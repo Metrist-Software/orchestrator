@@ -10,10 +10,12 @@ defmodule Orchestrator.Application do
     configure_neuron()
 
     run_groups = Application.get_env(:orchestrator, :run_groups, ["AWS Lambda"])
-    config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups) end
+    instance = System.get_env("AWS_REGION", "fake-dev-region")
+    config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
 
     children = [
-      {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]}
+      {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
+      Orchestrator.MonitorSupervisor
     ]
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
     Supervisor.start_link(children, opts)

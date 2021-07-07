@@ -42,9 +42,9 @@ defmodule Orchestrator.ConfigFetcher do
 
   defp run_fetch(state) do
     new_config = state.config_fetch_fun.()
-    Logger.info("New config is #{inspect new_config}")
-    Logger.info("Current config is #{inspect state.current_config}")
-    state
+    deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
+    Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
+    %State{state | current_config: new_config}
   end
 
   defp schedule_fetch(delay \\ 60000) do
