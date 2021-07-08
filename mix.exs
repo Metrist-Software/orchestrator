@@ -9,7 +9,7 @@ defmodule Orchestrator.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        private_cma: [
+        orchestrator: [
           steps: [:assemble, &Bakeware.assemble/1]
         ]
       ]
