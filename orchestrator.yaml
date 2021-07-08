@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  OrchestratorTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref OrchestratorTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: logs
+          Name: 0
+          Environment:
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
+            - Name: ENVIRONMENT_TAG
+              Value: !Ref EnvironmentTagName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: APP_API_HOSTNAME
+              Value: !Ref BackendAPIHostname
+      Cpu: 512
+      ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !GetAtt OrchestratorTaskTaskRole.Arn
+      Volumes: []
+    DependsOn: OrchestratorTaskLogGroup
+  OrchestratorService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${AWS::StackName}-OrchestratorService
+      TaskDefinition: !Ref OrchestratorTask
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      DeploymentController:
+        Type: ECS
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet1"
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet2"
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCDefaultSecruityGroup"
+  OrchestratorTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-OrchestratorT-execution
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DownloadDockerImagesFromECR
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:*:*:log-group:/stackery/task/${AWS::StackName}-*
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+  OrchestratorTaskTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-OrchestratorTask-task
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TriggerLambdaFunctions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub arn:aws:lambda:*:*:function:monitor-*
+        - PolicyName: AccessSecrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+  OrchestratorTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /stackery/task/${AWS::StackName}-OrchestratorTask/logs
+Conditions:
+    DeployAllResources: !Not
+    - !Equals
+      - 'true'
+      - !Ref MonitorsOnly
+Parameters:
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+  NetworkStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/networkStackName
+  MonitorsOnly:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/monitorsOnly
+  EnvConfigDatabaseLogicalName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/database/logicalName
+  BackendAPIHostname:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/apiEndpoints/backendAPI
+Metadata:
+  EnvConfigParameters:
+    NetworkStackName: stacks.networkStackName
+    MonitorsOnly: stacks.monitorsOnly
