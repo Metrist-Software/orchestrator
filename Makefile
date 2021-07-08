@@ -12,18 +12,18 @@ release:
 	echo Revision: `git rev-parse --short HEAD` >priv/build.txt
 	echo Date: `date` >>priv/build.txt
 	echo Build-Host: `hostname` >>priv/build.txt
-	docker build -t backend:`git rev-parse --short HEAD` .
+	docker build -t orchestrator:`git rev-parse --short HEAD` .
 
 local_release:
 	MIX_ENV=prod mix do compile, release --overwrite
 
-#tail_log_dev:
-	#aws logs tail --region=us-east-1 --follow --since=0m /stackery/task/backend-dev1-BackendTask/logs
+tail_log_dev:
+	aws logs tail --region=us-east-1 --follow --since=0m /stackery/task/orchestrator-dev1-OrchestratorTask/logs
 
-#tail_log_prod:
-	#aws logs tail --region=us-west-2 --follow --since=0m /stackery/task/backend-prod-BackendTask/logs
+tail_log_prod:
+	aws logs tail --region=us-west-2 --follow --since=0m /stackery/task/orchestrator-prod-OrchestratorTask/logs
 
 #exec_dev:
-	#@echo "Use 'bin/backend remote' to get an IEx shell once connected"
-	#aws ecs execute-command --region=us-east-1 --command /bin/sh --interactive --container backend --cluster default --task \
-	    #`aws ecs list-tasks --region=us-east-1 --service-name=backend-dev1-Service | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`
+	#@echo "Use 'bin/orchestrator remote' to get an IEx shell once connected"
+	#aws ecs execute-command --region=us-east-1 --command /bin/sh --interactive --container orchestrator --cluster default --task \
+	    #`aws ecs list-tasks --region=us-east-1 --service-name=orchestrator-dev1-Service | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`

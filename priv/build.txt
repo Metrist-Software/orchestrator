@@ -1,3 +1,0 @@
-Revision: 95beebb
-Date: Thu 08 Jul 2021 01:53:38 PM EDT
-Build-Host: system76-pc
