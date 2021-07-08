@@ -25,6 +25,8 @@ defmodule Orchestrator.MixProject do
 
   defp deps do
     [
+      {:dialyxir, "~> 1.0", only: :dev, runtime: false},
+
       # Generic dependencies
       {:jason, "~> 1.2"},
       {:bakeware, "~> 0.2.0"},
