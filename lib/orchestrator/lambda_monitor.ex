@@ -27,42 +27,19 @@ defmodule Orchestrator.LambdaMonitor do
 
   @impl true
   def handle_info(:run, state) do
-    Logger.info("Asked to run #{inspect state}")
+    Logger.info("Asked to run #{show(state)}")
     if state.task == nil do
-      Logger.info("Running #{inspect state.config}")
+      Logger.info("Doing run for #{show(state)}")
       Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
       task = invoke(state.config)
-      Process.send_after(self(), :check_completion, 1_000)
       {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
       # will run if it is time, otherwise not. However, we can use this later on to change scheduling - an
       # overtime run ending may mean we want to schedule right away, or after half the interval, or whatever.
-      Logger.info("Skipping run, marking us in overtime")
+      Logger.info("Skipping run for #{show(state)}, marking us in overtime")
       {:noreply, %State{state | overtime: true}}
     end
-  end
-
-  @impl true
-  def handle_info(:check_completion, state = %State{task: task}) when not is_nil(task) do
-    # The timing is here unimportant, we can poll every ms if we want but let's not flood the logs
-    case Task.yield(state.task, 5_000) do
-      {:ok, result} ->
-        Logger.info("Task complete for #{inspect state} with result #{inspect result}")
-        {:noreply, %State{state | task: nil, overtime: false}}
-      {:exit, reason} ->
-        Logger.error("Task exited (should not happen) for #{inspect state}, reason: #{inspect reason}")
-        {:noreply, %State{state | task: nil, overtime: false}}
-      nil ->
-        Logger.debug("Task still running for #{inspect state}")
-        Process.send_after(self(), :check_completion, 1_000)
-        {:noreply, state}
-    end
-  end
-  @impl true
-  def handle_info(:check_completion, state) do
-    Logger.debug("Excess check completion message on #{inspect state}, ignoring")
-    {:noreply, state}
   end
 
   @impl true
@@ -71,11 +48,44 @@ defmodule Orchestrator.LambdaMonitor do
     {:noreply, %State{state | config: new_config}}
   end
 
+  # As we're a GenServer, all Task completion messages arrive as info messages.
+
   @impl true
   def handle_info({_task_ref, {:error, error}}, state) do
-    result = Task.yield(state.task)
-    Logger.error("Received task error for #{inspect state}, error is: #{inspect error}, result is #{inspect result}")
+    Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
     {:noreply, %State{state | task: nil, overtime: false}}
+  end
+
+  @impl true
+  def handle_info({_task_ref, {:ok, result}}, state) do
+    Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
+    {:noreply, %State{state | task: nil, overtime: false}}
+  end
+
+  @impl true
+  def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal}, state) do
+    # Safely ignored, we did the work in the task completion handlers, above
+    {:noreply, state}
+  end
+
+  defp show(state) do
+    name =
+      if state.config.checkName == nil do
+        state.config.monitorName
+      else
+        "#{state.config.monitorName}.#{state.config.checkName}"
+      end
+    state =
+      if state.task != nil do
+        if state.overtime do
+          "in overtime"
+        else
+          "running"
+        end
+      else
+        "idle"
+      end
+    "#{name} (#{state})"
   end
 
   # Helpers for the first time (when we start) scheduling of a run, based on the
@@ -113,7 +123,7 @@ defmodule Orchestrator.LambdaMonitor do
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
     Logger.debug("About to spawn request #{inspect req}")
     # We spawn this as a task, so that we can keep receiving messages and do things like handle timeouts eventually.
-    Task.async(fn -> ExAws.request(req) end)
+    Task.async(fn -> ExAws.request(req, http_opts: [recv_timeout: 600_000], retries: [max_attempts: 1]) end)
   end
 
   defp lambda_function_name(%{functionName: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
