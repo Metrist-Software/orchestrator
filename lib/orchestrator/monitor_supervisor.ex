@@ -4,9 +4,11 @@ defmodule Orchestrator.MonitorSupervisor do
 
   """
   use DynamicSupervisor
+  require Logger
 
   def start_link(args) do
     name = Keyword.get(args, :name, __MODULE__)
+    {:ok, _} = Registry.start_link(keys: :unique, name: reg_name(name))
     DynamicSupervisor.start_link(__MODULE__, args, name: name)
   end
 
@@ -15,21 +17,31 @@ defmodule Orchestrator.MonitorSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def process_deltas(supervisor_pid, deltas) do
-    stop_deleted(supervisor_pid, deltas.delete)
-    start_added(supervisor_pid, deltas.add)
-    update_changed(supervisor_pid, deltas.change)
+  defp reg_name(name), do: String.to_atom("#{name}.Registry")
+
+  def process_deltas(supervisor_name, deltas) do
+    stop_deleted(supervisor_name, deltas.delete)
+    start_added(supervisor_name, deltas.add)
+    update_changed(supervisor_name, deltas.change)
   end
 
-  defp stop_deleted(_supervisor_pid, monitor_configs) do
+  defp stop_deleted(_supervisor_name, monitor_configs) do
     IO.inspect(monitor_configs, label: "Stop deleted")
   end
 
-  defp start_added(_supervisor_pid, monitor_configs) do
-    IO.inspect(monitor_configs, label: "Start added")
+  defp start_added(supervisor_name, monitor_configs) do
+    Enum.map(monitor_configs, fn {id, monitor_config} ->
+      name = {:via, Registry, {reg_name(supervisor_name), id}}
+      case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.LambdaMonitor, [config: monitor_config, name: name]}) do
+        {:error, message} ->
+          Logger.error("Could not start child #{id} with config #{inspect monitor_config}, error: #{inspect message}")
+        {:ok, pid} ->
+          Logger.info("Started child #{id} with config #{inspect monitor_config} as #{inspect pid}")
+      end
+    end)
   end
 
-  defp update_changed(_supervisor_pid, monitor_configs) do
+  defp update_changed(_supervisor_name, monitor_configs) do
     IO.inspect(monitor_configs, label: "Update changed")
   end
 
