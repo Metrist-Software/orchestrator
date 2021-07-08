@@ -44,14 +44,14 @@ defmodule Orchestrator.LambdaMonitor do
   end
 
   @impl true
-  def handle_info(:check_completion, state) do
+  def handle_info(:check_completion, state = %State{task: task}) when not is_nil(task) do
     # The timing is here unimportant, we can poll every ms if we want but let's not flood the logs
     case Task.yield(state.task, 5_000) do
       {:ok, result} ->
         Logger.info("Task complete for #{inspect state} with result #{inspect result}")
         {:noreply, %State{state | task: nil, overtime: false}}
       {:exit, reason} ->
-        Logger.info("Task exited (should not happen) for #{inspect state}, reason: #{inspect reason}")
+        Logger.error("Task exited (should not happen) for #{inspect state}, reason: #{inspect reason}")
         {:noreply, %State{state | task: nil, overtime: false}}
       nil ->
         Logger.debug("Task still running for #{inspect state}")
@@ -59,11 +59,23 @@ defmodule Orchestrator.LambdaMonitor do
         {:noreply, state}
     end
   end
+  @impl true
+  def handle_info(:check_completion, state) do
+    Logger.debug("Excess check completion message on #{inspect state}, ignoring")
+    {:noreply, state}
+  end
 
   @impl true
   def handle_info({:config_change, new_config}, state) do
     # We simply adopt the new config; the next run will then use the new data for scheduling.
     {:noreply, %State{state | config: new_config}}
+  end
+
+  @impl true
+  def handle_info({_task_ref, {:error, error}}, state) do
+    result = Task.yield(state.task)
+    Logger.error("Received task error for #{inspect state}, error is: #{inspect error}, result is #{inspect result}")
+    {:noreply, %State{state | task: nil, overtime: false}}
   end
 
   # Helpers for the first time (when we start) scheduling of a run, based on the
@@ -99,13 +111,14 @@ defmodule Orchestrator.LambdaMonitor do
   defp invoke(config) do
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
+    Logger.debug("About to spawn request #{inspect req}")
     # We spawn this as a task, so that we can keep receiving messages and do things like handle timeouts eventually.
     Task.async(fn -> ExAws.request(req) end)
   end
 
   defp lambda_function_name(%{functionName: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
   defp lambda_function_name(%{monitorName: monitor_name}), do: lambda_function_name(monitor_name)
-  defp lambda_function_name(name) when is_binary(name), do: "monitor-#{name}-#{env()}-{#name}Monitor"
+  defp lambda_function_name(name) when is_binary(name), do: "monitor-#{name}-#{env()}-#{name}Monitor"
 
   defp env, do: System.get_env("ENVIRONMENT_TAG", "local-development")
  end
