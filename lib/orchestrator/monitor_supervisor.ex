@@ -19,30 +19,43 @@ defmodule Orchestrator.MonitorSupervisor do
 
   defp reg_name(name), do: String.to_atom("#{name}.Registry")
 
+  defp child_name(supervisor_name, id), do: {:via, Registry, {reg_name(supervisor_name), id}}
+
   def process_deltas(supervisor_name, deltas) do
     stop_deleted(supervisor_name, deltas.delete)
     start_added(supervisor_name, deltas.add)
     update_changed(supervisor_name, deltas.change)
   end
 
-  defp stop_deleted(_supervisor_name, monitor_configs) do
-    IO.inspect(monitor_configs, label: "Stop deleted")
-  end
-
-  defp start_added(supervisor_name, monitor_configs) do
+  defp stop_deleted(supervisor_name, monitor_configs) do
+    registry = reg_name(supervisor_name)
     Enum.map(monitor_configs, fn {id, monitor_config} ->
-      name = {:via, Registry, {reg_name(supervisor_name), id}}
-      case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.LambdaMonitor, [config: monitor_config, name: name]}) do
-        {:error, message} ->
-          Logger.error("Could not start child #{id} with config #{inspect monitor_config}, error: #{inspect message}")
-        {:ok, pid} ->
-          Logger.info("Started child #{id} with config #{inspect monitor_config} as #{inspect pid}")
+      [{pid, _}] = Registry.lookup(registry, id)
+      case DynamicSupervisor.terminate_child(supervisor_name, pid) do
+        :ok ->
+          Logger.info("Terminated child #{id} with config #{inspect monitor_config} running as #{inspect pid}")
+        {:error, err} ->
+          Logger.error("Could not terminate child #{id} with config #{inspect monitor_config}, error: #{inspect err}")
       end
     end)
   end
 
-  defp update_changed(_supervisor_name, monitor_configs) do
-    IO.inspect(monitor_configs, label: "Update changed")
+  defp start_added(supervisor_name, monitor_configs) do
+    Enum.map(monitor_configs, fn {id, monitor_config} ->
+      name = child_name(supervisor_name, id)
+      case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.LambdaMonitor, [config: monitor_config, name: name]}) do
+        {:ok, pid} ->
+          Logger.info("Started child #{id} with config #{inspect monitor_config} as #{inspect pid}")
+        {:error, message} ->
+          Logger.error("Could not start child #{id} with config #{inspect monitor_config}, error: #{inspect message}")
+      end
+    end)
   end
 
+  defp update_changed(supervisor_name, monitor_configs) do
+    Enum.map(monitor_configs, fn {id, monitor_config} ->
+      name = child_name(supervisor_name, id)
+      GenServer.cast(name, {:config_change, monitor_config})
+    end)
+  end
 end
