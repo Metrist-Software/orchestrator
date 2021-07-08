@@ -11,16 +11,11 @@ RUN mix local.hex --force && \
 ENV MIX_ENV=prod
 
 COPY mix.exs mix.lock ./
-COPY config config
+#COPY config config
 RUN mix do deps.get, deps.compile
-COPY assets/package.json assets/package-lock.json ./assets/
-RUN npm --prefix ./assets ci --progress=false --no-audit
 COPY priv priv
-COPY assets assets
 COPY lib lib
-COPY rel rel
-RUN npm run --prefix ./assets deploy
-RUN mix phx.digest
+#COPY rel rel
 
 RUN mix do compile, release
 
@@ -36,8 +31,7 @@ ENV HOME=/app
 RUN chown nobody:nobody /app
 COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/bakeware/ ./
 USER nobody:nobody
+# Bakeware's cache directory must exist in advance. Probably safer.
+RUN mkdir .cache
 
-#HEALTHCHECK --interval=5s --timeout=2s \
-    #CMD curl -f http://localhost:4000/health || exit 1
-
-CMD ["orchestrator", "start"]
+CMD ["./orchestrator"]

@@ -4,6 +4,7 @@ defmodule Orchestrator.Application do
 
   @impl true
   def start(_type, _config) do
+    print_header()
     # TODO set stuff from run time environment
     # AWS_REGION
     configure_api_token()
@@ -76,5 +77,22 @@ defmodule Orchestrator.Application do
   defp do_aws_request(request) do
     region = System.get_env("AWS_REGION") || "us-east-1"
     ExAws.request(request, region: region)
+  end
+
+  defp print_header() do
+    build_txt = Path.join(Application.app_dir(:orchestrator, "priv"), "build.txt")
+    build = if File.exists?(build_txt) do
+      File.read!(build_txt)
+    else
+      "(unknown build)"
+    end
+    IO.puts """
+    Canary Monitoring Orchestrator starting.
+
+    Build info:
+    ===
+    #{build}
+    ===
+    """
   end
 end

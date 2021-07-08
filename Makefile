@@ -8,9 +8,10 @@ run:
 	iex -S mix
 
 release:
-	echo Revision: `git rev-parse --short HEAD` >assets/static/build.txt
-	echo Date: `date` >>assets/static/build.txt
-	echo Build-Host: `hostname` >>assets/static/build.txt
+	mkdir -p priv/
+	echo Revision: `git rev-parse --short HEAD` >priv/build.txt
+	echo Date: `date` >>priv/build.txt
+	echo Build-Host: `hostname` >>priv/build.txt
 	docker build -t backend:`git rev-parse --short HEAD` .
 
 local_release:
