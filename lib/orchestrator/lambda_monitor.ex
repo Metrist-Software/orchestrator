@@ -35,6 +35,9 @@ defmodule Orchestrator.LambdaMonitor do
       Process.send_after(self(), :check_completion, 1_000)
       {:noreply, %State{state | task: task, overtime: false}}
     else
+      # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
+      # will run if it is time, otherwise not. However, we can use this later on to change scheduling - an
+      # overtime run ending may mean we want to schedule right away, or after half the interval, or whatever.
       Logger.info("Skipping run, marking us in overtime")
       {:noreply, %State{state | overtime: true}}
     end
@@ -49,9 +52,11 @@ defmodule Orchestrator.LambdaMonitor do
         {:noreply, %State{state | task: nil, overtime: false}}
       {:exit, reason} ->
         Logger.info("Task exited (should not happen) for #{inspect state}, reason: #{inspect reason}")
+        {:noreply, %State{state | task: nil, overtime: false}}
       nil ->
         Logger.debug("Task still running for #{inspect state}")
         Process.send_after(self(), :check_completion, 1_000)
+        {:noreply, state}
     end
   end
 
