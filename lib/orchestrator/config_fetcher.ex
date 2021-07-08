@@ -28,7 +28,8 @@ defmodule Orchestrator.ConfigFetcher do
     schedule_fetch(0)
     {:ok, %State{
         monitor_supervisor_pid: monitor_supervisor_pid,
-        config_fetch_fun: config_fetch_fun
+        config_fetch_fun: config_fetch_fun,
+        current_config: %{}
      }}
   end
 
