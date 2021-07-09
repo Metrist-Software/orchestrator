@@ -8,6 +8,7 @@ defmodule Orchestrator.MixProject do
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      dialyzer: dialyzer(),
       releases: [
         orchestrator: [
           steps: [:assemble, &Bakeware.assemble/1]
@@ -35,6 +36,16 @@ defmodule Orchestrator.MixProject do
       {:neuron, "~> 5.0"},         # Until(?) we ditch GraphQL
       {:ex_aws_lambda, "~> 2.0"},
       {:ex_aws_secretsmanager, "~> 2.0"}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      # ignore_warnings: ".dialyzer_ignore.exs",
+      plt_add_apps: [:ex_unit, :jason, :mix],
+      plt_add_deps: :app_tree,
+      plt_file: {:no_warn, "priv/plts/orchestrator.plt"}
+
     ]
   end
 end
