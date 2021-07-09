@@ -12,6 +12,9 @@ defmodule Orchestrator.Application do
 
     run_groups = Application.get_env(:orchestrator, :run_groups, ["AWS Lambda"])
     instance = System.get_env("AWS_REGION", "fake-dev-region")
+
+    Application.put_env(:orchestrator, :aws_region, instance)
+
     config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
 
     children = [
