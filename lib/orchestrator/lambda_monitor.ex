@@ -6,7 +6,7 @@ defmodule Orchestrator.LambdaMonitor do
   require Logger
 
   defmodule State do
-    defstruct [:config, :task, :overtime]
+    defstruct [:config, :task, :overtime, :region]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -15,14 +15,15 @@ defmodule Orchestrator.LambdaMonitor do
   def start_link(opts) do
     config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
-    GenServer.start_link(__MODULE__, config, name: name)
+    region = Application.get_env(:orchestrator, :aws_region)
+    GenServer.start_link(__MODULE__, {config, region}, name: name)
   end
 
   @impl true
-  def init(config) do
+  def init({config, region}) do
     Logger.info("Initialize lambda monitor with #{inspect config}")
     schedule_initially(config)
-    {:ok, %State{config: config}}
+    {:ok, %State{config: config, region: region}}
   end
 
   @impl true
@@ -31,7 +32,7 @@ defmodule Orchestrator.LambdaMonitor do
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
       Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
-      task = invoke(state.config)
+      task = invoke(state.config, state.region)
       {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
@@ -118,12 +119,12 @@ defmodule Orchestrator.LambdaMonitor do
   end
 
   # Only these bits are actually AWS Lambda specific.
-  defp invoke(config) do
+  defp invoke(config, region) do
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
     Logger.debug("About to spawn request #{inspect req}")
     # We spawn this as a task, so that we can keep receiving messages and do things like handle timeouts eventually.
-    Task.async(fn -> ExAws.request(req, http_opts: [recv_timeout: 600_000], retries: [max_attempts: 1]) end)
+    Task.async(fn -> ExAws.request(req, region: region, http_opts: [recv_timeout: 600_000], retries: [max_attempts: 1]) end)
   end
 
   defp lambda_function_name(%{functionName: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
