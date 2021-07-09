@@ -5,7 +5,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:
