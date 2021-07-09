@@ -42,7 +42,8 @@ jobs:
         path: priv/plts
         key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles('**/mix.lock') }}
     - name: Create Dialyzer PLTs
-      if: steps.plt-cache.outputs.cache-hit != 'true'
+      # Need this to run every time for now as when the cache hit executes it currently errors
+      # if: steps.plt-cache.outputs.cache-hit != 'true'
       run: |
         mkdir -p priv/plts
         mix dialyzer --plt
