@@ -1,0 +1,75 @@
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        otp: ['23.2.1']
+        elixir: ['1.11.4']
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{matrix.elixir}}
+        otp-version: ${{matrix.otp}}
+
+    - name: Restore dependencies cache
+      uses: actions/cache@v2
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+
+    - name: Install dependencies
+      run: mix deps.get
+
+    - name: Run tests
+      run: |
+        epmd -daemon
+        mix test
+
+    # If the following is too slow, we can ditch it. Should only be slow once after an Erlang/Elixir version upgrade.
+    - name: Retrieve Dialyzer PLT cache
+      uses: actions/cache@v1
+      id: plt-cache
+      with:
+        path: priv/plts
+        key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles('**/mix.lock') }}
+    - name: Create Dialyzer PLTs
+      if: steps.plt-cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p priv/plts
+        mix dialyzer --plt
+    - name: Run Dialyzer
+      run: mix dialyzer --no-check
+
+  build-push:
+    runs-on: ubuntu-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and Push Orchestrator container
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: ./build-and-push.sh
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-push]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy Orchestrator container
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          STACKERY_KEY: ${{ secrets.STACKERY_KEY }}
+          STACKERY_SECRET: ${{ secrets.STACKERY_SECRET }}
+        run: ./deploy.sh

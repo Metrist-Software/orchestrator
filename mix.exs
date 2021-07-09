@@ -9,7 +9,7 @@ defmodule Orchestrator.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        private_cma: [
+        orchestrator: [
           steps: [:assemble, &Bakeware.assemble/1]
         ]
       ]
@@ -18,14 +18,23 @@ defmodule Orchestrator.MixProject do
 
   def application do
     [
+      mod: {Orchestrator.Application, []},
       extra_applications: [:logger]
     ]
   end
 
   defp deps do
     [
+      {:dialyxir, "~> 1.0", only: :dev, runtime: false},
+
+      # Generic dependencies
       {:jason, "~> 1.2"},
-      {:bakeware, "~> 0.2.0"}
+      {:bakeware, "~> 0.2.0"},
+
+      # Canary Orchestrator specific dependencies (for now)
+      {:neuron, "~> 5.0"},         # Until(?) we ditch GraphQL
+      {:ex_aws_lambda, "~> 2.0"},
+      {:ex_aws_secretsmanager, "~> 2.0"}
     ]
   end
 end
