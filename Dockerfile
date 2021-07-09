@@ -1,7 +1,7 @@
 FROM elixir:1.11-alpine AS build
 
 ENV REFRESHED_AT 20210428T213742Z
-RUN apk add --no-cache build-base zstd git curl
+RUN apk add --no-cache build-base zstd git curl unzip
 
 WORKDIR /app
 
@@ -10,10 +10,12 @@ RUN mix local.hex --force && \
 
 ENV MIX_ENV=prod
 
-COPY mix.exs mix.lock ./
+COPY mix.exs mix.lock install-runner.sh ./
 #COPY config config
-RUN mix do deps.get, deps.compile
 COPY priv priv
+RUN ./install-runner.sh & \
+    mix do deps.get, deps.compile & \
+    wait
 COPY lib lib
 #COPY rel rel
 
