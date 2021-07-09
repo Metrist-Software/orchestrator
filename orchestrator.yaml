@@ -5,7 +5,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator
+        - Image: 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -136,6 +136,9 @@ Parameters:
   BackendAPIHostname:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/backendAPI
+  ContainerVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/backend/container/version
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
