@@ -23,7 +23,7 @@ defmodule Orchestrator.MonitorScheduler do
 
   @impl true
   def init({config, region, invoker}) do
-    Logger.info("Initialize lambda monitor with #{inspect config}")
+    Logger.info("Initialize monitor with #{inspect invoker}, #{inspect config}")
     schedule_initially(config)
     {:ok, %State{config: config, region: region, invoker: invoker}}
   end
@@ -60,7 +60,7 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   @impl true
-  def handle_info({_task_ref, {:ok, result}}, state) do
+  def handle_info({_task_ref, result}, state) do
     Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
     {:noreply, %State{state | task: nil, overtime: false}}
   end

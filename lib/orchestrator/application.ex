@@ -10,7 +10,7 @@ defmodule Orchestrator.Application do
     configure_api_token()
     configure_neuron()
 
-    run_groups = Application.get_env(:orchestrator, :run_groups, ["AWS Lambda"])
+    run_groups = Application.get_env(:orchestrator, :run_groups, [])
     instance = System.get_env("AWS_REGION", "fake-dev-region")
 
     Application.put_env(:orchestrator, :aws_region, instance)

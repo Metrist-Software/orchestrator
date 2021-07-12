@@ -43,13 +43,14 @@ defmodule Orchestrator.MonitorSupervisor do
   defp start_added(supervisor_name, monitor_configs) do
     Enum.map(monitor_configs, fn {id, monitor_config} ->
       name = child_name(supervisor_name, id)
-      invoker = case name do
+      invoker = case monitor_config.monitorName do
                   # TODO store this somewhere else than hardcoded here :-)
                   # For our private synthetic monitor
                   "artifactory" -> Orchestrator.DotNetDLLInvoker
                   # For testing.
                   "testsignal" -> Orchestrator.DotNetDLLInvoker
-                  _ -> Orchestrator.LambdaInvoker
+                  _ -> Orchestrator.NilInvoker
+                  #_ -> Orchestrator.LambdaInvoker
                 end
       case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.MonitorScheduler, [config: monitor_config, name: name, invoker: invoker]}) do
         {:ok, pid} ->

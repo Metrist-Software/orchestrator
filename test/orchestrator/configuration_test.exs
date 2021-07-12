@@ -13,7 +13,6 @@ defmodule Orchestrator.ConfigurationTest do
         id: "11vpT2igxMZN4fbt17yntDX",
         intervalSecs: 120,
         monitor: %{
-          id: "datadog",
           instance: %{
             checkLastReports: [
               %{key: "GetEvent", value: "2021-07-07T21:34:26.746185"},
@@ -22,7 +21,6 @@ defmodule Orchestrator.ConfigurationTest do
             lastReport: "2021-07-07T21:34:26.746185",
             name: "us-east-1"
           },
-          logicalName: "datadog",
           name: "Datadog"
         },
         monitorName: "datadog"
@@ -45,7 +43,6 @@ defmodule Orchestrator.ConfigurationTest do
         id: "11vpT2igxMZN4fbt17yntDX",
         intervalSecs: 120,
         monitor: %{
-          id: "datadog",
           instance: %{
             checkLastReports: [
               %{key: "GetEvent", value: "2021-07-07T21:34:26.746185"},
@@ -54,7 +51,6 @@ defmodule Orchestrator.ConfigurationTest do
             lastReport: "2021-07-07T21:34:26.746185",
             name: "us-east-1"
           },
-          logicalName: "datadog",
           name: "Datadog"
         },
         monitorName: "datadog"

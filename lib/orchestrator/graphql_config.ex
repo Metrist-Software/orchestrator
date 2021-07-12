@@ -40,15 +40,15 @@ defmodule Orchestrator.GraphQLConfig do
     # We simplify here. The whole somewhat complicated GraphQL thing should be hidden, preferably.
     monitors = monitors.monitors
     |> Enum.map(fn mon ->
-      instance = case Enum.filter(mon.instances, fn i -> i.name == instance end) do
-                   [i] -> i
-                   [] ->
-                     IO.puts("Not found #{instance} in #{inspect mon.instances}")
-                     nil
-      end
+      instance_data = case Enum.filter(mon.instances, fn i -> i.name == instance end) do
+                        [i] -> i
+                        [] ->
+                          IO.puts("Not found #{instance} in #{inspect mon.instances}")
+                          nil
+                      end
       mon = mon
       |> Map.delete(:instances)
-      |> Map.put(:instance, instance)
+      |> Map.put(:instance, instance_data)
       {mon.id, mon}
     end)
     |> Map.new()
@@ -58,7 +58,10 @@ defmodule Orchestrator.GraphQLConfig do
       cfg = Map.put(cfg, :monitor, Map.get(monitors, cfg.monitorName, %{}))
       {cfg.id, cfg}
     end)
+    # If we did not find an instance above, the monitor was not for us and we should filter it out.
+    |> Enum.filter(fn {_id, cfg} -> Map.has_key?(cfg.monitor, :instance) end)
     |> Map.new()
+    |> IO.inspect(label: "Full config")
   end
 
   def get_monitors() do
