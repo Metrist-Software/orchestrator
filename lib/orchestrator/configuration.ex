@@ -10,7 +10,6 @@ defmodule Orchestrator.Configuration do
       id: "11vpT2iBDbLTDFOz5QhbQLV",
       intervalSecs: 120,
       monitor: %{
-        id: "gcal",
         instance: %{
           checkLastReports: [
             %{key: "CreateEvent", value: "2021-07-08T14:25:32.119925"},
@@ -20,7 +19,6 @@ defmodule Orchestrator.Configuration do
           lastReport: "2021-07-08T14:25:32.119925",
           name: "us-east-1"
         },
-        logicalName: "gcal",
         name: "Google Calendar"
       },
       monitorName: "gcal"
