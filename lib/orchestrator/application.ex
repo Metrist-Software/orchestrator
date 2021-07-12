@@ -27,14 +27,19 @@ defmodule Orchestrator.Application do
 
   defp configure_api_token do
     token =
-      case System.get_env("SECRETS_NAMESPACE") do
+      case System.get_env("CANARY_API_TOKEN") do
         nil ->
-          "fake-token-for-dev"
+          case System.get_env("SECRETS_NAMESPACE") do
+            nil ->
+              "fake-token-for-dev"
 
-        env ->
-          get_secret("canary-internal/api-token", env)
-          |> Jason.decode!()
-          |> Map.get("token")
+            env ->
+              get_secret("canary-internal/api-token", env)
+              |> Jason.decode!()
+              |> Map.get("token")
+          end
+
+        token -> token
       end
 
     Application.put_env(:orchestrator, :api_token, token)

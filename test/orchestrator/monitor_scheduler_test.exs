@@ -1,7 +1,7 @@
-defmodule Orchestrator.LambdaMonitorTest do
+defmodule Orchestrator.MonitorSchedulerTest do
   use ExUnit.Case, async: true
 
-  import Orchestrator.LambdaMonitor
+  import Orchestrator.MonitorScheduler
 
   test "time to next run when no last run should be right away" do
     assert time_to_next_run(nil, 120) == 0

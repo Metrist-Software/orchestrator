@@ -1,12 +1,13 @@
-defmodule Orchestrator.LambdaMonitor do
+defmodule Orchestrator.MonitorScheduler do
   @moduledoc """
-  Process to control a lambda monitor.
+  Process to control a monitor. The monitor itself is invoked through the passed `invoke` function, which
+  should return a task.
   """
   use GenServer
   require Logger
 
   defmodule State do
-    defstruct [:config, :task, :overtime, :region]
+    defstruct [:config, :task, :overtime, :region, :invoker]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -16,14 +17,15 @@ defmodule Orchestrator.LambdaMonitor do
     config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
     region = Application.get_env(:orchestrator, :aws_region)
-    GenServer.start_link(__MODULE__, {config, region}, name: name)
+    invoker = Keyword.get(opts, :invoker)
+    GenServer.start_link(__MODULE__, {config, region, invoker}, name: name)
   end
 
   @impl true
-  def init({config, region}) do
+  def init({config, region, invoker}) do
     Logger.info("Initialize lambda monitor with #{inspect config}")
     schedule_initially(config)
-    {:ok, %State{config: config, region: region}}
+    {:ok, %State{config: config, region: region, invoker: invoker}}
   end
 
   @impl true
@@ -32,7 +34,7 @@ defmodule Orchestrator.LambdaMonitor do
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
       Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
-      task = invoke(state.config, state.region)
+      task = state.invoker.invoke(state.config, state.region)
       {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
