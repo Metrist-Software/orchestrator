@@ -10,7 +10,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   """
   require Logger
 
-  @max_monitor_runtime 3_600_000 # an hour in milliseconds
+  @max_monitor_runtime 15 * 60 * 1_000
 
   @behaviour Orchestrator.Invoker
 
@@ -31,7 +31,6 @@ defmodule Orchestrator.DotNetDLLInvoker do
     wait_for_complete(port, ref, config.monitorName)
   end
 
-  # TODO timeouts
   defp wait_for_complete(port, ref, monitorName) do
     receive do
 	  {:DOWN, ^ref, :port, ^port, reason} ->
@@ -44,6 +43,5 @@ defmodule Orchestrator.DotNetDLLInvoker do
         Logger.info("Monitor #{monitorName}: Monitor did not complete in time, killing it")
         Port.close(port)
     end
-
   end
 end
