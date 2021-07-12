@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 #
 # The C# monitor runner is loaded from S3 during build time so we don't
 # have to check it in.
