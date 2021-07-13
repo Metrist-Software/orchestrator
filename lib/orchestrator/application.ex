@@ -74,7 +74,6 @@ defmodule Orchestrator.Application do
 
   defp copy_secret(path, field, env_var) do
     secret = get_secret(path) |> Jason.decode!()
-    IO.puts("Secret: #{inspect secret}")
     IO.puts("Copy field #{field} to #{env_var}")
     System.put_env(env_var, Map.get(secret, field))
   end
