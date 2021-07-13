@@ -9,6 +9,7 @@ defmodule Orchestrator.Application do
     # AWS_REGION
     configure_api_token()
     configure_neuron()
+    configure_monitors()
 
     run_groups = Application.get_env(:orchestrator, :run_groups, [])
     instance = System.get_env("AWS_REGION", "fake-dev-region")
@@ -66,6 +67,27 @@ defmodule Orchestrator.Application do
     end
   end
 
+  defp configure_monitors() do
+    # Artifactory is currently the only one we run as a private monitor with a separate API key
+    copy_secret("artifactory/api-token", "token", "CANARY_ARTIFACTORY_API_TOKEN")
+  end
+
+  defp copy_secret(path, field, env_var) do
+    secret = get_secret(path) |> Jason.decode!()
+    IO.puts("Secret: #{inspect secret}")
+    IO.puts("Copy field #{field} to #{env_var}")
+    System.put_env(env_var, Map.get(secret, field))
+  end
+
+  def get_secret(path) do
+    case System.get_env("SECRETS_NAMESPACE") do
+      nil ->
+        Logger.warning("No SECRETS_NAMESPACE found, not fetching secret #{path}")
+        nil
+      env ->
+        get_secret(path, env)
+    end
+  end
   defp get_secret(path, namespace) do
     Logger.debug("get_secret(#{path}, #{namespace}) (or #{namespace}#{path})")
 

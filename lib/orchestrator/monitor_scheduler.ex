@@ -95,7 +95,7 @@ defmodule Orchestrator.MonitorScheduler do
   # last run value of either the monitor or the check we are supposed to run.
   defp schedule_initially(config = %{checkName: nil}) do
     # Schedule a whole monitor
-    {:ok, last_run} = (config.monitor.instance.lastReport || @never)
+    {:ok, last_run} = Map.get((config.monitor.instance || %{}), :lastReport, @never)
     |> NaiveDateTime.from_iso8601()
     do_schedule_initially(config, last_run)
   end

@@ -16,7 +16,6 @@ defmodule Orchestrator.DotNetDLLInvoker do
 
   @impl true
   def invoke(config, _region) do
-    Logger.info("So now what? I'm supposed to invoke #{inspect config} how?")
     Task.async(fn -> do_invoke(config) end)
   end
 
@@ -25,9 +24,9 @@ defmodule Orchestrator.DotNetDLLInvoker do
     # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
     runner = Path.join(runner_dir, "Canary.Shared.Monitoring.Runner")
-    port = Port.open({:spawn_executable, runner}, [:binary, args: [config.monitorName]])
+    port = Port.open({:spawn_executable, runner}, [:binary, :stderr_to_stdout, args: [config.monitorName]])
     ref = Port.monitor(port)
-    Logger.debug("Opened port for #{config.monitorName} as #{inspect port}")
+    Logger.info("Opened port for #{config.monitorName} as #{inspect port}")
     wait_for_complete(port, ref, config.monitorName)
   end
 
@@ -35,14 +34,15 @@ defmodule Orchestrator.DotNetDLLInvoker do
     receive do
 	  {:DOWN, ^ref, :port, ^port, reason} ->
         Logger.debug("Monitor #{monitorName}: Received DOWN message, reason: #{inspect reason}, completing invocation.")
-      {:data, data} ->
+      {^port, {:data, data}} ->
         Logger.debug("Monitor #{monitorName}: stdout: #{data}")
+        wait_for_complete(port, ref, monitorName)
       msg ->
         Logger.debug("Monitor #{monitorName}: Ignoring message #{inspect msg}")
         wait_for_complete(port, ref, monitorName)
     after
       @max_monitor_runtime ->
-        Logger.info("Monitor #{monitorName}: Monitor did not complete in time, killing it")
+        Logger.error("Monitor #{monitorName}: Monitor did not complete in time, killing it")
         Port.close(port)
     end
   end
