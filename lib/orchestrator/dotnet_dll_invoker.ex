@@ -48,7 +48,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
         )
 
       {^port, {:data, data}} ->
-        Logger.debug("Monitor #{monitor_name}: stdout: #{data}")
+        handle_message(data, monitor_name)
         wait_for_complete(port, ref, monitor_name)
 
       msg ->
@@ -61,12 +61,34 @@ defmodule Orchestrator.DotNetDLLInvoker do
     end
   end
 
-  # Protocol bits. This probably should move to a different module
+  # Protocol bits. This probably should move to a different module if/when we add multiple invocation types.
+
+  defp handle_message("", _monitor_name), do: :ok
+  defp handle_message(data, monitor_name) do
+    case Integer.parse(data) do
+      {len, rest} ->
+        message = String.slice(rest, 1, len)
+        parts = String.split(message, " ", parts: 2)
+        if length(parts) == 2 do
+          maybe_log(Enum.at(parts, 0), Enum.at(parts, 1), monitor_name)
+        end
+        # If there's more, there's more
+        handle_message(String.slice(rest, 1 + len, 100_000), monitor_name)
+      :error ->
+        Logger.debug("#{monitor_name}: stdout: #{data}")
+    end
+  end
+  defp maybe_log("Debug", msg, monitor_name), do: Logger.debug("#{monitor_name}: #{msg}")
+  defp maybe_log("Info", msg, monitor_name), do: Logger.info("#{monitor_name}: #{msg}")
+  defp maybe_log("Warning", msg, monitor_name), do: Logger.warning("#{monitor_name}: #{msg}")
+  defp maybe_log("Error", msg, monitor_name), do: Logger.error("#{monitor_name}: #{msg}")
+  defp maybe_log(w, ws, monitor_name), do: Logger.info("#{monitor_name}: Uknown: #{w} #{ws}")
+
 
   defp handle_handshake(port, config) do
     matches = expect(port, ~r/Started ([0-9]+)\.([0-9]+)/)
-    major = Integer.parse(Enum.at(matches, 1))
-    minor = Integer.parse(Enum.at(matches, 3))
+    {major, _} = Integer.parse(Enum.at(matches, 1))
+    {minor, _} = Integer.parse(Enum.at(matches, 2))
     assert_compatible(config.monitor_name, major, minor)
     write(port, "Version #{@major}.#{@minor}")
     expect(port, ~r/Ready/)
@@ -83,9 +105,18 @@ defmodule Orchestrator.DotNetDLLInvoker do
   defp read(port) do
     receive do
       {^port, {:data, data}} ->
-        {len, rest} = Integer.parse(data)
-        if len + 1 != String.length(rest), do: raise "Unexpected message, expected #{len} bytes, got #{rest}"
-        String.trim_leading(rest)
+        Logger.debug("Received data: #{inspect data}")
+        case Integer.parse(data) do
+          {len, rest} ->
+            # This should not happen, but if it does, we can always make a more complex read function. For now, good enough.
+            # Note that technically, we can have other stuff interfering here, or multiple messages in one go, but at this
+            # part in the protocol (we only get called from the handshake) we should not be too worried about that.
+            if len + 1 != String.length(rest), do: raise "Unexpected message, expected #{len} bytes, got \"#{rest}\""
+            String.trim_leading(rest)
+          :error ->
+            Logger.info("Ignoring monitor output: #{data}")
+            read(port)
+        end
     after
       60_000->
         raise "Nothing read during handshake"

@@ -23,7 +23,7 @@ defmodule Orchestrator.ConfigurationTest do
           },
           name: "Datadog"
         },
-        monitorName: "datadog"
+        monitor_name: "datadog"
       }
     }
 
@@ -53,7 +53,7 @@ defmodule Orchestrator.ConfigurationTest do
           },
           name: "Datadog"
         },
-        monitorName: "datadog"
+        monitor_name: "datadog"
       }
     }
 

@@ -43,7 +43,7 @@ defmodule Orchestrator.MonitorSupervisor do
   defp start_added(supervisor_name, monitor_configs) do
     Enum.map(monitor_configs, fn {id, monitor_config} ->
       name = child_name(supervisor_name, id)
-      invoker = case monitor_config.monitorName do
+      invoker = case monitor_config.monitor_name do
                   # TODO store this somewhere else than hardcoded here :-)
                   # For our private synthetic monitor
                   "artifactory" -> Orchestrator.DotNetDLLInvoker

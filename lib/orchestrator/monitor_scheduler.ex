@@ -74,9 +74,9 @@ defmodule Orchestrator.MonitorScheduler do
   defp show(state) do
     name =
       if state.config.checkName == nil do
-        state.config.monitorName
+        state.config.monitor_name
       else
-        "#{state.config.monitorName}.#{state.config.checkName}"
+        "#{state.config.monitor_name}.#{state.config.checkName}"
       end
     state =
       if state.task != nil do
