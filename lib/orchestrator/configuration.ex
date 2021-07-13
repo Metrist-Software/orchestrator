@@ -5,7 +5,7 @@ defmodule Orchestrator.Configuration do
   ```
     %{
       checkName: nil,
-      extraConfig: [],
+      extra_config: %{},
       functionName: nil,
       id: "11vpT2iBDbLTDFOz5QhbQLV",
       intervalSecs: 120,
@@ -21,7 +21,7 @@ defmodule Orchestrator.Configuration do
         },
         name: "Google Calendar"
       },
-      monitorName: "gcal"
+      monitor_name: "gcal"
     }
   ```
 

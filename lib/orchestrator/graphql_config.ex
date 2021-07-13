@@ -55,7 +55,15 @@ defmodule Orchestrator.GraphQLConfig do
 
     configurations.monitorConfigurations
     |> Enum.map(fn cfg ->
-      cfg = Map.put(cfg, :monitor, Map.get(monitors, cfg.monitorName, %{}))
+      extra_config = cfg.extraConfig
+      |> Enum.map(fn elem -> {elem.key, elem.value} end)
+      |> Map.new
+      cfg = cfg
+      |> Map.put(:monitor, Map.get(monitors, cfg.monitorName, %{}))
+      |> Map.put(:extra_config, extra_config)
+      |> Map.delete(:extraConfig)
+      |> Map.put(:monitor_name, cfg.monitorName)
+      |> Map.delete(:monitorName)
       {cfg.id, cfg}
     end)
     # If we did not find an instance above, the monitor was not for us and we should filter it out.
