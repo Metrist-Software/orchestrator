@@ -30,7 +30,7 @@ defmodule Orchestrator.LambdaMonitor do
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
     # Need this to tick and check everytime even if the genserver goes into overtime
-    # so can't e inside the state.task == nil
+    # so can't be inside the state.task == nil
     Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
