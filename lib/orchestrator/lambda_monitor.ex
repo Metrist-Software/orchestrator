@@ -29,9 +29,11 @@ defmodule Orchestrator.LambdaMonitor do
   @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
+    # Need this to tick and check everytime even if the genserver goes into overtime
+    # so can't be inside the state.task == nil
+    Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
-      Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
       task = invoke(state.config, state.region)
       {:noreply, %State{state | task: task, overtime: false}}
     else
