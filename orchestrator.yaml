@@ -14,14 +14,18 @@ Resources:
               awslogs-stream-prefix: logs
           Name: 0
           Environment:
-            - Name: SECRETS_NAMESPACE
-              Value: !Sub /${EnvironmentTagName}/
-            - Name: ENVIRONMENT_TAG
-              Value: !Ref EnvironmentTagName
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: APP_API_HOSTNAME
+            - Name: CANARY_API_TOKEN_PATH
+              Value: !Sub /${EnvironmentTagName}/canary-internal/api-token.token
+            - Name: CANARY_INSTANCE_NAME
+              Value: !Ref AWS::Region
+            - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
+            - Name: CANARY_TELEMETRY_HOST
+              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
+            - Name: CANARY_INVOCATION_STYLE
+              Value: lambda
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -67,24 +71,18 @@ Resources:
               awslogs-stream-prefix: logs
           Name: 0
           Environment:
-            - Name: SECRETS_NAMESPACE
-              Value: !Sub /${EnvironmentTagName}/
-            - Name: ENVIRONMENT_TAG
-              Value: !Ref EnvironmentTagName
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: APP_API_HOSTNAME
-              Value: !Ref BackendAPIHostname
+            - Name: CANARY_API_TOKEN_PATH
+              Value: !Sub /${EnvironmentTagName}/private-cma/canary-api-token.token
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
-            - Name: TELEMETRY_API_ENDPOINT
-              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
+            - Name: CANARY_INSTANCE_NAME
+              Value: !Sub "canary-private-${AWS::Region}"
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
-            - Name: CANARY_INSTANCE_NAME
-              Value: !Sub "canary-private-${AWS::Region}"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -206,6 +204,13 @@ Parameters:
   ContainerVersion:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/container/version
+  EnvConfigapiEndpointstelemetryAPIAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/apiEndpoints/telemetryAPI
+  AppAPIHostname:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/apiEndpoints/appAPI
+
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName

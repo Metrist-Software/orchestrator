@@ -17,6 +17,12 @@ release:
 local_release:
 	MIX_ENV=prod mix do compile, release --overwrite
 
+tail_cma_log_dev:
+	aws logs tail --region=us-east-1 --follow --since=0m /stackery/task/orchestrator-dev1-PrivateCMATask/logs
+
+tail_cma_log_prod:
+	aws logs tail --region=us-west-2 --follow --since=0m /stackery/task/orchestrator-prod-PrivateCMATask/logs
+
 tail_log_dev:
 	aws logs tail --region=us-east-1 --follow --since=0m /stackery/task/orchestrator-dev1-OrchestratorTask/logs
 

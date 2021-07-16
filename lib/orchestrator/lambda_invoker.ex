@@ -7,6 +7,9 @@ defmodule Orchestrator.LambdaInvoker do
 
   @behaviour Orchestrator.Invoker
 
+  # TODO this is very Canary specific, especially the naming. Remove completely after
+  # we're off Lambda?
+
   @impl true
   def invoke(config, region) do
     name = lambda_function_name(config)

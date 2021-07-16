@@ -5,20 +5,16 @@ defmodule Orchestrator.Application do
   @impl true
   def start(_type, _config) do
     print_header()
-    # TODO set stuff from run time environment
-    # AWS_REGION
+
     configure_api_token()
     configure_neuron()
-    configure_monitors()
 
     run_groups = Application.get_env(:orchestrator, :run_groups, [])
-    instance = System.get_env("AWS_REGION", "fake-dev-region")
 
-    # So you can separate the AWS settings from the "what instance do we want to report as?" settings
-    instance = System.get_env("CANARY_INSTANCE_NAME", instance)
+    region = System.get_env("AWS_REGION", "fake-dev-region")
+    Application.put_env(:orchestrator, :aws_region, region)
 
-    Application.put_env(:orchestrator, :aws_region, instance)
-
+    instance = System.get_env("CANARY_INSTANCE_NAME", "fake-dev-instance")
     config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
 
     # Transitional, we probably will end up with just the .NET DLL invoker. At some point,
@@ -43,24 +39,23 @@ defmodule Orchestrator.Application do
 
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
-  defp filter_children(children), do: []
-  defp configure_api_token, do: "test-api-token"
+  defp filter_children(_children), do: []
+  defp configure_api_token, do: :ok
   defp configure_neuron, do: :ok
-  defp configure_monitors, do: :ok
 else
   defp filter_children(children), do: children
   defp configure_api_token do
     token =
       case System.get_env("CANARY_API_TOKEN") do
         nil ->
-          case System.get_env("SECRETS_NAMESPACE") do
+          case System.get_env("CANARY_API_TOKEN_PATH") do
             nil ->
               "fake-token-for-dev"
 
-            env ->
-              get_secret("canary-internal/api-token", env)
-              |> Jason.decode!()
-              |> Map.get("token")
+            path ->
+              token = get_secret(path)
+              System.put_env("CANARY_API_TOKEN", token) # TODO remove when children stop reporting themselves
+              token
           end
 
         token -> token
@@ -71,59 +66,45 @@ else
 
 
   defp configure_neuron do
-    case System.get_env("APP_API_HOSTNAME") do
-      nil ->
-        Logger.error("APP_API_HOSTNAME not set!")
+    host = System.get_env("CANARY_API_HOST", "app.canarymonitor.com")
+    transport =
+      if String.starts_with?(host, ["localhost", "172."]),
+        do: "http",
+        else: "https"
 
-      host ->
-        transport =
-        if String.starts_with?(host, ["localhost", "172."]),
-          do: "http",
-          else: "https"
-
-        api_token = Application.get_env(:orchestrator, :api_token)
-        Neuron.Config.set(url: "#{transport}://#{host}/graphql")
-        Neuron.Config.set(headers: [Authorization: "Bearer #{api_token}"])
-        Neuron.Config.set(parse_options: [keys: :atoms])
-        # our API can be slooow... Wait for it :)
-        Neuron.Config.set(connection_opts: [recv_timeout: 15_000])
-    end
+    api_token = Application.get_env(:orchestrator, :api_token)
+    |> IO.inspect(label: "Configuring Neuron")
+    Neuron.Config.set(url: "#{transport}://#{host}/graphql")
+    Neuron.Config.set(headers: [Authorization: "Bearer #{api_token}"])
+    Neuron.Config.set(parse_options: [keys: :atoms])
+    Neuron.Config.set(connection_opts: [recv_timeout: 15_000])
   end
 
-  defp configure_monitors() do
-    # Artifactory is currently the only one we run as a private monitor with a separate API key
-    copy_secret("artifactory/api-token", "token", "CANARY_ARTIFACTORY_API_TOKEN")
-  end
-
-  defp copy_secret(path, field, env_var) do
-    secret = get_secret(path) |> Jason.decode!()
-    IO.puts("Copy field #{field} to #{env_var}")
-    System.put_env(env_var, Map.get(secret, field))
-  end
-
-  def get_secret(path) do
-    case System.get_env("SECRETS_NAMESPACE") do
-      nil ->
-        Logger.warning("No SECRETS_NAMESPACE found, not fetching secret #{path}")
-        nil
-      env ->
-        get_secret(path, env)
-    end
-  end
-  defp get_secret(path, namespace) do
-    Logger.debug("get_secret(#{path}, #{namespace}) (or #{namespace}#{path})")
+  # TODO pluggable vault support (k8s, hashicorp, ...)
+  defp get_secret(path) do
+    Logger.debug("get_secret(#{path})")
 
     # We may be called in various stages of the life cycle, including really
     # early, so make sure that what ExAws needs is up and running.
     [:ex_aws_secretsmanager, :hackney, :jason]
     |> Enum.map(&Application.ensure_all_started/1)
 
+    parts = String.split(path, ".")
+    secret_name = hd(parts)
     {:ok, %{"SecretString" => secret}} =
-      "#{namespace}#{path}"
+      secret_name
       |> ExAws.SecretsManager.get_secret_value()
       |> do_aws_request()
 
-    secret
+    case parts do
+      [_path] ->
+        secret
+      [_path, selector] ->
+        secret
+        |> Jason.decode!()
+        |> Map.get(selector)
+    end
+    |> IO.inspect(label: "get_secret(#{path})")
   end
 end
 
