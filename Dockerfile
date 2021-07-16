@@ -28,8 +28,8 @@ FROM debian:buster AS app
 
 #RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
 RUN apt-get update && \
-    apt-get install -y openssl && \
-    rm -rf /var/cache/apt
+    apt-get install -y openssl ca-certificates && \
+    rm -rf /var/cache/apt /var/lib/apt/lists
 
 WORKDIR /app
 ENV HOME=/app
