@@ -20,7 +20,7 @@ defmodule Orchestrator.LambdaInvoker do
   end
 
   defp lambda_function_name(%{function_name: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
-  defp lambda_function_name(%{monitor_ame: monitor_name}), do: lambda_function_name(monitor_name)
+  defp lambda_function_name(%{monitor_name: monitor_name}), do: lambda_function_name(monitor_name)
   defp lambda_function_name(name) when is_binary(name), do: "monitor-#{name}-#{env()}-#{name}Monitor"
 
   defp env, do: System.get_env("ENVIRONMENT_TAG", "local-development")
