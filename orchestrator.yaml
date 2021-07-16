@@ -26,6 +26,8 @@ Resources:
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: CANARY_INVOCATION_STYLE
               Value: lambda
+            - Name: ENVIRONMENT_TAG
+              value: !Sub EnvironmentTagName
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
