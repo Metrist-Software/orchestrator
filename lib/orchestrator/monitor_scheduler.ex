@@ -23,7 +23,7 @@ defmodule Orchestrator.MonitorScheduler do
 
   @impl true
   def init({config, region, invoker}) do
-    Logger.info("Initialize monitor with #{inspect invoker}, #{inspect config}")
+    Logger.info("Initialize monitor with #{inspect invoker}, #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
     schedule_initially(config)
     {:ok, %State{config: config, region: region, invoker: invoker}}
   end

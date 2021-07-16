@@ -46,6 +46,7 @@ defmodule Orchestrator.GraphQLConfig do
                           IO.puts("Not found #{instance} in #{inspect mon.instances}")
                           nil
                       end
+      # Replace all instances with the data for the instance we're interested in
       mon = mon
       |> Map.delete(:instances)
       |> Map.put(:instance, instance_data)
@@ -69,7 +70,6 @@ defmodule Orchestrator.GraphQLConfig do
     # If we did not find an instance above, the monitor was not for us and we should filter it out.
     |> Enum.filter(fn {_id, cfg} -> Map.has_key?(cfg.monitor, :instance) end)
     |> Map.new()
-    |> IO.inspect(label: "Full config")
   end
 
   def get_monitors() do

@@ -14,9 +14,23 @@ defmodule Orchestrator.Application do
     run_groups = Application.get_env(:orchestrator, :run_groups, [])
     instance = System.get_env("AWS_REGION", "fake-dev-region")
 
+    # So you can separate the AWS settings from the "what instance do we want to report as?" settings
+    instance = System.get_env("CANARY_INSTANCE_NAME", instance)
+
     Application.put_env(:orchestrator, :aws_region, instance)
 
     config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
+
+    # Transitional, we probably will end up with just the .NET DLL invoker. At some point,
+    # this needs to be configurable by monitor but for now it'll allow us to run either
+    # as the Lambda-invoking Orchestrator or the DLL-invoking Private Monitor.
+    invoker = case System.get_env("CANARY_INVOCATION_STYLE") do
+                nil -> Orchestrator.LambdaInvoker
+                "lambda" -> Orchestrator.LambdaInvoker
+                "rundll" -> Orchestrator.DotNetDLLInvoker
+                other -> raise "Unknown invoker #{other} set, cannot continue"
+              end
+    Application.put_env(:orchestrator, :invoker, invoker)
 
     children = [
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},

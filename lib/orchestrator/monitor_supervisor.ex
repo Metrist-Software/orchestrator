@@ -43,20 +43,12 @@ defmodule Orchestrator.MonitorSupervisor do
   defp start_added(supervisor_name, monitor_configs) do
     Enum.map(monitor_configs, fn {id, monitor_config} ->
       name = child_name(supervisor_name, id)
-      invoker = case monitor_config.monitor_name do
-                  # TODO store this somewhere else than hardcoded here :-)
-                  # For our private synthetic monitor
-                  "artifactory" -> Orchestrator.DotNetDLLInvoker
-                  # For testing.
-                  "testsignal" -> Orchestrator.DotNetDLLInvoker
-                  _ -> Orchestrator.NilInvoker
-                  #_ -> Orchestrator.LambdaInvoker
-                end
+      invoker = Application.get_env(:orchestrator, :invoker)
       case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.MonitorScheduler, [config: monitor_config, name: name, invoker: invoker]}) do
         {:ok, pid} ->
-          Logger.info("Started child #{id} with config #{inspect monitor_config} as #{inspect pid}")
+          Logger.info("Started child #{id} with config #{inspect redact(monitor_config)} as #{inspect pid}")
         {:error, message} ->
-          Logger.error("Could not start child #{id} with config #{inspect monitor_config}, error: #{inspect message}")
+          Logger.error("Could not start child #{id} with config #{inspect redact(monitor_config)}, error: #{inspect message}")
       end
     end)
   end
@@ -66,5 +58,16 @@ defmodule Orchestrator.MonitorSupervisor do
       name = child_name(supervisor_name, id)
       GenServer.cast(name, {:config_change, monitor_config})
     end)
+  end
+
+  def redact(monitor_config) do
+    Map.put(monitor_config, :extra_config, do_redact(monitor_config.extra_config))
+  end
+  def do_redact(extra_config) do
+    extra_config
+    |> Enum.map(fn {k, v} ->
+      {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
+    end)
+    |> Map.new()
   end
 end
