@@ -66,7 +66,8 @@ then
     for env in prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1
     do
       $stackery env parameters set --env-name=$env orchestrator.container.version $container_tag
-      $stackery deploy -n orchestrator $template_arg $ref -e $env $aws_args
+      $stackery deploy -n orchestrator $template_arg $ref -e $env $aws_args &
     done
+    wait
   fi
 fi
