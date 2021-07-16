@@ -65,6 +65,8 @@ defmodule Orchestrator.GraphQLConfig do
       |> Map.delete(:extraConfig)
       |> Map.put(:monitor_name, cfg.monitorName)
       |> Map.delete(:monitorName)
+      |> Map.put(:function_name, cfg.functionName)
+      |> Map.delete(:functionName)
       {cfg.id, cfg}
     end)
     # If we did not find an instance above, the monitor was not for us and we should filter it out.
