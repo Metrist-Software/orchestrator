@@ -36,10 +36,19 @@ defmodule Orchestrator.Application do
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor
     ]
+    |> filter_children()
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
     Supervisor.start_link(children, opts)
   end
 
+if Mix.env() == :test do
+  # For now, the simplest way to make tests just do tests, not configure/start anything.
+  defp filter_children(children), do: []
+  defp configure_api_token, do: "test-api-token"
+  defp configure_neuron, do: :ok
+  defp configure_monitors, do: :ok
+else
+  defp filter_children(children), do: children
   defp configure_api_token do
     token =
       case System.get_env("CANARY_API_TOKEN") do
@@ -116,6 +125,7 @@ defmodule Orchestrator.Application do
 
     secret
   end
+end
 
   defp do_aws_request(request) do
     region = System.get_env("AWS_REGION") || "us-east-1"
