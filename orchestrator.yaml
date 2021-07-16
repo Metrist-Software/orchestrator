@@ -54,6 +54,69 @@ Resources:
           SecurityGroups:
             - Fn::ImportValue:
                 !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCDefaultSecruityGroup"
+  PrivateCMATask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref PrivateCMATaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: logs
+          Name: 0
+          Environment:
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
+            - Name: ENVIRONMENT_TAG
+              Value: !Ref EnvironmentTagName
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: APP_API_HOSTNAME
+              Value: !Ref BackendAPIHostname
+            - Name: CANARY_API_HOST
+              Value: !Ref BackendAPIHostname
+            - Name: TELEMETRY_API_ENDPOINT
+              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
+            - Name: CANARY_TELEMETRY_HOST
+              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
+            - Name: CANARY_INVOCATION_STYLE
+              Value: rundll
+            - Name: CANARY_INSTANCE_NAME
+              Value: !Sub "canary-private-${AWS::Region}"
+      Cpu: 512
+      ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !GetAtt OrchestratorTaskTaskRole.Arn
+      Volumes: []
+    DependsOn: PrivateCMATaskLogGroup
+  PrivateCMAService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${AWS::StackName}-PrivateCMAService
+      TaskDefinition: !Ref PrivateCMATask
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      DeploymentController:
+        Type: ECS
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet1"
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet2"
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCDefaultSecruityGroup"
   OrchestratorTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -111,6 +174,10 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+  PrivateCMATaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /stackery/task/${AWS::StackName}-PrivateCMATask/logs
   OrchestratorTaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
