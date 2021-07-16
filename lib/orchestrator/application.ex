@@ -14,7 +14,8 @@ defmodule Orchestrator.Application do
     region = System.get_env("AWS_REGION", "fake-dev-region")
     Application.put_env(:orchestrator, :aws_region, region)
 
-    instance = System.get_env("CANARY_INSTANCE_NAME", "fake-dev-instance")
+    instance = System.get_env("CANARY_INSTANCE_ID", "fake-dev-instance")
+    Application.put_env(:orchestrator, :instance, instance)
     config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
 
     # Transitional, we probably will end up with just the .NET DLL invoker. At some point,

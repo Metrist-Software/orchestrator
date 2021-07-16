@@ -18,7 +18,7 @@ Resources:
               Value: !Ref AWS::Region
             - Name: CANARY_API_TOKEN_PATH
               Value: !Sub /${EnvironmentTagName}/canary-internal/api-token.token
-            - Name: CANARY_INSTANCE_NAME
+            - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
@@ -79,7 +79,7 @@ Resources:
               Value: !Sub /${EnvironmentTagName}/private-cma/canary-api-token.token
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
-            - Name: CANARY_INSTANCE_NAME
+            - Name: CANARY_INSTANCE_ID
               Value: !Sub "canary-private-${AWS::Region}"
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
