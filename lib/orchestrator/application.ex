@@ -74,7 +74,6 @@ else
         else: "https"
 
     api_token = Application.get_env(:orchestrator, :api_token)
-    |> IO.inspect(label: "Configuring Neuron")
     Neuron.Config.set(url: "#{transport}://#{host}/graphql")
     Neuron.Config.set(headers: [Authorization: "Bearer #{api_token}"])
     Neuron.Config.set(parse_options: [keys: :atoms])
