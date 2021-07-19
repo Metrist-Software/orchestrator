@@ -82,7 +82,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   defp maybe_log("Info", msg, monitor_name), do: Logger.info("#{monitor_name}: #{msg}")
   defp maybe_log("Warning", msg, monitor_name), do: Logger.warning("#{monitor_name}: #{msg}")
   defp maybe_log("Error", msg, monitor_name), do: Logger.error("#{monitor_name}: #{msg}")
-  defp maybe_log(w, ws, monitor_name), do: Logger.info("#{monitor_name}: Uknown: #{w} #{ws}")
+  defp maybe_log(w, ws, monitor_name), do: Logger.info("#{monitor_name}: Unknown: #{w} #{ws}")
 
 
   defp handle_handshake(port, config) do
