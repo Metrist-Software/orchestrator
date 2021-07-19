@@ -28,3 +28,5 @@ orchestrator-*.tar
 .aws-sam/
 .stackery
 priv/build.txt
+priv/plts
+priv/runner

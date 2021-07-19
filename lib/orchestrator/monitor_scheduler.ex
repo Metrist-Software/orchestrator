@@ -1,12 +1,13 @@
-defmodule Orchestrator.LambdaMonitor do
+defmodule Orchestrator.MonitorScheduler do
   @moduledoc """
-  Process to control a lambda monitor.
+  Process to control a monitor. The monitor itself is invoked through the passed `invoke` function, which
+  should return a task.
   """
   use GenServer
   require Logger
 
   defmodule State do
-    defstruct [:config, :task, :overtime, :region]
+    defstruct [:config, :task, :overtime, :region, :invoker]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -16,14 +17,15 @@ defmodule Orchestrator.LambdaMonitor do
     config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
     region = Application.get_env(:orchestrator, :aws_region)
-    GenServer.start_link(__MODULE__, {config, region}, name: name)
+    invoker = Keyword.get(opts, :invoker)
+    GenServer.start_link(__MODULE__, {config, region, invoker}, name: name)
   end
 
   @impl true
-  def init({config, region}) do
-    Logger.info("Initialize lambda monitor with #{inspect config}")
+  def init({config, region, invoker}) do
+    Logger.info("Initialize monitor with #{inspect invoker}, #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
     schedule_initially(config)
-    {:ok, %State{config: config, region: region}}
+    {:ok, %State{config: config, region: region, invoker: invoker}}
   end
 
   @impl true
@@ -34,7 +36,7 @@ defmodule Orchestrator.LambdaMonitor do
     Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
-      task = invoke(state.config, state.region)
+      task = state.invoker.invoke(state.config, state.region)
       {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
@@ -60,7 +62,7 @@ defmodule Orchestrator.LambdaMonitor do
   end
 
   @impl true
-  def handle_info({_task_ref, {:ok, result}}, state) do
+  def handle_info({_task_ref, result}, state) do
     Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
     {:noreply, %State{state | task: nil, overtime: false}}
   end
@@ -74,9 +76,9 @@ defmodule Orchestrator.LambdaMonitor do
   defp show(state) do
     name =
       if state.config.checkName == nil do
-        state.config.monitorName
+        state.config.monitor_name
       else
-        "#{state.config.monitorName}.#{state.config.checkName}"
+        "#{state.config.monitor_name}.#{state.config.checkName}"
       end
     state =
       if state.task != nil do
@@ -95,7 +97,7 @@ defmodule Orchestrator.LambdaMonitor do
   # last run value of either the monitor or the check we are supposed to run.
   defp schedule_initially(config = %{checkName: nil}) do
     # Schedule a whole monitor
-    {:ok, last_run} = (config.monitor.instance.lastReport || @never)
+    {:ok, last_run} = Map.get((config.monitor.instance || %{}), :lastReport, @never)
     |> NaiveDateTime.from_iso8601()
     do_schedule_initially(config, last_run)
   end
@@ -119,19 +121,4 @@ defmodule Orchestrator.LambdaMonitor do
     next_run = NaiveDateTime.add(last_run, interval, :second)
     max(NaiveDateTime.diff(next_run, now, :second), 0)
   end
-
-  # Only these bits are actually AWS Lambda specific.
-  defp invoke(config, region) do
-    name = lambda_function_name(config)
-    req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
-    Logger.debug("About to spawn request #{inspect req}")
-    # We spawn this as a task, so that we can keep receiving messages and do things like handle timeouts eventually.
-    Task.async(fn -> ExAws.request(req, region: region, http_opts: [recv_timeout: 1_800_000], retries: [max_attempts: 1]) end)
-  end
-
-  defp lambda_function_name(%{functionName: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
-  defp lambda_function_name(%{monitorName: monitor_name}), do: lambda_function_name(monitor_name)
-  defp lambda_function_name(name) when is_binary(name), do: "monitor-#{name}-#{env()}-#{name}Monitor"
-
-  defp env, do: System.get_env("ENVIRONMENT_TAG", "local-development")
  end
