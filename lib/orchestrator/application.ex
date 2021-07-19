@@ -104,7 +104,6 @@ else
         |> Jason.decode!()
         |> Map.get(selector)
     end
-    |> IO.inspect(label: "get_secret(#{path})")
   end
 end
 
