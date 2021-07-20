@@ -7,27 +7,13 @@ defmodule Orchestrator.Application do
     print_header()
 
     configure_api_token()
-    configure_neuron()
-
-    run_groups = Application.get_env(:orchestrator, :run_groups, [])
 
     region = System.get_env("AWS_REGION", "fake-dev-region")
     Application.put_env(:orchestrator, :aws_region, region)
 
     instance = System.get_env("CANARY_INSTANCE_ID", "fake-dev-instance")
     Application.put_env(:orchestrator, :instance, instance)
-    config_fetch_fun = fn -> Orchestrator.GraphQLConfig.get_config(run_groups, instance) end
-
-    # Transitional, we probably will end up with just the .NET DLL invoker. At some point,
-    # this needs to be configurable by monitor but for now it'll allow us to run either
-    # as the Lambda-invoking Orchestrator or the DLL-invoking Private Monitor.
-    invoker = case System.get_env("CANARY_INVOCATION_STYLE") do
-                nil -> Orchestrator.LambdaInvoker
-                "lambda" -> Orchestrator.LambdaInvoker
-                "rundll" -> Orchestrator.DotNetDLLInvoker
-                other -> raise "Unknown invoker #{other} set, cannot continue"
-              end
-    Application.put_env(:orchestrator, :invoker, invoker)
+    config_fetch_fun = fn -> Orchestrator.APIConfig.get_config(instance) end
 
     children = [
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
@@ -65,20 +51,6 @@ else
     Application.put_env(:orchestrator, :api_token, token)
   end
 
-
-  defp configure_neuron do
-    host = System.get_env("CANARY_API_HOST", "app.canarymonitor.com")
-    transport =
-      if String.starts_with?(host, ["localhost", "172."]),
-        do: "http",
-        else: "https"
-
-    api_token = Application.get_env(:orchestrator, :api_token)
-    Neuron.Config.set(url: "#{transport}://#{host}/graphql")
-    Neuron.Config.set(headers: [Authorization: "Bearer #{api_token}"])
-    Neuron.Config.set(parse_options: [keys: :atoms])
-    Neuron.Config.set(connection_opts: [recv_timeout: 15_000])
-  end
 
   # TODO pluggable vault support (k8s, hashicorp, ...)
   defp get_secret(path) do

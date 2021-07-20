@@ -8,10 +8,11 @@ defmodule Orchestrator.LambdaInvoker do
   @behaviour Orchestrator.Invoker
 
   # TODO this is very Canary specific, especially the naming. Remove completely after
-  # we're off Lambda?
+  # we're off Lambda? Would anyone else want this over the simpler exe/dll options?
 
   @impl true
-  def invoke(config, region) do
+  def invoke(config) do
+    region = Application.get_env(:orchestrator, :aws_region)
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
     Logger.debug("About to spawn request #{inspect req}")
@@ -19,8 +20,8 @@ defmodule Orchestrator.LambdaInvoker do
     Task.async(fn -> ExAws.request(req, region: region, http_opts: [recv_timeout: 1_800_000], retries: [max_attempts: 1]) end)
   end
 
-  defp lambda_function_name(%{function_name: function_name}) when not is_nil(function_name), do: lambda_function_name(function_name)
-  defp lambda_function_name(%{monitor_name: monitor_name}), do: lambda_function_name(monitor_name)
+  defp lambda_function_name(%{run_spec: %{name: name}}), do: lambda_function_name(name)
+  defp lambda_function_name(%{monitor_logical_name: monitor_logical_name}), do: lambda_function_name(monitor_logical_name)
   defp lambda_function_name(name) when is_binary(name), do: "monitor-#{name}-#{env()}-#{name}Monitor"
 
   defp env, do: System.get_env("ENVIRONMENT_TAG", "local-development")

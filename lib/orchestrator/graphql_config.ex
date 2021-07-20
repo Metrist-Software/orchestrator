@@ -63,7 +63,7 @@ defmodule Orchestrator.GraphQLConfig do
       |> Map.put(:monitor, Map.get(monitors, cfg.monitorName, %{}))
       |> Map.put(:extra_config, extra_config)
       |> Map.delete(:extraConfig)
-      |> Map.put(:monitor_name, cfg.monitorName)
+      |> Map.put(:monitor_logical_name, cfg.monitorName)
       |> Map.delete(:monitorName)
       |> Map.put(:function_name, cfg.functionName)
       |> Map.delete(:functionName)

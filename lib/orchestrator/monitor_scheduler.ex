@@ -7,7 +7,7 @@ defmodule Orchestrator.MonitorScheduler do
   require Logger
 
   defmodule State do
-    defstruct [:config, :task, :overtime, :region, :invoker]
+    defstruct [:config, :task, :overtime]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -16,16 +16,14 @@ defmodule Orchestrator.MonitorScheduler do
   def start_link(opts) do
     config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
-    region = Application.get_env(:orchestrator, :aws_region)
-    invoker = Keyword.get(opts, :invoker)
-    GenServer.start_link(__MODULE__, {config, region, invoker}, name: name)
+    GenServer.start_link(__MODULE__, config, name: name)
   end
 
   @impl true
-  def init({config, region, invoker}) do
-    Logger.info("Initialize monitor with #{inspect invoker}, #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
+  def init(config) do
+    Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
     schedule_initially(config)
-    {:ok, %State{config: config, region: region, invoker: invoker}}
+    {:ok, %State{config: config}}
   end
 
   @impl true
@@ -33,10 +31,10 @@ defmodule Orchestrator.MonitorScheduler do
     Logger.info("Asked to run #{show(state)}")
     # Need this to tick and check everytime even if the genserver goes into overtime
     # so can't be inside the state.task == nil
-    Process.send_after(self(), :run, state.config.intervalSecs * 1_000)
+    Process.send_after(self(), :run, state.config.interval_secs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
-      task = state.invoker.invoke(state.config, state.region)
+      task = do_run(state.config)
       {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
@@ -73,12 +71,31 @@ defmodule Orchestrator.MonitorScheduler do
     {:noreply, state}
   end
 
+  defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
+    Orchestrator.DotNetDLLInvoker.invoke(cfg)
+  end
+  defp do_run(%{run_spec: %{run_type: "exe"}}) do
+    Logger.warn("Direct executable run spec not yet supported")
+    Task.async(fn -> :ok end)
+  end
+  defp do_run(cfg = %{run_spec: %{run_type: "awslambda"}}) do
+    Orchestrator.LambdaInvoker.invoke(cfg)
+  end
+  defp do_run(cfg = %{run_spec: %{run_type: _}}) do
+    Logger.warn("Unknown run specification in config: #{inspect Orchestrator.MonitorSupervisor.redact(cfg)}")
+    Task.async(fn -> :ok end)
+  end
+  defp do_run(cfg) do
+    Logger.info("No run specification given, running with default runner DLL")
+    Orchestrator.DotNetDLLInvoker.invoke(cfg)
+  end
+
   defp show(state) do
     name =
-      if state.config.checkName == nil do
-        state.config.monitor_name
+      if state.config.steps == nil do
+        state.config.monitor_logical_name
       else
-        "#{state.config.monitor_name}.#{state.config.checkName}"
+        "#{state.config.monitor_logical_name}.#{inspect state.config.steps}"
       end
     state =
       if state.task != nil do
@@ -93,25 +110,12 @@ defmodule Orchestrator.MonitorScheduler do
     "#{name} (#{state})"
   end
 
-  # Helpers for the first time (when we start) scheduling of a run, based on the
-  # last run value of either the monitor or the check we are supposed to run.
-  defp schedule_initially(config = %{checkName: nil}) do
-    # Schedule a whole monitor
-    {:ok, last_run} = Map.get((config.monitor.instance || %{}), :lastReport, @never)
-    |> NaiveDateTime.from_iso8601()
-    do_schedule_initially(config, last_run)
-  end
-  defp schedule_initially(config) do
-    # Schedule a single check style monitor
-    {:ok, last_run} = config.monitor.instance.checkLastReports
-    |> Enum.find(%{value: @never}, fn clr -> clr.key == config.checkName end)
-    |> Map.get(:value)
-    |> NaiveDateTime.from_iso8601()
-    do_schedule_initially(config, last_run)
-  end
+  # Helpers for the initial scheduling. After the initial scheduling, which introduces a
+  # variable sleep, we just tick every interval_secs.
 
-  defp do_schedule_initially(config, last_run) do
-    time_to_next_run = time_to_next_run(last_run, config.intervalSecs)
+  defp schedule_initially(config) do
+    {:ok, last_run} = NaiveDateTime.from_iso8601(config.last_run_time || @never)
+    time_to_next_run = time_to_next_run(last_run, config.interval_secs)
     Process.send_after(self(), :run, time_to_next_run * 1_000)
   end
 

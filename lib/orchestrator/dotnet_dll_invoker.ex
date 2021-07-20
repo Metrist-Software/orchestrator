@@ -17,11 +17,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
-  def invoke(config, _region) do
-    Task.async(fn -> do_invoke(config) end)
-  end
-
-  defp do_invoke(config) do
+  def invoke(config) do
     # Pretty much everything is handled by the runner for now, so all we need to do
     # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
@@ -31,68 +27,68 @@ defmodule Orchestrator.DotNetDLLInvoker do
       Port.open({:spawn_executable, runner}, [
         :binary,
         :stderr_to_stdout,
-        args: [config.monitor_name]
+        args: [config.monitor_logical_name]
       ])
 
     ref = Port.monitor(port)
-    Logger.info("Opened port for #{config.monitor_name} as #{inspect(port)}")
+    Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
     :ok = handle_handshake(port, config)
-    wait_for_complete(port, ref, config.monitor_name)
+    wait_for_complete(port, ref, config.monitor_logical_name)
   end
 
-  defp wait_for_complete(port, ref, monitor_name) do
+  defp wait_for_complete(port, ref, monitor_logical_name) do
     receive do
       {:DOWN, ^ref, :port, ^port, reason} ->
         Logger.debug(
-          "Monitor #{monitor_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
+          "Monitor #{monitor_logical_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
         )
 
       {^port, {:data, data}} ->
-        handle_message(data, monitor_name)
-        wait_for_complete(port, ref, monitor_name)
+        handle_message(data, monitor_logical_name)
+        wait_for_complete(port, ref, monitor_logical_name)
 
       msg ->
-        Logger.debug("Monitor #{monitor_name}: Ignoring message #{inspect(msg)}")
-        wait_for_complete(port, ref, monitor_name)
+        Logger.debug("Monitor #{monitor_logical_name}: Ignoring message #{inspect(msg)}")
+        wait_for_complete(port, ref, monitor_logical_name)
     after
       @max_monitor_runtime ->
-        Logger.error("Monitor #{monitor_name}: Monitor did not complete in time, killing it")
+        Logger.error("Monitor #{monitor_logical_name}: Monitor did not complete in time, killing it")
         Port.close(port)
     end
   end
 
   # Protocol bits. This probably should move to a different module if/when we add multiple invocation types.
 
-  defp handle_message("", _monitor_name), do: :ok
-  defp handle_message(data, monitor_name) do
+  defp handle_message("", _monitor_logical_name), do: :ok
+  defp handle_message(data, monitor_logical_name) do
     case Integer.parse(data) do
       {len, rest} ->
         message = String.slice(rest, 1, len)
         parts = String.split(message, " ", parts: 2)
         if length(parts) == 2 do
-          maybe_log(Enum.at(parts, 0), Enum.at(parts, 1), monitor_name)
+          maybe_log(Enum.at(parts, 0), Enum.at(parts, 1), monitor_logical_name)
         end
         # If there's more, there's more
-        handle_message(String.slice(rest, 1 + len, 100_000), monitor_name)
+        handle_message(String.slice(rest, 1 + len, 100_000), monitor_logical_name)
       :error ->
-        Logger.debug("#{monitor_name}: stdout: #{data}")
+        Logger.debug("#{monitor_logical_name}: stdout: #{data}")
     end
   end
-  defp maybe_log("Debug", msg, monitor_name), do: Logger.debug("#{monitor_name}: #{msg}")
-  defp maybe_log("Info", msg, monitor_name), do: Logger.info("#{monitor_name}: #{msg}")
-  defp maybe_log("Warning", msg, monitor_name), do: Logger.warning("#{monitor_name}: #{msg}")
-  defp maybe_log("Error", msg, monitor_name), do: Logger.error("#{monitor_name}: #{msg}")
-  defp maybe_log(w, ws, monitor_name), do: Logger.info("#{monitor_name}: Unknown: #{w} #{ws}")
+  defp maybe_log("Debug", msg, monitor_logical_name), do: Logger.debug("#{monitor_logical_name}: #{msg}")
+  defp maybe_log("Info", msg, monitor_logical_name), do: Logger.info("#{monitor_logical_name}: #{msg}")
+  defp maybe_log("Warning", msg, monitor_logical_name), do: Logger.warning("#{monitor_logical_name}: #{msg}")
+  defp maybe_log("Error", msg, monitor_logical_name), do: Logger.error("#{monitor_logical_name}: #{msg}")
+  defp maybe_log(w, ws, monitor_logical_name), do: Logger.info("#{monitor_logical_name}: Unknown: #{w} #{ws}")
 
 
   defp handle_handshake(port, config) do
     matches = expect(port, ~r/Started ([0-9]+)\.([0-9]+)/)
     {major, _} = Integer.parse(Enum.at(matches, 1))
     {minor, _} = Integer.parse(Enum.at(matches, 2))
-    assert_compatible(config.monitor_name, major, minor)
+    assert_compatible(config.monitor_logical_name, major, minor)
     write(port, "Version #{@major}.#{@minor}")
     expect(port, ~r/Ready/)
-    json = Jason.encode!(config.extra_config)
+    json = Jason.encode!(config.extra_config || %{})
     write(port, "Config #{json}")
     :ok
   end
@@ -129,12 +125,14 @@ defmodule Orchestrator.DotNetDLLInvoker do
       |> String.length()
       |> Integer.to_string()
       |> String.pad_leading(5, "0")
-    Port.command(port, len <> " " <> msg)
+    msg = len <> " " <> msg
+    Port.command(port, msg)
+    Logger.debug("Sent message: #{inspect msg}")
   end
 
-  defp assert_compatible(monitor_name, major, _minor) when major != @major,
-    do: raise("#{monitor_name}: Incompatible major version, got #{major}, want #{@major}")
-  defp assert_compatible(monitor_name, _major, minor) when minor > @minor,
-    do: raise("#{monitor_name}: Incompatible minor version, got #{minor}, want >= #{@minor}")
-  defp assert_compatible(_monitor_name, _major, _minor), do: :ok
+  defp assert_compatible(monitor_logical_name, major, _minor) when major != @major,
+    do: raise("#{monitor_logical_name}: Incompatible major version, got #{major}, want #{@major}")
+  defp assert_compatible(monitor_logical_name, _major, minor) when minor > @minor,
+    do: raise("#{monitor_logical_name}: Incompatible minor version, got #{minor}, want >= #{@minor}")
+  defp assert_compatible(_monitor_logical_name, _major, _minor), do: :ok
 end

@@ -22,7 +22,7 @@ defmodule Orchestrator.ConfigFetcher do
   def init(args) do
     monitor_supervisor_pid = Keyword.get(args, :monitor_supervisor_pid, Orchestrator.MonitorSupervisor)
     config_fetch_fun = Keyword.get(args, :config_fetch_fun, fn ->
-      Logger.info("Put fetch function here")
+      Logger.error("No fetch function defined, returning empty!")
       %{}
     end)
     schedule_fetch(0)
