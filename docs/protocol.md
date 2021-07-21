@@ -76,13 +76,44 @@ The scheduler will be relatively robust against all sort of noise being received
 these messages are unlikely to follow the format above. This "noise" is captured and forwarded as logging data. However, if the
 monitor wants to make it explicit that it is logging, and use logging levels, it can do so with the logging messages:
 
-    Debug <message>
+    Log Debug <message>
 
-    Info <message>
+    Log Info <message>
 
-    Warning <message>
+    Log Warning <message>
 
-    Error <message>
+    Log Error <message>
 
 Where the run-time environment allows it, messages will then be logged with the same or equivalent log levels and tagged with
 metadata like what monitor emitted the message.
+
+## Running steps
+
+When the monitor is ready, the orchestrator will run the individual steps. This is done so we can implement any smarts around
+this process once, the monitor just needs to implement a step function and nothing else. At this point, the monitor should
+wait for either:
+
+    Exit
+
+signaling that all is done and the process is expected to shut down, or
+
+    Run step <step name>
+
+to run a step function. The step function can either be self-timed (often, a step needs to do some setup which may be more expensive
+than the actual check, so in that case the step function will execute the setup and then time the code that runs the actual check), which
+should return:
+
+    Step Time <time-in-seconds>
+
+(where time can be a float), or if it is not self-timed:
+
+    Step OK
+
+The orchestrator will then take care of the timing. In both cases, if an error occurs that prevents the step from generating a timing,
+it should be signalled as follows:
+
+    Step Error <error message>
+
+In the latter case, it is up to the orchestrator to decide whether to run any more steps.
+
+Note that on Exit, the monitor may elect to do some cleanup.

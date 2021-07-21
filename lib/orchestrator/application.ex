@@ -13,7 +13,7 @@ defmodule Orchestrator.Application do
 
     instance = System.get_env("CANARY_INSTANCE_ID", "fake-dev-instance")
     Application.put_env(:orchestrator, :instance, instance)
-    config_fetch_fun = fn -> Orchestrator.APIConfig.get_config(instance) end
+    config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance) end
 
     children = [
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
