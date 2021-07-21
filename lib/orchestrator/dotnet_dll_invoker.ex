@@ -15,25 +15,32 @@ defmodule Orchestrator.DotNetDLLInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
+  def invoke(%{monitor_logical_name: mln}) when mln in ["moneris", "testsignal"] do
+    Logger.info("Not running #{mln}")
+    Task.async(fn -> :ok end)
+  end
+
+  @impl true
   def invoke(config) do
     # Pretty much everything is handled by the runner for now, so all we need to do
     # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
     runner = Path.join(runner_dir, "Canary.Shared.Monitoring.Runner")
 
-    port =
-      Port.open({:spawn_executable, runner}, [
-        :binary,
-        :stderr_to_stdout,
-        args: [config.monitor_logical_name]
-      ])
-    Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
-
     Task.async(fn ->
+      port =
+        Port.open({:spawn_executable, runner}, [
+                    :binary,
+                    :stderr_to_stdout,
+                    args: [config.monitor_logical_name]
+                  ])
+      Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
+
       ref = Port.monitor(port)
       :ok = Orchestrator.ProtocolHandler.handle_handshake(port, config)
       {:ok, pid} = Orchestrator.ProtocolHandler.start_link(config.monitor_logical_name, config.steps, self())
       wait_for_complete(port, ref, config.monitor_logical_name, pid)
+      Logger.info("Monitor #{config.monitor_logical_name} is complete")
     end)
   end
 
@@ -53,6 +60,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
 
       {:write, message} ->
         Orchestrator.ProtocolHandler.write(port, message)
+        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
 
       msg ->
         Logger.debug("Monitor #{monitor_logical_name}: Ignoring message #{inspect(msg)}")

@@ -21,6 +21,8 @@ defmodule Orchestrator.ProtocolHandler do
   end
 
   def start_link(monitor_logical_name, steps, io_handler) do
+    # We only need the step name for now, this simplifies the code a bit.
+    steps = Enum.map(steps, &(&1.check_logical_name))
     GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler})
   end
 
@@ -52,10 +54,15 @@ defmodule Orchestrator.ProtocolHandler do
 
   @impl true
   def init({monitor_logical_name, steps, io_handler}) do
-    start_step()
     {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, io_handler: io_handler}}
   end
 
+  @impl true
+  def handle_cast({:message, "Configured"}, state) do
+    Logger.info("Monitor #{state.monitor_logical_name} fully configured, start stepping")
+    start_step()
+    {:noreply, state}
+  end
   @impl true
   def handle_cast({:message, <<"Log Debug ", rest::binary>>}, state) do
     do_log(:debug, rest, state)
@@ -111,12 +118,13 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_info(:start_step, state) when length(state.steps) > 0 do
     [step | steps] = state.steps
     Logger.info("#{state.monitor_logical_name}: Starting step #{step}")
-    send_msg("Run step #{step}", state)
+    send_msg("Run Step #{step}", state)
     {:noreply, %State{state | steps: steps, current_step: step, step_start_time: :erlang.monotonic_time(:millisecond)}}
   end
   def handle_info(:start_step, state) do
     Logger.info("#{state.monitor_logical_name}: All steps done, asking monitor to exit")
     send_exit(state)
+    {:stop, :normal, state}
   end
 
   defp send_exit(state) do

@@ -29,8 +29,7 @@ defmodule Orchestrator.MonitorScheduler do
   @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
-    # Need this to tick and check everytime even if the genserver goes into overtime
-    # so can't be inside the state.task == nil
+    # So the next time we need to run is trivially simple now.
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
@@ -95,7 +94,7 @@ defmodule Orchestrator.MonitorScheduler do
       if state.config.steps == nil do
         state.config.monitor_logical_name
       else
-        "#{state.config.monitor_logical_name}.#{inspect state.config.steps}"
+        "#{state.config.monitor_logical_name}.#{inspect Enum.map(state.config.steps, &(&1.check_logical_name))}"
       end
     state =
       if state.task != nil do
