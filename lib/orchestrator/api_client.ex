@@ -6,18 +6,65 @@ defmodule Orchestrator.APIClient do
 
     {:ok, %HTTPoison.Response{body: body}} =
       HTTPoison.get("#{url}/run-config/#{instance}", headers)
+
     Jason.decode!(body, keys: :atoms)
     |> IO.inspect(label: "Config for instance #{instance}")
   end
 
   def write_telemetry(monitor_logical_name, check_logical_name, value) do
-    Logger.error("Unimplemented: write_telemetry(#{monitor_logical_name}, #{check_logical_name}, #{value})")
+    post_with_retries("telemetry", %{
+      monitor_logical_name: monitor_logical_name,
+      instance_name: Orchestrator.Application.instance(),
+      check_logical_name: check_logical_name,
+      value: value
+    })
   end
 
   def write_error(monitor_logical_name, check_logical_name, message) do
-    Logger.error("Unimplemented: write_error(#{monitor_logical_name}, #{check_logical_name}, #{message})")
+    post_with_retries("error", %{
+      monitor_logical_name: monitor_logical_name,
+      instance_name: Orchestrator.Application.instance(),
+      check_logical_name: check_logical_name,
+      message: message,
+      time: NaiveDateTime.utc_now()
+    })
   end
 
+  @backoff [5000, 2500, 500, 100]
+
+  defp post_with_retries(path, msg) do
+    {url, headers} = base_url_and_headers()
+    headers = [{"Content-Type", "application/json"} | headers]
+    msg = Jason.encode!(msg)
+    Task.start_link(fn ->
+      do_post_with_retries("#{url}/#{path}", headers, msg, length(@backoff))
+    end)
+  end
+
+  defp do_post_with_retries(url, headers, msg, retries) do
+    # TODO This is quite primitive for now. We probably should queue this up to a genserver, blablabla. Genserver
+    # can then also start batching messages.
+
+    {:ok, %HTTPoison.Response{status_code: status_code}} = HTTPoison.post(url, msg, headers)
+    case div(status_code, 100) do
+      2 -> :ok
+      4 ->
+        Logger.error("Got #{status_code} posting #{url}/#{msg}, not retrying")
+        :error
+      5 ->
+        if retries > 0 do
+          sleep = Enum.at(@backoff, retries - 1)
+          # Always toss jitter in your backoff, it's much better
+          sleep = sleep - div(sleep, 4) + :rand.uniform(div(sleep, 2))
+          Logger.info("Got #{status_code} posting #{url}/#{msg}, retrying after #{sleep}ms")
+          Process.sleep(sleep)
+          do_post_with_retries(url, headers, msg, retries - 1)
+        else
+          Logger.error("Got #{status_code} posting #{url}/#{msg} after max retries, giving up")
+          :error
+        end
+    end
+  end
 
   defp base_url_and_headers do
     host = System.get_env("CANARY_API_HOST", "app.canarymonitor.com")

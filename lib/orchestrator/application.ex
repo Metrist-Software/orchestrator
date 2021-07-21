@@ -24,6 +24,8 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
+  def instance, do: Application.get_env(:orchestrator, :instance)
+
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []

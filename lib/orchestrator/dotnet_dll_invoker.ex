@@ -15,7 +15,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
-  def invoke(%{monitor_logical_name: mln}) when mln in ["moneris", "testsignal"] do
+  def invoke(%{monitor_logical_name: mln}) when mln in ["testsignal"] do
     Logger.info("Not running #{mln}")
     Task.async(fn -> :ok end)
   end
