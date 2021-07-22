@@ -98,4 +98,36 @@ defmodule Orchestrator.Configuration do
   defp find_by_name(list, monitor_logical_name) do
     Enum.find(list, fn elem -> monitor_logical_name == elem.monitor_logical_name end)
   end
+
+  @doc """
+  Translate all the values that are present in the configurations. This accepts a single monitor configuration,
+  because fetching secrets, etcetera, may be an expensive operation so we only want to call it when we are
+  starting a monitor.
+  """
+  def translate_config(monitor_config) do
+    Map.put(monitor_config, :extra_config,
+      monitor_config.extra_config
+      |> Enum.map(fn {k, v} -> {k, translate_value(v)} end)
+      |> Map.new())
+  end
+
+
+  @doc """
+  We have three kinds of values that can be in the monitor's "extra config":
+
+  * A straight value
+  * A pointer to a secrets source secret, initiated by `@secret@:`
+  * A reference to an environment variable, initiated by `@env@:`
+
+  In the latter two cases, if the translation cannot be made, the whole value is returned. This protects against the
+  case where some other system requires the same format as we use.
+  """
+  def translate_value(v = <<"@secret@:", name::binary>>) do
+    Orchestrator.Application.secrets_source().fetch(name) || v
+  end
+  def translate_value(v = <<"@env@:", name::binary>>) do
+    System.get_env(name, v)
+  end
+  def translate_value(straight), do: straight
+
 end
