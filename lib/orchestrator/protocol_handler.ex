@@ -144,7 +144,10 @@ defmodule Orchestrator.ProtocolHandler do
     send self(), :start_step
   end
   defp do_log(level, message, state) do
-    Logger.log(level, "#{state.monitor_logical_name} received log: #{message}")
+    message = String.trim(message)
+    if String.length(message) > 0 do
+      Logger.log(level, "#{state.monitor_logical_name} received log: #{message}")
+    end
     {:noreply, state}
   end
 
