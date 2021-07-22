@@ -93,7 +93,7 @@ When the monitor is ready, the orchestrator will run the individual steps. This 
 this process once, the monitor just needs to implement a step function and nothing else. At this point, the monitor should
 wait for either:
 
-    Exit
+    Exit <do_cleanup>
 
 signaling that all is done and the process is expected to shut down, or
 
@@ -116,4 +116,12 @@ it should be signalled as follows:
 
 In the latter case, it is up to the orchestrator to decide whether to run any more steps.
 
-Note that on Exit, the monitor may elect to do some cleanup.
+Note that on Exit, the monitor may elect to do some cleanup. An environment variable `CANARY_CLEANUP_ENABLED` is passed as a `1` or
+`0` value to the `Exit` command (the variable can contain "true", "false", "1" or "0", case-insensitive, but the flag passed to the
+Exit command will always be a number). By default, we set this to false because cleanups often involve expensive/long running operations. A
+lot of the standard monitors have a `Cleanup` function that gets invoked when `<do_cleanup>` is set to 1. When the monitor is ready
+to exit, it sends a simple
+
+    Exit
+
+message to indicate that things may be shutdown.

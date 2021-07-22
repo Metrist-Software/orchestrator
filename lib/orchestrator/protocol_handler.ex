@@ -103,6 +103,10 @@ defmodule Orchestrator.ProtocolHandler do
       {:stop, :step_error, %State{state | current_step: nil, step_start_time: nil}}
     end)
   end
+  def handle_cast({:message, <<"Exit", _::binary>>}, state) do
+    Logger.info("Monitor completed shutdown")
+    {:stop, :normal, state}
+  end
 
   defp when_current_step(msg, state, function) do
     if is_nil(state.current_step) do
@@ -124,11 +128,12 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_info(:start_step, state) do
     Logger.info("#{state.monitor_logical_name}: All steps done, asking monitor to exit")
     send_exit(state)
-    {:stop, :normal, state}
+    {:noreply, state}
   end
 
   defp send_exit(state) do
-    send_msg("Exit", state)
+    do_cleanup = if Orchestrator.Application.do_cleanup?(), do: "1", else: "0"
+    send_msg("Exit #{do_cleanup}", state)
   end
 
   defp send_msg(msg, state) do
