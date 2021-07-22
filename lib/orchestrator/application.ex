@@ -13,7 +13,16 @@ defmodule Orchestrator.Application do
 
     instance = System.get_env("CANARY_INSTANCE_ID", "fake-dev-instance")
     Application.put_env(:orchestrator, :instance, instance)
-    config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance) end
+
+    rg_string = System.get_env("CANARY_RUN_GROUPS", "")
+    run_groups = parse_run_groups(rg_string)
+
+    cl_string = System.get_env("CANARY_CLEANUP_ENABLED", "true")
+    cleanup_enabled = parse_bool(cl_string)
+    Application.put_env(:orchestrator, :cleanup_enabled, cleanup_enabled)
+
+
+    config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance, run_groups) end
 
     children = [
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
@@ -24,7 +33,20 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
+
   def instance, do: Application.get_env(:orchestrator, :instance)
+
+  defp parse_run_groups(""), do: []
+  defp parse_run_groups(string) do
+    String.split(string, ",")
+  end
+
+  defp parse_bool(s), do: do_parse_bool(String.downcase(s))
+  defp do_parse_bool("true"), do: true
+  defp do_parse_bool("false"), do: false
+  defp do_parse_bool("1"), do: true
+  defp do_parse_bool("0"), do: false
+  defp do_parse_bool(_), do: false # Safe default.
 
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.

@@ -1,14 +1,23 @@
 defmodule Orchestrator.APIClient do
   require Logger
 
-  def get_config(instance) do
+  def get_config(instance, run_groups) do
     {url, headers} = base_url_and_headers()
 
+    qs = case run_groups do
+           [] -> ""
+           groups ->
+             gs = groups
+             |> Enum.map(fn g -> URI.encode_query(%{"rg[]" => g}) end)
+             |> Enum.join("&")
+             "?" <> gs
+         end
+
     {:ok, %HTTPoison.Response{body: body}} =
-      HTTPoison.get("#{url}/run-config/#{instance}", headers)
+      HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers)
 
     Jason.decode!(body, keys: :atoms)
-    |> IO.inspect(label: "Config for instance #{instance}")
+    |> IO.inspect(label: "Config for instance #{instance} and run groups #{inspect run_groups}")
   end
 
   def write_telemetry(monitor_logical_name, check_logical_name, value) do
