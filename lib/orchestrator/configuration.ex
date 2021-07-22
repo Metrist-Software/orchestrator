@@ -117,16 +117,26 @@ defmodule Orchestrator.Configuration do
 
   * A straight value
   * A pointer to a secrets source secret, initiated by `@secret@:`
-  * A reference to an environment variable, initiated by `@env@:`
+  * A interpolated string using the environment, initiated by `@env@:`
 
   In the latter two cases, if the translation cannot be made, the whole value is returned. This protects against the
-  case where some other system requires the same format as we use.
+  case where some other system requires the same format as we use. The latter two options are recursive, so you can
+  use the environment to form a secret name and then look that up.
+
+  Environment interpolation is simple: only "${WORD}" is supported.
   """
   def translate_value(v = <<"@secret@:", name::binary>>) do
-    Orchestrator.Application.secrets_source().fetch(name) || v
+    (Orchestrator.Application.secrets_source().fetch(name) || v)
+    |> translate_value()
   end
-  def translate_value(v = <<"@env@:", name::binary>>) do
-    System.get_env(name, v)
+  def translate_value(v = <<"@env@:", value::binary>>) do
+    String.replace(value, ~r/\$\{([A-Za-z_]+)\}/,
+      fn match ->
+        match
+        |> String.slice(2, String.length(match) - 3)
+        |> System.get_env()
+      end)
+    |> translate_value()
   end
   def translate_value(straight), do: straight
 
