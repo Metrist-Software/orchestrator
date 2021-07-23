@@ -85,8 +85,16 @@ defmodule Orchestrator.MonitorScheduler do
     Task.async(fn -> :ok end)
   end
   defp do_run(cfg) do
-    Logger.info("No run specification given, running with default runner DLL")
-    Orchestrator.DotNetDLLInvoker.invoke(cfg)
+    Logger.info("No run specification given, running based on configured invocation style")
+    case Orchestrator.Application.invocation_style() do
+      "rundll" ->
+        Orchestrator.DotNetDLLInvoker.invoke(cfg)
+      "awslambda" ->
+        Orchestrator.LambdaInvoker.invoke(cfg)
+      other ->
+        Logger.warn("Unknown invocation style #{other}, ignoring.")
+        Task.async(fn -> :ok end)
+    end
   end
 
   defp show(state) do

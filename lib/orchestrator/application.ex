@@ -15,6 +15,10 @@ defmodule Orchestrator.Application do
     rg_string = System.get_env("CANARY_RUN_GROUPS", "")
     run_groups = parse_run_groups(rg_string)
 
+    cl_string = System.get_env("CANARY_INVOCATION_STYLE", "false")
+    invocation_style = parse_bool(cl_string)
+    Application.put_env(:orchestrator, :invocation_style, invocation_style)
+
     cl_string = System.get_env("CANARY_CLEANUP_ENABLED", "false")
     cleanup_enabled = parse_bool(cl_string)
     Application.put_env(:orchestrator, :cleanup_enabled, cleanup_enabled)
@@ -40,6 +44,7 @@ defmodule Orchestrator.Application do
   def instance, do: Application.get_env(:orchestrator, :instance)
   def secrets_source, do: Application.get_env(:orchestrator, :secrets_source)
   def do_cleanup?, do: Application.get_env(:orchestrator, :cleanup_enabled)
+  def invocation_style, do: Application.get_env(:orchestrator, :invocation_style)
 
   defp parse_run_groups(""), do: []
   defp parse_run_groups(string) do
