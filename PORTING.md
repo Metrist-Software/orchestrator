@@ -66,3 +66,18 @@ Therefore, the process is simple: just move every monitor from the old to the ne
    and push; as soon as the DLLs have been re-built and sent to S3 you can set the run groups again, this time to `"RunDLL"` and the
    monitor will now move from your local environment to the new style orchestrator.
 1. Verify that the new style orchestrator invokes your monitor, reporting is ok, and move your ticket to Done.
+
+## Special considerations
+
+### Cleanups
+
+Monitors can define two methods, "TearDown" and "Cleanup". The first gets invoked when it exists, the second only when the
+environment variable `CANARY_CLEANUP_ENABLED` is set to a truthy value. Normally, this will ensure that things "just work"
+by setting that value from the parameter store, but where Cleanup exists, it requires validation.
+
+### Expensive monitors
+
+We have some monitors that are expensive to run and we will not run them from every region. For develop, we have two regions
+where we can mimic this behavior; given that we can have multiple run groups, this is easy to fix by having the monitor be
+assigned to a separate run group and one of the regions also running that run group. A generic configuration solution is not
+in place at the moment, but, again, this requires validation.
