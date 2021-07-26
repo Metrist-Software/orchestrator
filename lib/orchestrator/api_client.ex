@@ -4,14 +4,19 @@ defmodule Orchestrator.APIClient do
   def get_config(instance, run_groups) do
     {url, headers} = base_url_and_headers()
 
-    qs = case run_groups do
-           [] -> ""
-           groups ->
-             gs = groups
-             |> Enum.map(fn g -> URI.encode_query(%{"rg[]" => g}) end)
-             |> Enum.join("&")
-             "?" <> gs
-         end
+    qs =
+      case run_groups do
+        [] ->
+          ""
+
+        groups ->
+          gs =
+            groups
+            |> Enum.map(fn g -> URI.encode_query(%{"rg[]" => g}) end)
+            |> Enum.join("&")
+
+          "?" <> gs
+      end
 
     {:ok, %HTTPoison.Response{body: body}} =
       HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers)
@@ -44,6 +49,7 @@ defmodule Orchestrator.APIClient do
     {url, headers} = base_url_and_headers()
     headers = [{"Content-Type", "application/json"} | headers]
     msg = Jason.encode!(msg)
+
     Task.start_link(fn ->
       do_post_with_retries("#{url}/#{path}", headers, msg, length(@backoff))
     end)
@@ -53,22 +59,43 @@ defmodule Orchestrator.APIClient do
     # TODO This is quite primitive for now. We probably should queue this up to a genserver, blablabla. Genserver
     # can then also start batching messages.
 
-    {:ok, %HTTPoison.Response{status_code: status_code}} = HTTPoison.post(url, msg, headers)
-    case div(status_code, 100) do
-      2 -> :ok
-      4 ->
-        Logger.error("Got #{status_code} posting #{url}/#{msg}, not retrying")
-        :error
-      5 ->
+    case HTTPoison.post(url, msg, headers) do
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        case div(status_code, 100) do
+          2 ->
+            :ok
+
+          4 ->
+            Logger.error("Got #{status_code} posting #{url}/#{msg}, not retrying")
+            :error
+
+          5 ->
+            if retries > 0 do
+              sleep = Enum.at(@backoff, retries - 1)
+              # Always toss jitter in your backoff, it's much better
+              sleep = sleep - div(sleep, 4) + :rand.uniform(div(sleep, 2))
+              Logger.info("Got #{status_code} posting #{url}/#{msg}, retrying after #{sleep}ms")
+              Process.sleep(sleep)
+              do_post_with_retries(url, headers, msg, retries - 1)
+            else
+              Logger.error(
+                "Got #{status_code} posting #{url}/#{msg} after max retries, giving up"
+              )
+
+              :error
+            end
+        end
+
+      {:error, error} ->
         if retries > 0 do
           sleep = Enum.at(@backoff, retries - 1)
           # Always toss jitter in your backoff, it's much better
           sleep = sleep - div(sleep, 4) + :rand.uniform(div(sleep, 2))
-          Logger.info("Got #{status_code} posting #{url}/#{msg}, retrying after #{sleep}ms")
+          Logger.info("Got #{error} posting #{url}/#{msg}, retrying after #{sleep}ms")
           Process.sleep(sleep)
           do_post_with_retries(url, headers, msg, retries - 1)
         else
-          Logger.error("Got #{status_code} posting #{url}/#{msg} after max retries, giving up")
+          Logger.error("Got #{error} posting #{url}/#{msg} after max retries, giving up")
           :error
         end
     end
