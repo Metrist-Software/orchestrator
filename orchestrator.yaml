@@ -17,8 +17,8 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN_PATH
-              Value: !Sub /${EnvironmentTagName}/canary-internal/api-token.token
+            - Name: CANARY_API_TOKEN
+              Value: !Sub @secret@:/${EnvironmentTagName}/canary-internal/api-token#token
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
@@ -83,8 +83,8 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN_PATH
-              Value: !Sub /${EnvironmentTagName}/canary-internal/api-token.token
+            - Name: CANARY_API_TOKEN
+              Value: !Sub @secret@:/${EnvironmentTagName}/canary-internal/api-token#token
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
@@ -149,8 +149,8 @@ Resources:
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN_PATH
-              Value: !Sub /${EnvironmentTagName}/private-cma/canary-api-token.token
+            - Name: CANARY_API_TOKEN
+              Value: !Sub @secret@:/${EnvironmentTagName}/private-cma/canary-api-token#token
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
             - Name: CANARY_INSTANCE_ID
