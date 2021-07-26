@@ -106,7 +106,7 @@ defmodule Orchestrator.Configuration do
   """
   def translate_config(monitor_config) do
     Map.put(monitor_config, :extra_config,
-      monitor_config.extra_config
+      (monitor_config.extra_config || %{})
       |> Enum.map(fn {k, v} -> {k, translate_value(v)} end)
       |> Map.new())
   end
