@@ -15,8 +15,8 @@ defmodule Orchestrator.Application do
     rg_string = System.get_env("CANARY_RUN_GROUPS", "")
     run_groups = parse_run_groups(rg_string)
 
-    cl_string = System.get_env("CANARY_INVOCATION_STYLE", "false")
-    invocation_style = parse_bool(cl_string)
+    # TODO set default invocation style back to rundll
+    invocation_style = System.get_env("CANARY_INVOCATION_STYLE", "awslambda")
     Application.put_env(:orchestrator, :invocation_style, invocation_style)
 
     cl_string = System.get_env("CANARY_CLEANUP_ENABLED", "false")
