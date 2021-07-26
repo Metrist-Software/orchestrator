@@ -17,7 +17,6 @@ defmodule Orchestrator.APIClient do
       HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers)
 
     Jason.decode!(body, keys: :atoms)
-    |> IO.inspect(label: "Config for instance #{instance} and run groups #{inspect run_groups}")
   end
 
   def write_telemetry(monitor_logical_name, check_logical_name, value) do
