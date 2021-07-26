@@ -57,7 +57,9 @@ Therefore, the process is simple: just move every monitor from the old to the ne
    be all there but typos can and will happen.
 1. Check that `Mix.Tasks.Canary.SecretsToConfig` is correct for your monitor. There is plenty of sample code there, and we want to not
    only copy actual secrets but also make sure that `extra_config` values in the monitor config have everything the monitor needs.
-1. Run the mix task and verify in pgAdmin that all is well.
+1. Run the `canary.secrets_to_config` mix task and verify in pgAdmin that all is well. Note that the mix task is supposed to
+   also run on production, so do not
+   manually tweak the projection db - it will be overwritten anyway when someone else runs the mix task.
 1. Your monitor can now run as DLL. Move it from the "AWS Lambda" run group to whatever you set for the local run group using the
    backend mix task `mix canary.set_run_group`. If you start Orchestrator (or have it running) using `iex -S mix` then when the next
    run is due, your local orchestrator should pick it up and the "AWS Lambda" orchestrator will stop running it (you can keep the
@@ -81,3 +83,9 @@ We have some monitors that are expensive to run and we will not run them from ev
 where we can mimic this behavior; given that we can have multiple run groups, this is easy to fix by having the monitor be
 assigned to a separate run group and one of the regions also running that run group. A generic configuration solution is not
 in place at the moment, but, again, this requires validation.
+
+### Local monitor DLLs, testing
+
+Orchestrator will start the runner and DLL fresh every time, so you can just leave it running while you tweak things. Note that
+you need to use `dotnet publish -c Release -r linux-x64` after C# changes to the monitors get the right stuff in the right location;
+the runner, when symlinked as above, will not need that as it is pretty self-contained.

@@ -27,6 +27,7 @@ defmodule Orchestrator.ProtocolHandler do
   end
 
   def handle_message(pid, monitor_logical_name, message) do
+    message = String.trim(message)
     case Integer.parse(message) do
       {len, rest} ->
         message = String.slice(rest, 1, len)
@@ -34,7 +35,9 @@ defmodule Orchestrator.ProtocolHandler do
         # If there's more, process more.
         handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
       :error ->
-        Logger.debug("#{monitor_logical_name}: stdout: #{message}")
+        if String.length(message) > 0 do
+          Logger.debug("#{monitor_logical_name}: stdout: #{message}")
+        end
     end
   end
 
@@ -81,7 +84,7 @@ defmodule Orchestrator.ProtocolHandler do
   end
   def handle_cast({:message, msg = <<"Step Time ", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
-      time = Float.parse(rest)
+      {time, _} = Float.parse(rest)
       Orchestrator.APIClient.write_telemetry(state.monitor_logical_name, state.current_step, time)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
