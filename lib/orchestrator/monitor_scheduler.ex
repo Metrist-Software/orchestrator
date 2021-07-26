@@ -27,6 +27,12 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   @impl true
+  def handle_cast({:config_change, new_config}, state) do
+    # We simply adopt the new config; the next run will then use the new data for scheduling.
+    {:noreply, %State{state | config: new_config}}
+  end
+
+  @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
     # So the next time we need to run is trivially simple now.
@@ -42,12 +48,6 @@ defmodule Orchestrator.MonitorScheduler do
       Logger.info("Skipping run for #{show(state)}, marking us in overtime")
       {:noreply, %State{state | overtime: true}}
     end
-  end
-
-  @impl true
-  def handle_info({:config_change, new_config}, state) do
-    # We simply adopt the new config; the next run will then use the new data for scheduling.
-    {:noreply, %State{state | config: new_config}}
   end
 
   # As we're a GenServer, all Task completion messages arrive as info messages.
