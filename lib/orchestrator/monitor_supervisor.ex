@@ -64,7 +64,6 @@ defmodule Orchestrator.MonitorSupervisor do
   end
 
   def redact(monitor_config) do
-    IO.puts("Redact #{inspect monitor_config}")
     Map.put(monitor_config, :extra_config, do_redact(monitor_config.extra_config))
   end
   def do_redact(nil), do: nil
