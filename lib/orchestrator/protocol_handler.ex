@@ -93,7 +93,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = "Step OK"}, state) do
     when_current_step(msg, state, fn ->
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
-      Orchestrator.APIClient.write_telemetry(state.monitor_logical_name, state.current_step, time_taken / 1_000)
+      Orchestrator.APIClient.write_telemetry(state.monitor_logical_name, state.current_step, time_taken)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)

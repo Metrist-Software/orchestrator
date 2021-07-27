@@ -103,9 +103,9 @@ to run a step function. The step function can either be self-timed (often, a ste
 than the actual check, so in that case the step function will execute the setup and then time the code that runs the actual check), which
 should return:
 
-    Step Time <time-in-seconds>
+    Step Time <time-in-milliseconds>
 
-(where time can be a float), or if it is not self-timed:
+(where time can be a float but expect the micro/nanosecond part to be truncated), or if it is not self-timed:
 
     Step OK
 
