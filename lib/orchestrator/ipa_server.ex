@@ -8,6 +8,8 @@ defmodule Orchestrator.IPAServer do
   require Logger
 
   @port 51712
+  @any ~r/.*/
+  @default_config %{}
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, [])
@@ -23,12 +25,11 @@ defmodule Orchestrator.IPAServer do
     config =
       case Orchestrator.Application.cma_config() do
         nil ->
-          %{}
+          @default_config
 
         file ->
-          YamlElixir.read_from_file!(file)
+          parse_config_file(file)
       end
-      |> IO.inspect(label: "Parsed config")
 
     Logger.info("Started listening on port #{@port} for IPA messages")
 
@@ -37,15 +38,18 @@ defmodule Orchestrator.IPAServer do
 
   def handle_info({:udp, _socket, _host, _port, msg}, config) do
     Logger.debug("Has message! #{inspect(msg)}")
-    cleaned_msg = msg
-    |> List.to_string()
-    |> String.trim()
+
+    cleaned_msg =
+      msg
+      |> List.to_string()
+      |> String.trim()
+
     try do
       handle_message(cleaned_msg, config)
     rescue
-      e ->
-        Logger.error("Got error processing #{inspect msg}: #{Exception.format(:error, e, __STACKTRACE__)}")
+      e -> Logger.error("Got error processing #{inspect(msg)}: #{Exception.format(:error, e, __STACKTRACE__)}")
     end
+
     {:noreply, config}
   end
 
@@ -63,10 +67,10 @@ defmodule Orchestrator.IPAServer do
       rest
       |> String.trim()
       |> String.split(~r/[[:space:]]+/, parts: 3)
-    |> IO.inspect(label: "split")
 
-    uri = URI.parse(url)
-    |> IO.inspect(label: "uri")
+    uri =
+      URI.parse(url)
+
     maybe_send(method, uri.host, uri.path, value, config)
   end
 
@@ -75,54 +79,57 @@ defmodule Orchestrator.IPAServer do
   end
 
   def maybe_send(method, host, path, value, config) do
-    Enum.any?(config["patterns"], fn {k, v} ->
-      case matches?(method, host, path, v) do
-        true ->
-          {value, _} = Float.parse(value)
-          Logger.info(
-            "We are sending #{method}/#{host}/#{path}/#{value} as #{k} because #{inspect(v)} matches"
-          )
-
-          true
-
-        false ->
-          false
-      end
-    end)
-  end
-
-  def matches?(method, host, path, pats) do
-    # TODO pre-compile when we're reading this in
-    # Code is a bit ugly for now but saves compiling.
-    method_re = Regex.compile!(pats["method"] || ".*")
-
-    if Regex.match?(method_re, method) do
-      host_re = Regex.compile!(pats["host"] || ".*")
-
-      if Regex.match?(host_re, host) do
-        path_re = Regex.compile!(pats["url"] || ".*")
-
-        if Regex.match?(path_re, path) do
-          true
-        else
-          false
-        end
-      else
-        false
-      end
-    else
-      false
+    case Enum.find(config, fn {_, v} -> matches?(method, host, path, v) end) do
+      {{m, c}, v} ->
+        {value, _} = Float.parse(value)
+        Logger.info("We are sending #{method}/#{host}/#{path}/#{value} as #{m}/#{c} because #{inspect(v)} matches")
+        Orchestrator.APIClient.write_telemetry(m, c, value)
+      _ ->
+        Logger.info("#{method}/#{host}/#{path} does not match anything in our configuration")
     end
   end
 
-  # parse
-  # 0 method host path value
-  # 1 method url value
-  #
-  # parse
-  # patterns:
-  # braintree.Transaction:
-  # method: any
-  # host: api.*.braintreegateway.com
-  # url: /transaction$
+  def matches?(method, host, path, pats) do
+    Regex.match?(pats["method"], method) &&
+      Regex.match?(pats["host"], host) &&
+      Regex.match?(pats["url"], path)
+  end
+
+  def parse_config_file(file) do
+    file
+    |> YamlElixir.read_from_file!()
+    |> parse_config()
+  end
+
+  def parse_config_string(string) do
+    string
+    |> YamlElixir.read_from_string!()
+    |> parse_config()
+  end
+
+  def parse_config(raw_config) do
+    raw_config
+    |> Map.put_new("patterns", %{})
+    |> Map.get("patterns")
+    |> Enum.map(fn {mc, pats} ->
+      [monitor, check] = String.split(mc, ".", parts: 2)
+      pats =
+        Enum.map(pats || %{}, fn {type, pat} ->
+          pat =
+            case pat do
+              "any" -> @any
+              pat -> Regex.compile!(pat)
+            end
+
+          {type, pat}
+        end)
+        |> Map.new()
+        |> Map.put_new("host", @any)
+        |> Map.put_new("method", @any)
+        |> Map.put_new("url", @any)
+
+      {{monitor, check}, pats}
+    end)
+    |> Map.new()
+  end
 end
