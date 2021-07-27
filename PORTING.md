@@ -10,7 +10,7 @@ are:
 * `CANARY_API_HOST` decides where monitor configuration is downloaded and telemetry/error information is uploaded. For porting,
   set it to `app-dev1.canarymonitor.com`.
 * `CANARY_API_TOKEN` decides "who we are". There are two possible values:
-  1. `@secret@:/dev1/canary-internal/api-token#token` - this is a reference to the token for SHARED and to be used to port
+  1. `@secret@:/dev1/canary-shared/api-token#token` - this is a reference to the token for SHARED and to be used to port
      all monitors in that account;
   2. `@secret@:/dev1/private-cma/canary-api-token#token` - this is a reference to the token for the "private CMA" account,
      353-C in development;
