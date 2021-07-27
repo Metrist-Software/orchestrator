@@ -84,7 +84,7 @@ Resources:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: CANARY_API_TOKEN
-              Value: !Sub "@secret@:/${EnvironmentTagName}/canary-internal/api-token#token"
+              Value: !Sub "@secret@:/${EnvironmentTagName}/canary-shared/api-token#token"
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
