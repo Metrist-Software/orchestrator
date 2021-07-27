@@ -31,11 +31,12 @@ defmodule Orchestrator.MixProject do
       # Generic dependencies
       {:jason, "~> 1.2"},
       {:bakeware, "~> 0.2.0"},
+      {:yaml_elixir, "~> 2.8"},
+      {:ex_aws_secretsmanager, "~> 2.0"},
+      {:ex_aws_lambda, "~> 2.0"},
 
       # Canary Orchestrator specific dependencies (for now)
-      {:neuron, "~> 5.0"},         # Until(?) we ditch GraphQL
-      {:ex_aws_lambda, "~> 2.0"},
-      {:ex_aws_secretsmanager, "~> 2.0"}
+      {:neuron, "~> 5.0"}         # Until(?) we ditch GraphQL
     ]
   end
 

@@ -27,13 +27,17 @@ defmodule Orchestrator.Application do
     secrets_source = Map.get(%{"aws" => Orchestrator.AWSSecretsManager}, ss_string, Orchestrator.AWSSecretsManager)
     Application.put_env(:orchestrator, :secrets_source, secrets_source)
 
+    cma_config = System.get_env("CANARY_CMA_CONFIG")
+    Application.put_env(:orchestrator, :cma_config, cma_config)
+
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance, run_groups) end
 
     configure_api_token()
 
     children = [
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
-      Orchestrator.MonitorSupervisor
+      Orchestrator.MonitorSupervisor,
+      Orchestrator.IPAServer
     ]
     |> filter_children()
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
@@ -45,6 +49,7 @@ defmodule Orchestrator.Application do
   def secrets_source, do: Application.get_env(:orchestrator, :secrets_source)
   def do_cleanup?, do: Application.get_env(:orchestrator, :cleanup_enabled)
   def invocation_style, do: Application.get_env(:orchestrator, :invocation_style)
+  def cma_config, do: Application.get_env(:orchestrator, :cma_config)
 
   defp parse_run_groups(""), do: []
   defp parse_run_groups(string) do
