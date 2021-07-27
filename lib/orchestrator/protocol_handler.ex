@@ -110,6 +110,11 @@ defmodule Orchestrator.ProtocolHandler do
     Logger.info("Monitor completed shutdown")
     {:stop, :normal, state}
   end
+  def handle_cast({:message, other}, state) do
+    Logger.error("Unexpected message: [#{inspect other}] received, exiting")
+    send_exit(state)
+    {:stop, :badprotocol, state}
+  end
 
   defp when_current_step(msg, state, function) do
     if is_nil(state.current_step) do
