@@ -17,4 +17,5 @@ jobs:
         run: |
           git config --global user.email "nobodye@canarymonitor.com"
           git config --global user.name "Github Action Bot"
-          git reset --hard origin/main && git commit --allow-empty -m "== Hard reset to main ==" && git push --force
+          # TODO enable reset again
+          #git reset --hard origin/main && git commit --allow-empty -m "== Hard reset to main ==" && git push --force
