@@ -93,7 +93,7 @@ defmodule Orchestrator.APIClient do
           sleep = Enum.at(@backoff, retries - 1)
           # Always toss jitter in your backoff, it's much better
           sleep = sleep - div(sleep, 4) + :rand.uniform(div(sleep, 2))
-          Logger.info("Got #{error} posting #{url}/#{msg}, retrying after #{sleep}ms")
+          Logger.info("Got #{inspect error} posting #{url}/#{msg}, retrying after #{sleep}ms")
           Process.sleep(sleep)
           do_post_with_retries(url, headers, msg, retries - 1)
         else
