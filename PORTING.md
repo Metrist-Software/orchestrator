@@ -64,8 +64,12 @@ Therefore, the process is simple: just move every monitor from the old to the ne
    backend mix task `mix canary.set_run_group`. If you start Orchestrator (or have it running) using `iex -S mix` then when the next
    run is due, your local orchestrator should pick it up and the "AWS Lambda" orchestrator will stop running it (you can keep the
    Orchestrator run). Check that all is fine, telemetry is reported, etcetera.
-1. If this works, then you should be done. Make sure that any monitor changes are on `develop` (and on the ticket 1212 branch as well!)
-   and push; as soon as the DLLs have been re-built and sent to S3 you can set the run groups again, this time to `"RunDLL"` and the
+1. If this works, then you should be done. Make sure that any monitor changes are:
+   * For orchestrator and backend, on `develop` (cleanest is to commit on and then merge from the ticket 1212 branch)
+   * For aws-serverless, on the ticket 1212 branch; make sure to merge/rebase upstream changes
+     first. *DO NOT MERGE aws-serverless TO `develop` FOR NOW!*
+   and push; for aws-serverless, you can now run `shared/publish-new-only.sh` to publish the runner and all DLLS; then you can set the
+   run groups again, this time to `"RunDLL"` and the
    monitor will now move from your local environment to the new style orchestrator.
 1. Verify that the new style orchestrator invokes your monitor, reporting is ok, and move your ticket to Done.
 
