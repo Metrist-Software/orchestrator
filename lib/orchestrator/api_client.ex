@@ -21,7 +21,9 @@ defmodule Orchestrator.APIClient do
     {:ok, %HTTPoison.Response{body: body}} =
       HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers)
 
-    Jason.decode!(body, keys: :atoms)
+    {:ok, config} = Jason.decode(body, keys: :atoms)
+
+    config
   end
 
   def write_telemetry(monitor_logical_name, check_logical_name, value) do
