@@ -30,6 +30,9 @@ defmodule Orchestrator.Application do
     cma_config = System.get_env("CANARY_CMA_CONFIG")
     Application.put_env(:orchestrator, :cma_config, cma_config)
 
+    ll_config = System.get_env("CANARY_LOGGING_LEVEL", "Info")
+    set_logging(String.downcase(ll_config))
+
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance, run_groups) end
 
     configure_api_token()
@@ -43,7 +46,6 @@ defmodule Orchestrator.Application do
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
     Supervisor.start_link(children, opts)
   end
-
 
   def instance, do: Application.get_env(:orchestrator, :instance)
   def secrets_source, do: Application.get_env(:orchestrator, :secrets_source)
@@ -62,6 +64,11 @@ defmodule Orchestrator.Application do
   defp do_parse_bool("1"), do: true
   defp do_parse_bool("0"), do: false
   defp do_parse_bool(_), do: false # Safe default.
+
+  defp set_logging("debug"), do: Logger.configure(level: :debug)
+  defp set_logging("info"), do: Logger.configure(level: :info)
+  defp set_logging("warning"), do: Logger.configure(level: :warning)
+  defp set_logging("error"), do: Logger.configure(level: :error)
 
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
