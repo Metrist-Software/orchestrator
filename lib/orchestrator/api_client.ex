@@ -2,6 +2,7 @@ defmodule Orchestrator.APIClient do
   require Logger
 
   def get_config(instance, run_groups) do
+    Logger.info("Fetching config for instance #{instance} and run groups #{inspect run_groups}")
     {url, headers} = base_url_and_headers()
 
     qs =
