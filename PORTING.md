@@ -49,7 +49,7 @@ Therefore, the process is simple: just move every monitor from the old to the ne
 
 ## Process
 
-1. Check that the monitor has a MonitorConfig that is just strings, that its (soon to be obsolete) `src/..../Function.cs` file is not
+1. Check that the monitor has a MonitorConfig that is just strings and have getters and setters, that its (soon to be obsolete) `src/..../Function.cs` file is not
    doing anything smart - the monitor will be invoked directly without going through that call - and move anything from that file
    to the new `shared/.../Monitor.cs` home. Also check that the logical name matches the directory name (minus the uppercase) because
    that is for now mandatory. Tweak where needed.
