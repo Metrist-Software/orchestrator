@@ -30,6 +30,8 @@ Resources:
               Value: lambda
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_INVOCATION_STYLE
               Value: awslambda
             - Name: CANARY_RUN_GROUPS
@@ -97,6 +99,8 @@ Resources:
               Value: lambda
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
             - Name: CANARY_RUN_GROUPS
@@ -162,6 +166,10 @@ Resources:
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
+            - Name: ENVIRONMENT_TAG
+              Value: !Sub ${EnvironmentTagName}
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_RUN_GROUPS
               Value: "Canary Monitoring Agent"
             - Name: CANARY_CLEANUP_ENABLED
