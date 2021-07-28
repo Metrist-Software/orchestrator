@@ -14,6 +14,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: logs
           Name: orchestrator
+          ReadonlyRootFilesystem: false
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
@@ -80,6 +81,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: logs
           Name: orchestrator
+          ReadonlyRootFilesystem: false
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
@@ -146,6 +148,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: logs
           Name: privatecma
+          ReadonlyRootFilesystem: false
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
@@ -177,6 +180,7 @@ Resources:
     Properties:
       ServiceName: !Sub ${AWS::StackName}-PrivateCMAService
       TaskDefinition: !Ref PrivateCMATask
+      EnableExecuteCommand: true
       DesiredCount: 1
       DeploymentConfiguration:
         MaximumPercent: 100
@@ -244,6 +248,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub arn:aws:lambda:*:*:function:monitor-*
+        - PolicyName: AllowSSMExec
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:*
+                Resource: '*'
         - PolicyName: AccessSecrets
           PolicyDocument:
             Version: '2012-10-17'
