@@ -107,6 +107,8 @@ Resources:
               Value: "RunDLL"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
+            - Name: USER_POOL
+              Value: !Ref CognitoTestUserPool
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -174,8 +176,6 @@ Resources:
               Value: "Canary Monitoring Agent"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
-            - Name: USER_POOL
-              Value: !Ref CognitoTestUserPool
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
