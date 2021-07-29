@@ -5,10 +5,9 @@
 #
 set -euo pipefail
 
-# TODO once the S3 upload invalidates CloudFront, make this point there
-dist=https://canary-public-assets.s3.us-west-2.amazonaws.com/dist/monitors
+dist=https://monitor-distributions.canarymonitor.com
 
-latest=$(curl $dist/latest.txt)
+latest=$(curl $dist/runner-latest.txt)
 echo "Installing runner version $latest"
 curl $dist/runner-${latest}-linux-x64.zip >/tmp/runner.zip
 cd priv/runner

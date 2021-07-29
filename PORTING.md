@@ -68,9 +68,10 @@ Therefore, the process is simple: just move every monitor from the old to the ne
    * For orchestrator and backend, on `develop` (cleanest is to commit on and then merge from the ticket 1212 branch)
    * For aws-serverless, on the ticket 1212 branch; make sure to merge/rebase upstream changes
      first. *DO NOT MERGE aws-serverless TO `develop` FOR NOW!*
-   and push; for aws-serverless, you can now run `shared/publish-new-only.sh` to publish the runner and all DLLS; then you can set the
-   run groups again, this time to `"RunDLL"` and the
-   monitor will now move from your local environment to the new style orchestrator.
+   and push; for aws-serverless, you can now run `shared/publish-new-only.sh <monitor_logical_name_all_lowercase>` to publish the 
+   monitor DLLs. If you made changes to the runner you can use `shared/publish-new-only.sh runner` to publish the runner; then you can 
+   set the run groups again, this time to `"RunDLL"` and the monitor will now move from your local environment to the new style orchestrator. 
+   Alternatively you can simply run `shared/publish-new-only.sh` to publish everything.
 1. Verify that the new style orchestrator invokes your monitor, reporting is ok, and move your ticket to Done.
 
 ## Special considerations
