@@ -69,8 +69,12 @@ defmodule Orchestrator.MonitorSupervisor do
   def do_redact(nil), do: nil
   def do_redact(extra_config) do
     extra_config
-    |> Enum.map(fn {k, v} ->
-      {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
+    |> Enum.map(fn
+      {k, nil} ->
+        Logger.error("Unexpected nil value in extra config under key #{k}, skipping redaction")
+        {k, nil}
+      {k, v} ->
+        {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
     end)
     |> Map.new()
   end
