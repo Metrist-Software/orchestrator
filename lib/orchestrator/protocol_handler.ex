@@ -30,13 +30,27 @@ defmodule Orchestrator.ProtocolHandler do
     message = String.trim(message)
     case Integer.parse(message) do
       {len, rest} ->
-        message = String.slice(rest, 1, len)
-        GenServer.cast(pid, {:message, message})
-        # If there's more, process more.
-        handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
+        message_body = String.slice(rest, 1, len)
+        if (len > String.length(message_body)) do
+          # Incomplete message
+          # Send message back if we can't process it
+          # so that future data can be appended
+          {:incomplete, message}
+        else
+          GenServer.cast(pid, {:message, message_body})
+          # If there's more, try to process more (but it may be incomplete)
+          handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
+        end
       :error ->
         if String.length(message) > 0 do
           Logger.debug("#{monitor_logical_name}: stdout: #{message}")
+          {:error, message}
+        else
+          # This is actually the catch all. Odd but this
+          # is the success exit condition as there will either be an
+          # incomplete message left or nothing and nohting will trigger
+          # an :error trying to parse
+          {:ok, nil}
         end
     end
   end
