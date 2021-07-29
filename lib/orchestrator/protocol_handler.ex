@@ -100,6 +100,7 @@ defmodule Orchestrator.ProtocolHandler do
   end
   def handle_cast({:message, msg = <<"Step Error", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
+      Logger.error("#{state.monitor_logical_name}: step error #{state.current_step}: #{rest}")
       Orchestrator.APIClient.write_error(state.monitor_logical_name, state.current_step, rest)
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
