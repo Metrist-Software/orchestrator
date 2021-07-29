@@ -126,16 +126,18 @@ defmodule Orchestrator.Configuration do
   Environment interpolation is simple: only "${WORD}" is supported.
   """
   def translate_value(<<"@secret@:", name::binary>>) do
-    Orchestrator.Application.secrets_source().fetch(name)
-    |> translate_value()
+    case Orchestrator.Application.secrets_source().fetch(name) do
+      nil -> "<<ERROR: secret #{name} not found>>"
+      other -> translate_value(other)
+    end
   end
   def translate_value(<<"@env@:", value::binary>>) do
     String.replace(value, ~r/\$\{([A-Za-z_]+)\}/,
       fn match ->
         match
         |> String.slice(2, String.length(match) - 3)
-        |> System.get_env()
-      end)
+        |> System.get_env("<<ERROR: could not expand \"#{match}\", environment variable not found>>")
+       end)
     |> translate_value()
   end
   def translate_value(straight), do: straight

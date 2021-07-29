@@ -71,8 +71,12 @@ defmodule Orchestrator.MonitorSupervisor do
     extra_config
     |> Enum.map(fn
       {k, nil} ->
-        Logger.error("Unexpected nil value in extra config under key #{k}, skipping redaction")
+        # Yes, this will probably log the same thing more often than once, but better that then never for now.
+        Logger.error("Unexpected nil value in extra config under key #{k} found during redaction, monitor may not work!")
         {k, nil}
+      {k, e = << "<<ERROR:", _rest::binary>>} ->
+        # "<<ERROR: error message>>" is generated during `translate_value/1`, let's keep these in the clear
+        {k, e}
       {k, v} ->
         {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
     end)
