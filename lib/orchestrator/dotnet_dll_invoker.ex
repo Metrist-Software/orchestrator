@@ -44,7 +44,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler) do
     receive do
       {:DOWN, ^ref, :port, ^port, reason} ->
-        Logger.debug(
+        Logger.info(
           "Monitor #{monitor_logical_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
         )
 
