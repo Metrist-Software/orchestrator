@@ -66,8 +66,6 @@ defmodule Orchestrator.Configuration do
   commands to delete, add, or update monitors.
   """
   def diff_config(new_config, old_config) do
-    Logger.info("diff config, new is #{inspect new_config}")
-    Logger.info("diff config, old is #{inspect old_config}")
     %{
       add: find_added(new_config, old_config),
       delete: find_deleted(new_config, old_config),
