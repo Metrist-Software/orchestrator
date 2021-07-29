@@ -280,7 +280,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - cognitor-idp:*
+                  - cognito-idp:*
                 Resource: !GetAtt CognitoTestUserPool.Arn
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
