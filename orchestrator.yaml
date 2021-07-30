@@ -125,11 +125,11 @@ Resources:
             - Name: LAMBDA_TEST_FUNCTION_ARN
               Value:
                 Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-TestFunction"
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
             - Name: LAMBDA_QUEUE_URL
               Value:
                 Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
