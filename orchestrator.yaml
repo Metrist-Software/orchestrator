@@ -307,6 +307,14 @@ Resources:
               - Effect: Allow
                   - ec2:*
                 Resource: '*'
+        # Specifically for the S3 monitor
+        - PolicyName: S3FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                  - s3:*
+                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
