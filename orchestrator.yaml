@@ -342,7 +342,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - sqs:*
-                Resource: '*'
+                Resource: !GetAtt SQSTestQueue.Arn
         # Specifically for the ses monitor
         - PolicyName: SESSendEmail
           PolicyDocument:
