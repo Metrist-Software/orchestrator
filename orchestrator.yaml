@@ -95,8 +95,6 @@ Resources:
               Value: !Ref BackendAPIHostname
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
-            - Name: CANARY_INVOCATION_STYLE
-              Value: lambda
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
             - Name: SECRETS_NAMESPACE
@@ -115,6 +113,9 @@ Resources:
               Value: !Ref PersistentInstanceId
             - Name: AMI_ID
               Value: !Ref AmiId
+            # Specifically for Kinesis monitor
+            - Name: KINESIS_STREAM_NAME
+              Value: !Ref KinesisMonitorStream
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -289,6 +290,14 @@ Resources:
                 Action:
                   - cognito-idp:*
                 Resource: !GetAtt CognitoTestUserPool.Arn
+        - PolicyName: AccessKinesisMonitorStream
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:*
+                Resource: !GetAtt KinesisMonitorStream.Arn
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -317,9 +326,14 @@ Resources:
           RequireNumbers: false
           RequireSymbols: false
           MinimumLength: 8
-
+  # Kinesis monitor. Also the Task role "AccessKinesisMonitorStream" policy and the service's KINESIS_STREAM_NAME env
+  KinesisMonitorStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub ${AWS::StackName}-KinesisMonitorStream
+      ShardCount: 1
 Conditions:
-    DeployAllResources: !Not
+  DeployAllResources: !Not
     - !Equals
       - 'true'
       - !Ref MonitorsOnly
@@ -358,7 +372,9 @@ Parameters:
   AmiId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/monitors/ec2/amiId
-
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
