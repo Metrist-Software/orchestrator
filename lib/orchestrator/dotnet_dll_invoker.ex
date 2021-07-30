@@ -41,7 +41,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   # This is strictly not DLL specific, but how things work when using a Port. So this will likely move
   # elsewhere at some time.
 
-  defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler) do
+  defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
       {:DOWN, ^ref, :port, ^port, reason} ->
         Logger.info(
@@ -49,8 +49,18 @@ defmodule Orchestrator.DotNetDLLInvoker do
         )
 
       {^port, {:data, data}} ->
-        Orchestrator.ProtocolHandler.handle_message(protocol_handler, monitor_logical_name, data)
-        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+        case Orchestrator.ProtocolHandler.handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
+          {:incomplete, message} ->
+            # append to returned partial message as this partial piece was not complete
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler, message)
+          {:ok, _} ->
+            # call wait_for_complete normally
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+          {:error, message} ->
+            Logger.error("Error processing message #{message}. Skipping.")
+            # call wait_for_complete normally but skip the bad message
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+        end
 
       {:write, message} ->
         Orchestrator.ProtocolHandler.write(port, message)
