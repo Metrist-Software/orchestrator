@@ -331,6 +331,15 @@ Resources:
                 Action:
                   - s3:*
                 Resource: '*'
+        # Specifically for the ses monitor
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: '*'               
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
