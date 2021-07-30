@@ -102,7 +102,7 @@ Resources:
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
             - Name: CANARY_RUN_GROUPS
-              Value: "RunDLL"
+              Value: !Sub "RunDLL,RunDLL-${AWS::Region}"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
             # Specifically for Cognito monitor
@@ -116,6 +116,11 @@ Resources:
             # Specifically for Kinesis monitor
             - Name: KINESIS_STREAM_NAME
               Value: !Ref KinesisMonitorStream
+            # Specifically for SES monitor
+            - Name: SES_FROM_EMAIL
+              Value: !Ref SESFromEmail
+            - Name: SES_TO_EMAIL
+              Value: !Ref SESToEmail
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -375,6 +380,12 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+  SESFromEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/defaultFromEmail
+  SESToEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sesToEmail
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
