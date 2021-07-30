@@ -98,7 +98,7 @@ defmodule Orchestrator.APIClient do
           Process.sleep(sleep)
           do_post_with_retries(url, headers, msg, retries - 1)
         else
-          Logger.error("Got #{error} posting #{url}/#{msg} after max retries, giving up")
+          Logger.error("Got #{inspect error} posting #{url}/#{msg} after max retries, giving up")
           :error
         end
     end
