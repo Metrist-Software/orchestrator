@@ -286,7 +286,7 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-          # Specifically for Cognito monitor
+        # Specifically for the Cognito monitor
         - PolicyName: CognitoOwner
           PolicyDocument:
             Version: '2012-10-17'
@@ -295,6 +295,7 @@ Resources:
                 Action:
                   - cognito-idp:*
                 Resource: !GetAtt CognitoTestUserPool.Arn
+        # Specifically for the Kinesis monitor
         - PolicyName: AccessKinesisMonitorStream
           PolicyDocument:
             Version: '2012-10-17'
@@ -303,6 +304,22 @@ Resources:
                 Action:
                   - kinesis:*
                 Resource: !GetAtt KinesisMonitorStream.Arn
+        # Specifically for the EC2 monitor
+        - PolicyName: EC2FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                  - ec2:*
+                Resource: '*'
+        # Specifically for the S3 monitor
+        - PolicyName: S3FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                  - s3:*
+                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -320,7 +337,7 @@ Resources:
   # above. This will make it easier to peel things apart if we decide that this template becomes too
   # bloated.
 
-  # Cognito monitor. Also the Task role "CognitoOwner" policy and the service's USER_POOL env var.
+  # Cognito monitor.
   CognitoTestUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
