@@ -107,8 +107,14 @@ Resources:
               Value: "RunDLL"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
+            # Specifically for Cognito monitor
             - Name: USER_POOL
               Value: !Ref CognitoTestUserPool
+            # Specifically for EC2 monitor
+            - Name: PERSISTENT_INSTANCE_ID
+              Value: !Ref PersistentInstanceId
+            - Name: AMI_ID
+              Value: !Ref AmiId
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -274,6 +280,7 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+          # Specifically for Cognito monitor
         - PolicyName: CognitoOwner
           PolicyDocument:
             Version: '2012-10-17'
@@ -344,7 +351,13 @@ Parameters:
   EnableCleanup:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/monitors/enableCleanup
-
+  # For EC2 monitor
+  PersistentInstanceId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/ec2/persistentInstanceId
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/ec2/amiId
 
 Metadata:
   EnvConfigParameters:
