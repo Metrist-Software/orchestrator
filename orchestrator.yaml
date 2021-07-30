@@ -352,6 +352,23 @@ Resources:
                 Action:
                   - ses:SendEmail
                 Resource: '*'
+        # Specifically for the lambda monitor
+        - PolicyName: LambdaMonitorTrigger
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -388,9 +405,9 @@ Resources:
       ShardCount: 1
   # SQS monitor
   SQSTestQueue:
-     Type: AWS::SQS::Queue
-      Properties:
-        KmsMasterKeyId: alias/aws/sqs
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
 Conditions:
   DeployAllResources: !Not
     - !Equals
