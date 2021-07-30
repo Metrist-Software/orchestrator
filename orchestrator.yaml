@@ -128,11 +128,11 @@ Resources:
             - Name: LAMBDA_TEST_FUNCTION_ARN
               Value:
                 Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-TestFunction"
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
             - Name: LAMBDA_QUEUE_URL
               Value:
                 Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -342,7 +342,16 @@ Resources:
               - Effect: Allow
                 Action:
                   - sqs:*
-                Resource: !GetAtt SQSTestQueue.Arn
+                Resource: '*'
+        # Specifically for the ses monitor
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:

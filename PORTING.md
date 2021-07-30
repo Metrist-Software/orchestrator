@@ -89,6 +89,8 @@ where we can mimic this behavior; given that we can have multiple run groups, th
 assigned to a separate run group and one of the regions also running that run group. A generic configuration solution is not
 in place at the moment, but, again, this requires validation.
 
+You can use the `RunDLL-<region-id>` run groups instead of `RunDLL` to target only specific regions.
+
 ### Local monitor DLLs, testing
 
 Orchestrator will start the runner and DLL fresh every time, so you can just leave it running while you tweak things. Note that
