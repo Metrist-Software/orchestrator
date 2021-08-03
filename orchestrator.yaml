@@ -384,7 +384,7 @@ Resources:
                   - sqs:*
                 Resource:
                   Fn::ImportValue:
-                    !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+                    !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
