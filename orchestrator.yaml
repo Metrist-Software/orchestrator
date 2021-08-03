@@ -133,6 +133,11 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
+            # Specifically for Heroku monitor
+            - Name: HEROKU_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -369,6 +374,15 @@ Resources:
                 Resource:
                   - Fn::ImportValue:
                       !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
+        # Specifically for the Heroku monitor
+        - PolicyName: HerokuReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: !GetAtt HerokuWebhooksQueue.Arn
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -457,6 +471,10 @@ Parameters:
   SESToEmail:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/email/sesToEmail
+  # For Heroku monitor
+  HerokuStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/herokuStackName
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
