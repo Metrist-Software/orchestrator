@@ -382,7 +382,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - sqs:*
-                Resource: !GetAtt HerokuWebhooksQueue.Arn
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
