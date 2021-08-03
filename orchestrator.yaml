@@ -138,6 +138,11 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for Github monitor
+            - Name: GITHUB_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -385,6 +390,17 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Github monitor
+        - PolicyName: GithubReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -477,6 +493,10 @@ Parameters:
   HerokuStackName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/stacks/herokuStackName
+  # For Github monitor
+  GithubStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/githubStackName
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
