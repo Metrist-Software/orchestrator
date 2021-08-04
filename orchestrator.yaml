@@ -155,6 +155,11 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for SendGrid monitor
+            - Name: SENDGRID_FROM_EMAIL
+              Value: !Ref SendGridFromEmail
+            - Name: SENDGRID_TO_EMAIL
+              Value: !Ref SendGridToEmail
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -517,6 +522,7 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+   # For SES monitor
   SESFromEmail:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/email/defaultFromEmail
@@ -542,6 +548,13 @@ Parameters:
   SentryStackName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/stacks/sentryStackName
+  # For Sendgrid monitor
+  SendGridFromEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sendgridFromEmail
+  SendGridToEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sendgridToEmail
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
