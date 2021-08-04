@@ -160,9 +160,9 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
-      Cpu: 512
+      Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
-      Memory: 1024
+      Memory: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
