@@ -148,6 +148,8 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            - Name: PAGERDUTY_SERVICE_ID
+              Value: !Ref PagerdutyServiceId
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -517,6 +519,9 @@ Parameters:
   PagerdutyStackName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/stacks/pagerDutyStackName
+  PagerdutyServiceId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/pagerduty/serviceId
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
