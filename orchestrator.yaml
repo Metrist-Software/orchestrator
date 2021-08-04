@@ -150,6 +150,11 @@ Resources:
                   !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
             - Name: PAGERDUTY_SERVICE_ID
               Value: !Ref PagerdutyServiceId
+            # Specifically for Sentry monitor
+            - Name: SENTRY_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -419,6 +424,17 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Sentry monitor
+        - PolicyName: SentryReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -522,6 +538,10 @@ Parameters:
   PagerdutyServiceId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/monitors/pagerduty/serviceId
+  # For Sentry monitor
+  SentryStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/sentryStackName
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
