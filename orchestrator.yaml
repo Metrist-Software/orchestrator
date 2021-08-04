@@ -143,6 +143,11 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for Pagerduty monitor
+            - Name: PAGERDUTY_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -401,6 +406,17 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Pagerduty monitor
+        - PolicyName: PagerdutyReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -497,6 +513,10 @@ Parameters:
   GithubStackName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/stacks/githubStackName
+  # For Pagerduty monitor
+  PagerdutyStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/pagerdutyStackName
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
