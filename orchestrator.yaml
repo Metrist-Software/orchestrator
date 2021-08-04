@@ -516,7 +516,7 @@ Parameters:
   # For Pagerduty monitor
   PagerdutyStackName:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/pagerdutyStackName
+    Default: /<EnvironmentName>/stacks/pagerDutyStackName
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
