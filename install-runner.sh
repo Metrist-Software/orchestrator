@@ -5,8 +5,10 @@
 #
 set -euo pipefail
 
-latest=$(curl https://assets.canarymonitor.com/dist/monitors/latest.txt)
+dist=https://monitor-distributions.canarymonitor.com
+
+latest=$(curl $dist/runner-latest.txt)
 echo "Installing runner version $latest"
-curl https://assets.canarymonitor.com/dist/monitors/runner-${latest}-linux-x64.zip >/tmp/runner.zip
+curl $dist/runner-${latest}-linux-x64.zip >/tmp/runner.zip
 cd priv/runner
 unzip /tmp/runner.zip

@@ -22,7 +22,7 @@ defmodule Orchestrator.ConfigFetcher do
   def init(args) do
     monitor_supervisor_pid = Keyword.get(args, :monitor_supervisor_pid, Orchestrator.MonitorSupervisor)
     config_fetch_fun = Keyword.get(args, :config_fetch_fun, fn ->
-      Logger.info("Put fetch function here")
+      Logger.error("No fetch function defined, returning empty!")
       %{}
     end)
     schedule_fetch(0)
@@ -44,6 +44,7 @@ defmodule Orchestrator.ConfigFetcher do
   defp run_fetch(state) do
     new_config = state.config_fetch_fun.()
     deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
+    Logger.info("- deltas: add=#{length(deltas.add)} delete=#{length(deltas.delete)} change=#{length(deltas.change)}")
     Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
     %State{state | current_config: new_config}
   end

@@ -1,6 +1,76 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Resources:
+  # LambdaOrchestrator is the temporary instance that triggers the old Lambda monitors
+  LambdaOrchestratorTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LambdaOrchestratorTaskLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: logs
+          Name: orchestrator
+          ReadonlyRootFilesystem: false
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: CANARY_API_TOKEN
+              Value: !Sub "@secret@:/${EnvironmentTagName}/canary-internal/api-token#token"
+            - Name: CANARY_INSTANCE_ID
+              Value: !Ref AWS::Region
+            - Name: CANARY_API_HOST
+              Value: !Ref BackendAPIHostname
+            - Name: CANARY_TELEMETRY_HOST
+              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
+            - Name: CANARY_INVOCATION_STYLE
+              Value: lambda
+            - Name: ENVIRONMENT_TAG
+              Value: !Sub ${EnvironmentTagName}
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
+            - Name: CANARY_INVOCATION_STYLE
+              Value: awslambda
+            - Name: CANARY_RUN_GROUPS
+              Value: "AWS Lambda"
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
+      Cpu: 512
+      ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
+      Memory: 1024
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !GetAtt OrchestratorTaskTaskRole.Arn
+      Volumes: []
+    DependsOn: LambdaOrchestratorTaskLogGroup
+  LambdaOrchestratorService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${AWS::StackName}-LambdaOrchestratorService
+      TaskDefinition: !Ref LambdaOrchestratorTask
+      DesiredCount: 1
+      EnableExecuteCommand: true
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      DeploymentController:
+        Type: ECS
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet1"
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet2"
+          SecurityGroups:
+            - Fn::ImportValue:
+                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCDefaultSecruityGroup"
   OrchestratorTask:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -12,25 +82,87 @@ Resources:
               awslogs-group: !Ref OrchestratorTaskLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: logs
-          Name: 0
+          Name: orchestrator
+          ReadonlyRootFilesystem: false
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN_PATH
-              Value: !Sub /${EnvironmentTagName}/canary-internal/api-token.token
+            - Name: CANARY_API_TOKEN
+              Value: !Sub "@secret@:/${EnvironmentTagName}/canary-shared/api-token#token"
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
-            - Name: CANARY_INVOCATION_STYLE
-              Value: lambda
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
-      Cpu: 512
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
+            - Name: CANARY_INVOCATION_STYLE
+              Value: rundll
+            - Name: CANARY_RUN_GROUPS
+              Value: !Sub "RunDLL,RunDLL-${AWS::Region}"
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
+            # Specifically for Cognito monitor
+            - Name: USER_POOL
+              Value: !Ref CognitoTestUserPool
+            # Specifically for EC2 monitor
+            - Name: PERSISTENT_INSTANCE_ID
+              Value: !Ref PersistentInstanceId
+            - Name: AMI_ID
+              Value: !Ref AmiId
+            # Specifically for Kinesis monitor
+            - Name: KINESIS_STREAM_NAME
+              Value: !Ref KinesisMonitorStream
+            # Specifically for SES monitor
+            - Name: SES_FROM_EMAIL
+              Value: !Ref SESFromEmail
+            - Name: SES_TO_EMAIL
+              Value: !Ref SESToEmail
+            # Specifically for SQS monitor
+            - Name: QUEUE_URL
+              Value: !Ref SQSTestQueue
+            # Specifically for Lambda monitor
+            - Name: LAMBDA_TEST_FUNCTION_ARN
+              Value:
+                Fn::ImportValue:
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
+            - Name: LAMBDA_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
+            # Specifically for Heroku monitor
+            - Name: HEROKU_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for Github monitor
+            - Name: GITHUB_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for Pagerduty monitor
+            - Name: PAGERDUTY_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            - Name: PAGERDUTY_SERVICE_ID
+              Value: !Ref PagerdutyServiceId
+            # Specifically for Sentry monitor
+            - Name: SENTRY_QUEUE_URL
+              Value:
+                Fn::ImportValue:
+                  !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
+            # Specifically for SendGrid monitor
+            - Name: SENDGRID_FROM_EMAIL
+              Value: !Ref SendGridFromEmail
+            - Name: SENDGRID_TO_EMAIL
+              Value: !Ref SendGridToEmail
+      Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
-      Memory: 1024
+      Memory: 4096
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -43,6 +175,7 @@ Resources:
       ServiceName: !Sub ${AWS::StackName}-OrchestratorService
       TaskDefinition: !Ref OrchestratorTask
       DesiredCount: 1
+      EnableExecuteCommand: true
       DeploymentConfiguration:
         MaximumPercent: 100
         MinimumHealthyPercent: 0
@@ -71,12 +204,13 @@ Resources:
               awslogs-group: !Ref PrivateCMATaskLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: logs
-          Name: 0
+          Name: privatecma
+          ReadonlyRootFilesystem: false
           Environment:
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN_PATH
-              Value: !Sub /${EnvironmentTagName}/private-cma/canary-api-token.token
+            - Name: CANARY_API_TOKEN
+              Value: !Sub "@secret@:/${EnvironmentTagName}/private-cma/canary-api-token#token"
             - Name: CANARY_API_HOST
               Value: !Ref BackendAPIHostname
             - Name: CANARY_INSTANCE_ID
@@ -85,6 +219,14 @@ Resources:
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
+            - Name: ENVIRONMENT_TAG
+              Value: !Sub ${EnvironmentTagName}
+            - Name: SECRETS_NAMESPACE
+              Value: !Sub /${EnvironmentTagName}/
+            - Name: CANARY_RUN_GROUPS
+              Value: "Canary Monitoring Agent"
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
@@ -99,6 +241,7 @@ Resources:
     Properties:
       ServiceName: !Sub ${AWS::StackName}-PrivateCMAService
       TaskDefinition: !Ref PrivateCMATask
+      EnableExecuteCommand: true
       DesiredCount: 1
       DeploymentConfiguration:
         MaximumPercent: 100
@@ -166,6 +309,14 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !Sub arn:aws:lambda:*:*:function:monitor-*
+        - PolicyName: AllowSSMExec
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssmmessages:*
+                Resource: '*'
         - PolicyName: AccessSecrets
           PolicyDocument:
             Version: '2012-10-17'
@@ -174,16 +325,162 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        # Specifically for the Cognito monitor
+        - PolicyName: CognitoOwner
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:*
+                Resource: !GetAtt CognitoTestUserPool.Arn
+        # Specifically for the Kinesis monitor
+        - PolicyName: AccessKinesisMonitorStream
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:*
+                Resource: !GetAtt KinesisMonitorStream.Arn
+        # Specifically for the EC2 monitor
+        - PolicyName: EC2FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                Resource: '*'
+        # Specifically for the S3 monitor
+        - PolicyName: S3FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: '*'
+        # Specifically for the SQS monitor
+        - PolicyName: SQSReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource: !GetAtt SQSTestQueue.Arn
+        # Specifically for the ses monitor
+        - PolicyName: SESSendEmail
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: '*'
+        # Specifically for the lambda monitor
+        - PolicyName: LambdaMonitorTrigger
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
+        # Specifically for the Heroku monitor
+        - PolicyName: HerokuReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Github monitor
+        - PolicyName: GithubReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Pagerduty monitor
+        - PolicyName: PagerdutyReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for the Sentry monitor
+        - PolicyName: SentryReadWriteQueue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:*
+                Resource:
+                  Fn::ImportValue:
+                    !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /stackery/task/${AWS::StackName}-PrivateCMATask/logs
+  LambdaOrchestratorTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /stackery/task/${AWS::StackName}-LambdaOrchestratorTask/logs
   OrchestratorTaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub /stackery/task/${AWS::StackName}-OrchestratorTask/logs
+
+  # Please collect all monitor-specific things here where possible and document in-line dependencies
+  # above. This will make it easier to peel things apart if we decide that this template becomes too
+  # bloated.
+
+  # Cognito monitor.
+  CognitoTestUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      Policies:
+        PasswordPolicy:
+          RequireLowercase: false
+          RequireUppercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+          MinimumLength: 8
+  # Kinesis monitor. Also the Task role "AccessKinesisMonitorStream" policy and the service's KINESIS_STREAM_NAME env
+  KinesisMonitorStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub ${AWS::StackName}-KinesisMonitorStream
+      ShardCount: 1
+  # SQS monitor
+  SQSTestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
 Conditions:
-    DeployAllResources: !Not
+  DeployAllResources: !Not
     - !Equals
       - 'true'
       - !Ref MonitorsOnly
@@ -212,7 +509,52 @@ Parameters:
   AppAPIHostname:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/appAPI
-
+  EnableCleanup:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/enableCleanup
+  # For EC2 monitor
+  PersistentInstanceId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/ec2/persistentInstanceId
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/ec2/amiId
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+   # For SES monitor
+  SESFromEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/defaultFromEmail
+  SESToEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sesToEmail
+  # For Heroku monitor
+  HerokuStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/herokuStackName
+  # For Github monitor
+  GithubStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/githubStackName
+  # For Pagerduty monitor
+  PagerdutyStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/pagerDutyStackName
+  PagerdutyServiceId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/monitors/pagerduty/serviceId
+  # For Sentry monitor
+  SentryStackName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/stacks/sentryStackName
+  # For Sendgrid monitor
+  SendGridFromEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sendgridFromEmail
+  SendGridToEmail:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/email/sendgridToEmail
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
