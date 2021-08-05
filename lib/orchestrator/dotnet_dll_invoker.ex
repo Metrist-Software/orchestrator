@@ -28,51 +28,8 @@ defmodule Orchestrator.DotNetDLLInvoker do
                     :stderr_to_stdout,
                     args: [config.monitor_logical_name]
                   ])
-      Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
-
-      ref = Port.monitor(port)
-      :ok = Orchestrator.ProtocolHandler.handle_handshake(port, config)
-      {:ok, pid} = Orchestrator.ProtocolHandler.start_link(config.monitor_logical_name, config.steps, self())
-      wait_for_complete(port, ref, config.monitor_logical_name, pid)
-      Logger.info("Monitor #{config.monitor_logical_name} is complete")
+      Orchestrator.ProtocolHandler.start_protocol(config, port)
     end)
   end
 
-  # This is strictly not DLL specific, but how things work when using a Port. So this will likely move
-  # elsewhere at some time.
-
-  defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
-    receive do
-      {:DOWN, ^ref, :port, ^port, reason} ->
-        Logger.info(
-          "Monitor #{monitor_logical_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
-        )
-
-      {^port, {:data, data}} ->
-        case Orchestrator.ProtocolHandler.handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
-          {:incomplete, message} ->
-            # append to returned partial message as this partial piece was not complete
-            wait_for_complete(port, ref, monitor_logical_name, protocol_handler, message)
-          {:ok, _} ->
-            # call wait_for_complete normally
-            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
-          {:error, message} ->
-            Logger.error("Error processing message #{message}. Skipping.")
-            # call wait_for_complete normally but skip the bad message
-            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
-        end
-
-      {:write, message} ->
-        Orchestrator.ProtocolHandler.write(port, message)
-        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
-
-      msg ->
-        Logger.debug("Monitor #{monitor_logical_name}: Ignoring message #{inspect(msg)}")
-        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
-    after
-      @max_monitor_runtime ->
-        Logger.error("Monitor #{monitor_logical_name}: Monitor did not complete in time, killing it")
-        Port.close(port)
-    end
-  end
 end
