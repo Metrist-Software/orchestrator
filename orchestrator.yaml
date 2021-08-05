@@ -128,11 +128,11 @@ Resources:
             - Name: LAMBDA_TEST_FUNCTION_ARN
               Value:
                 Fn::ImportValue:
-                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
+                  !Sub "test-function-${EnvironmentTagName}-TestFunction"
             - Name: LAMBDA_QUEUE_URL
               Value:
                 Fn::ImportValue:
-                  !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
+                  !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
             # Specifically for Heroku monitor
             - Name: HEROKU_QUEUE_URL
               Value:
@@ -389,13 +389,13 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - Fn::ImportValue:
-                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-TestFunction"
+                      !Sub "test-function-${EnvironmentTagName}-TestFunction"
               - Effect: Allow
                 Action:
                   - sqs:*
                 Resource:
                   - Fn::ImportValue:
-                      !Sub "lambda-monitor-test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
+                      !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
         # Specifically for the Heroku monitor
         - PolicyName: HerokuReadWriteQueue
           PolicyDocument:
