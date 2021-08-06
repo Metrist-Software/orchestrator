@@ -28,7 +28,12 @@ FROM debian:buster AS app
 
 #RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
 RUN apt-get update && \
-    apt-get install -y openssl ca-certificates && \
+    apt-get install -y openssl ca-certificates curl
+
+# The Zoom client monitor needs Chromium/Chrome. Bundling doesn't work due to DLL dependencies in the
+# downloaded version, so we install Google's Debian package here. We still use the actual Chromium that
+# puppeteer bundles, but this will ensure we have all the prerequisites.
+RUN cd /tmp; curl -O https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb; apt install -y ./*.deb && \
     rm -rf /var/cache/apt /var/lib/apt/lists
 
 WORKDIR /app
