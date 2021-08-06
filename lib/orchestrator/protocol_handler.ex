@@ -8,6 +8,8 @@ defmodule Orchestrator.ProtocolHandler do
   require Logger
   @major 1
   @minor 1
+  @max_monitor_runtime 15 * 60 * 1_000
+
 
   defmodule State do
     @type t() :: %__MODULE__{
@@ -24,6 +26,53 @@ defmodule Orchestrator.ProtocolHandler do
     # We only need the step name for now, this simplifies the code a bit.
     steps = Enum.map(steps, &(&1.check_logical_name))
     GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler})
+  end
+
+  def start_protocol(config, port) do
+    Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
+
+    ref = Port.monitor(port)
+    Logger.debug("Monitoring port, ref is #{inspect ref}")
+    :ok = handle_handshake(port, config)
+    Logger.debug("Handshake done")
+    {:ok, pid} = start_link(config.monitor_logical_name, config.steps, self())
+    wait_for_complete(port, ref, config.monitor_logical_name, pid)
+    Logger.info("Monitor #{config.monitor_logical_name} is complete")
+  end
+
+  defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
+    receive do
+      {:DOWN, ^ref, :port, ^port, reason} ->
+        Logger.info(
+          "Monitor #{monitor_logical_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
+        )
+
+      {^port, {:data, data}} ->
+        case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
+          {:incomplete, message} ->
+            # append to returned partial message as this partial piece was not complete
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler, message)
+          {:ok, _} ->
+            # call wait_for_complete normally
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+          {:error, message} ->
+            Logger.error("Error processing message #{message}. Skipping.")
+            # call wait_for_complete normally but skip the bad message
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+        end
+
+      {:write, message} ->
+        Orchestrator.ProtocolHandler.write(port, message)
+        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+
+      msg ->
+        Logger.debug("Monitor #{monitor_logical_name}: Ignoring message #{inspect(msg)}")
+        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
+    after
+      @max_monitor_runtime ->
+        Logger.error("Monitor #{monitor_logical_name}: Monitor did not complete in time, killing it")
+        Port.close(port)
+    end
   end
 
   def handle_message(pid, monitor_logical_name, message) do
@@ -55,9 +104,7 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
-  # We keep this code synchronous to the caller so we know the whole thing is done
-  # as when the protocol handler genserver is started.
-  def handle_handshake(port, config) do
+  defp handle_handshake(port, config) do
     matches = expect(port, ~r/Started ([0-9]+)\.([0-9]+)/)
     {major, _} = Integer.parse(Enum.at(matches, 1))
     {minor, _} = Integer.parse(Enum.at(matches, 2))
@@ -68,6 +115,8 @@ defmodule Orchestrator.ProtocolHandler do
     write(port, "Config #{json}")
     :ok
   end
+
+  # Server side of protocol handling.
 
   @impl true
   def init({monitor_logical_name, steps, io_handler}) do

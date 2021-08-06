@@ -73,9 +73,8 @@ defmodule Orchestrator.MonitorScheduler do
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
     Orchestrator.DotNetDLLInvoker.invoke(cfg)
   end
-  defp do_run(%{run_spec: %{run_type: "exe"}}) do
-    Logger.warn("Direct executable run spec not yet supported")
-    Task.async(fn -> :ok end)
+  defp do_run(cfg = %{run_spec: %{run_type: "exe"}}) do
+    Orchestrator.ExecutableInvoker.invoke(cfg)
   end
   defp do_run(cfg = %{run_spec: %{run_type: "awslambda"}}) do
     Orchestrator.LambdaInvoker.invoke(cfg)

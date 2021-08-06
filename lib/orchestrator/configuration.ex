@@ -88,6 +88,7 @@ defmodule Orchestrator.Configuration do
   defp find_changed(new_config, old_config) do
     new_list = Map.get(new_config, :monitors, [])
     old_list = Map.get(old_config, :monitors, [])
+
     Enum.filter(old_list, fn cfg ->
       case find_by_name(new_list, cfg.monitor_logical_name) do
         nil -> false
@@ -107,12 +108,23 @@ defmodule Orchestrator.Configuration do
   starting a monitor.
   """
   def translate_config(monitor_config) do
-    Map.put(monitor_config, :extra_config,
+    monitor_config
+    |> Map.put(
+      :extra_config,
       (monitor_config.extra_config || %{})
       |> Enum.map(fn {k, v} -> {k, translate_value(v)} end)
-      |> Map.new())
+      |> Map.new()
+    )
+    |> Map.put(
+      :run_spec,
+      maybe_override_run_spec(monitor_config.run_spec)
+    )
   end
 
+  # This is mostly for temporary overrides during migrations.
+  # TODO remove backend code that sets this to awslambda in agent_controller.
+  defp maybe_override_run_spec(%{name: "zoomclient"}), do: %{name: "zoomclient", run_type: "exe"}
+  defp maybe_override_run_spec(run_spec), do: run_spec
 
   @doc """
   We have three kinds of values that can be in the monitor's "extra config":
@@ -131,15 +143,17 @@ defmodule Orchestrator.Configuration do
       other -> translate_value(other)
     end
   end
+
   def translate_value(<<"@env@:", value::binary>>) do
-    String.replace(value, ~r/\$\{([A-Za-z_]+)\}/,
-      fn match ->
-        match
-        |> String.slice(2, String.length(match) - 3)
-        |> System.get_env("<<ERROR: could not expand \"#{match}\", environment variable not found>>")
-       end)
+    String.replace(value, ~r/\$\{([A-Za-z_]+)\}/, fn match ->
+      match
+      |> String.slice(2, String.length(match) - 3)
+      |> System.get_env(
+        "<<ERROR: could not expand \"#{match}\", environment variable not found>>"
+      )
+    end)
     |> translate_value()
   end
-  def translate_value(straight), do: straight
 
+  def translate_value(straight), do: straight
 end
