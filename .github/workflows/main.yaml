@@ -47,7 +47,7 @@ jobs:
         mkdir -p priv/plts
         mix dialyzer --plt
     - name: Run Dialyzer
-      run: mix dialyzer --no-check
+      run: MIX_ENV=test mix dialyzer --no-check
 
   build-push:
     runs-on: ubuntu-latest
