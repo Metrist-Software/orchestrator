@@ -6,7 +6,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+
+        - Image: !Sub canarymonitor/agent:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -75,7 +76,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+        - Image: !Sub canarymonitor/agent:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -197,7 +198,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: !Sub 147803588724.dkr.ecr.us-west-2.amazonaws.com/orchestrator:${ContainerVersion}
+        - Image: !Sub canarymonitor/agent:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -281,13 +282,6 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:aws:logs:*:*:log-group:/stackery/task/${AWS::StackName}-*
-              - Effect: Allow
-                Action:
-                  - ecr:GetAuthorizationToken
-                  - ecr:BatchCheckLayerAvailability
-                  - ecr:GetDownloadUrlForLayer
-                  - ecr:BatchGetImage
-                Resource: '*'
   OrchestratorTaskTaskRole:
     Type: AWS::IAM::Role
     Properties:
