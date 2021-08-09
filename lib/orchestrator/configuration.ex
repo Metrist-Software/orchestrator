@@ -56,7 +56,10 @@ defmodule Orchestrator.Configuration do
   }
   ```
 
-  All we need to do is run the checks :)
+  A monitor is uniquely identified by the tuple `{monitor_logical_name, check_logical_names}`, the latter being the
+  logical names of the steps configured for that monitor configuration. This way, we can have different things running
+  for different parts of a logical "monitor"; an example is the Zoom monitor, where one step (GetUsers) uses a regular
+  C# API, while another step (JoinCall) is run through NodeJS essentially running a browser test.
   """
 
   require Logger
@@ -76,13 +79,13 @@ defmodule Orchestrator.Configuration do
   defp find_added(new_config, old_config) do
     new_list = Map.get(new_config, :monitors, [])
     old_list = Map.get(old_config, :monitors, [])
-    Enum.filter(new_list, fn cfg -> find_by_name(old_list, cfg.monitor_logical_name) == nil end)
+    Enum.filter(new_list, fn cfg -> find_by_unique_key(old_list, cfg) == nil end)
   end
 
   defp find_deleted(new_config, old_config) do
     new_list = Map.get(new_config, :monitors, [])
     old_list = Map.get(old_config, :monitors, [])
-    Enum.filter(old_list, fn cfg -> find_by_name(new_list, cfg.monitor_logical_name) == nil end)
+    Enum.filter(old_list, fn cfg -> find_by_unique_key(new_list, cfg) == nil end)
   end
 
   defp find_changed(new_config, old_config) do
@@ -90,7 +93,7 @@ defmodule Orchestrator.Configuration do
     old_list = Map.get(old_config, :monitors, [])
 
     Enum.filter(old_list, fn cfg ->
-      case find_by_name(new_list, cfg.monitor_logical_name) do
+      case find_by_unique_key(new_list, cfg) do
         nil -> false
         # TODO: probably filter out last run time and then change on _everything_
         new_cfg -> new_cfg.interval_secs != cfg.interval_secs
@@ -98,8 +101,16 @@ defmodule Orchestrator.Configuration do
     end)
   end
 
-  defp find_by_name(list, monitor_logical_name) do
-    Enum.find(list, fn elem -> monitor_logical_name == elem.monitor_logical_name end)
+  defp find_by_unique_key(list, config) do
+    key = unique_key(config)
+    Enum.find(list, fn elem -> key == unique_key(elem) end)
+  end
+
+  defp unique_key(config) do
+    steps = config
+    |> Map.get(:steps, [])
+    |> Enum.map(fn step -> step.check_logical_name end)
+    {config.monitor_logical_name, steps}
   end
 
   @doc """
