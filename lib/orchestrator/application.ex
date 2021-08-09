@@ -67,6 +67,7 @@ defmodule Orchestrator.Application do
 
   defp set_logging("debug"), do: Logger.configure(level: :debug)
   defp set_logging("info"), do: Logger.configure(level: :info)
+  defp set_logging("information"), do: Logger.configure(level: :info)
   defp set_logging("warning"), do: Logger.configure(level: :warning)
   defp set_logging("error"), do: Logger.configure(level: :error)
 
