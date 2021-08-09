@@ -16,9 +16,10 @@ defmodule Orchestrator.IPAServer do
   end
 
   def init(_args) do
-    {:ok, _sock} = :gen_udp.open(@port, [{:active, true}, :inet, {:ip, :loopback}])
+    ip = if Orchestrator.Application.ipa_loopback_only?, do: :loopback, else: :any
+    {:ok, _sock} = :gen_udp.open(@port, [{:active, true}, :inet, {:ip, ip}])
     # IPv6 is optional for now, so we ignore what is returned on purpose.
-    :gen_udp.open(@port, [{:active, true}, :inet6, {:ip, :loopback}])
+    :gen_udp.open(@port, [{:active, true}, :inet6, {:ip, ip}])
 
     # This is currently IPA specific, but at one point can grow more generic agent stuff at which
     # point it should move elsewhere.
