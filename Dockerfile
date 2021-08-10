@@ -26,9 +26,9 @@ RUN mix do compile, release
 # is built from this image.
 FROM debian:buster AS app
 
-# nss3, nspr4, libexpat1 needed for the Zoom client's bundled Chromium
+# nss3, nspr4, libexpat1, fonts-freefont-ttf needed for the Zoom client's bundled Chromium
 RUN apt-get update && \
-    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 && \
+    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 fonts-freefont-ttf && \
     rm -rf /var/cache/apt /var/lib/apt
 
 
