@@ -33,6 +33,10 @@ defmodule Orchestrator.Application do
     ll_config = System.get_env("CANARY_LOGGING_LEVEL", "Info")
     set_logging(String.downcase(ll_config))
 
+    lo_string = System.get_env("CANARY_IPA_LOOPBACK_ONLY", "false")
+    loopback_only = parse_bool(lo_string)
+    Application.put_env(:orchestrator, :ipa_loopback_only, loopback_only)
+
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance, run_groups) end
 
     configure_api_token()
@@ -52,6 +56,7 @@ defmodule Orchestrator.Application do
   def do_cleanup?, do: Application.get_env(:orchestrator, :cleanup_enabled)
   def invocation_style, do: Application.get_env(:orchestrator, :invocation_style)
   def cma_config, do: Application.get_env(:orchestrator, :cma_config)
+  def ipa_loopback_only?, do: Application.get_env(:orchestrator, :ipa_loopback_only)
 
   defp parse_run_groups(""), do: []
   defp parse_run_groups(string) do
@@ -65,10 +70,18 @@ defmodule Orchestrator.Application do
   defp do_parse_bool("0"), do: false
   defp do_parse_bool(_), do: false # Safe default.
 
+  defp set_logging("all"), do: Logger.configure(level: :debug)
+  defp set_logging("none"), do: Logger.configure(level: :none)
+
   defp set_logging("debug"), do: Logger.configure(level: :debug)
   defp set_logging("info"), do: Logger.configure(level: :info)
+  defp set_logging("information"), do: Logger.configure(level: :info)  # For C# compat
+  defp set_logging("notice"), do: Logger.configure(level: :notice)
   defp set_logging("warning"), do: Logger.configure(level: :warning)
   defp set_logging("error"), do: Logger.configure(level: :error)
+  defp set_logging("critical"), do: Logger.configure(level: :critical)
+  defp set_logging("alert"), do: Logger.configure(level: :alert)
+  defp set_logging("emergency"), do: Logger.configure(level: :emergency)
 
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
