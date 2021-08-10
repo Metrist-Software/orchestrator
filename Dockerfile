@@ -26,9 +26,11 @@ RUN mix do compile, release
 # is built from this image.
 FROM debian:buster AS app
 
-#RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
+# nss3, nspr4, libexpat1 needed for the Zoom client's bundled Chromium
 RUN apt-get update && \
-    apt-get install -y openssl ca-certificates curl
+    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 && \
+    rm -rf /var/cache/apt /var/lib/apt
+
 
 WORKDIR /app
 ENV HOME=/app
