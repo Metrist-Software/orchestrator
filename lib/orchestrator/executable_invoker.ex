@@ -41,7 +41,7 @@ defmodule Orchestrator.ExecutableInvoker do
   end
 
   defp cache_or_download(name) do
-    latest = String.trim(download("#{name}-latest.txt"))
+    latest = get_latest_version(name, Orchestrator.Application.preview_mode?())
 
     if cache_disabled?() or not available?(name, latest) do
       fetch_and_unpack_zip(name, latest)
@@ -49,6 +49,18 @@ defmodule Orchestrator.ExecutableInvoker do
 
     dir_and_exe_of(name, latest)
   end
+
+  defp get_latest_version(name, _preview_mode = true) do
+    try do
+      String.trim(download("#{name}-latest-preview.txt"))
+    rescue
+      _ -> get_latest_version(name, false)
+    end
+  end
+  defp get_latest_version(name, _preview_mode = false) do
+    String.trim(download("#{name}-latest.txt"))
+  end
+
 
   defp fetch_and_unpack_zip(name, version) do
     Logger.info("Fetching monitor #{name} version #{version}")

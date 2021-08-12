@@ -12,7 +12,7 @@ defmodule Orchestrator.LambdaInvoker do
 
   @impl true
   def invoke(config) do
-    region = Application.get_env(:orchestrator, :aws_region)
+    region = Orchestrator.Application.aws_region()
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
     Logger.debug("About to spawn request #{inspect req}")
