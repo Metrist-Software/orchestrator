@@ -473,6 +473,11 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       KmsMasterKeyId: alias/aws/sqs
+  # Pagerduty private CMA
+  pagerDutyWebhooksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
 Conditions:
   DeployAllResources: !Not
     - !Equals
