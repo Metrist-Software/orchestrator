@@ -1,0 +1,18 @@
+# This is valid as long as the elixir image above is based on an erlang image that
+# is built from this image.
+FROM debian:buster AS app
+
+#RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
+RUN apt-get update && \
+    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 fonts-freefont-ttf && \
+    rm -rf /var/cache/apt /var/lib/apt
+
+WORKDIR /app
+ENV HOME=/app
+ENV LANG=C.UTF-8
+
+# Make .NET happy.
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+RUN chown nobody:nogroup /app
