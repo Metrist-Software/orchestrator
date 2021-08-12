@@ -1,4 +1,4 @@
-FROM canarymonitor/agent:build-base-2021.32 build
+FROM canarymonitor/agent:build-base-2021.32 AS build
 
 COPY mix.exs mix.lock install-runner.sh ./
 #COPY config config
