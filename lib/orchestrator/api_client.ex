@@ -112,7 +112,7 @@ defmodule Orchestrator.APIClient do
         do: "http",
         else: "https"
 
-    api_token = Application.get_env(:orchestrator, :api_token)
+    api_token = Orchestrator.Application.api_token()
 
     {"#{transport}://#{host}/api/agent", [{"Authorization", "Bearer #{api_token}"}]}
   end
