@@ -3,6 +3,8 @@
 #
 #  Build and push the docker container
 #
+set -eou pipefail
+
 version=$(git rev-parse --short HEAD)
 image_tag=canarymonitor/agent:$version
 
