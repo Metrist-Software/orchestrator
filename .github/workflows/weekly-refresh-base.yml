@@ -1,4 +1,4 @@
-name: Develop nightly reset
+name: Weekly Base Container Refresh
 
 on:
   schedule:
