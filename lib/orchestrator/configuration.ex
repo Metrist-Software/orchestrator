@@ -95,8 +95,9 @@ defmodule Orchestrator.Configuration do
     Enum.filter(old_list, fn cfg ->
       case find_by_unique_key(new_list, cfg) do
         nil -> false
-        # TODO: probably filter out last run time and then change on _everything_
-        new_cfg -> new_cfg.interval_secs != cfg.interval_secs
+        # Configs are maps so !== is safe which delegates to Kernel.!==/2 where http://erlang.org/doc/reference_manual/expressions.html#term-comparisons states
+        # Maps are ordered by size, two maps with the same size are compared by keys in ascending term order and then by values in key order.
+        new_cfg -> new_cfg !== cfg
       end
     end)
   end

@@ -76,6 +76,60 @@ defmodule Orchestrator.ConfigurationTest do
     assert length(deltas.change) == 1
   end
 
+  test "Changing extra config produces :change delta" do
+    new = %{
+      monitors: [
+        %{
+          monitor_logical_name: "foodog",
+          interval_secs: 120,
+          extra_config: %{ "test" => "value" }
+        }
+      ]
+    }
+
+    old = %{
+      monitors: [
+        %{
+          monitor_logical_name: "foodog",
+          interval_secs: 120,
+          extra_config: %{ "test" => "value", "test2" => "value2" }
+        }
+      ]
+    }
+
+    deltas = diff_config(new, old)
+    assert length(deltas.add) == 0
+    assert length(deltas.delete) == 0
+    assert length(deltas.change) == 1
+  end
+
+  test "Different map orders do not produce a :change delta" do
+    new = %{
+      monitors: [
+        %{
+          interval_secs: 120,
+          monitor_logical_name: "foodog",
+          extra_config: %{ "test" => "value" }
+        }
+      ]
+    }
+
+    old = %{
+      monitors: [
+        %{
+          monitor_logical_name: "foodog",
+          interval_secs: 120,
+          extra_config: %{ "test" => "value" }
+        }
+      ]
+    }
+
+    deltas = diff_config(new, old)
+    assert length(deltas.add) == 0
+    assert length(deltas.delete) == 0
+    assert length(deltas.change) == 0
+  end
+
   test "Monitors that have different checks are different monitors" do
     new = %{
       monitors: [
