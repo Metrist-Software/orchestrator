@@ -95,12 +95,20 @@ defmodule Orchestrator.Configuration do
     Enum.filter(old_list, fn cfg ->
       case find_by_unique_key(new_list, cfg) do
         nil -> false
-        # Configs are maps so !== is safe which delegates to Kernel.!==/2 where http://erlang.org/doc/reference_manual/expressions.html#term-comparisons states
-        # Maps are ordered by size, two maps with the same size are compared by keys in ascending term order and then by values in key order.
-        new_cfg -> new_cfg !== cfg
+        new_cfg ->
+          # can't just compare maps as last_run_time is in there and changes on every run
+          has_time_interval_changes?(new_cfg, cfg)
+          || has_config_changes?(new_cfg, cfg)
+          || has_run_spec_changes?(new_cfg, cfg)
       end
     end)
   end
+
+  defp has_time_interval_changes?(new_monitor_cfg, old_monitor_cfg), do: new_monitor_cfg.interval_secs != old_monitor_cfg.interval_secs
+  # extra_config are maps so !== is safe which delegates to Kernel.!==/2 where http://erlang.org/doc/reference_manual/expressions.html#term-comparisons states
+  # Maps are ordered by size, two maps with the same size are compared by keys in ascending term order and then by values in key order.
+  defp has_config_changes?(new_monitor_cfg, old_monitor_cfg), do: Map.get(new_monitor_cfg, :extra_config, %{}) !== Map.get(old_monitor_cfg, :extra_config, %{})
+  defp has_run_spec_changes?(new_monitor_cfg, old_monitor_cfg), do: Map.get(new_monitor_cfg, :run_spec, nil) !== Map.get(old_monitor_cfg, :run_spec, nil)
 
   defp find_by_unique_key(list, config) do
     key = unique_key(config)

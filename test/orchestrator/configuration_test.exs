@@ -130,6 +130,35 @@ defmodule Orchestrator.ConfigurationTest do
     assert length(deltas.change) == 0
   end
 
+  test "Runspec changes produce a :change delta" do
+    new = %{
+      monitors: [
+        %{
+          interval_secs: 120,
+          monitor_logical_name: "foodog",
+          run_spec: nil,
+          extra_config: %{ "test" => "value" }
+        }
+      ]
+    }
+
+    old = %{
+      monitors: [
+        %{
+          monitor_logical_name: "foodog",
+          interval_secs: 120,
+          run_spec: "RunDLL",
+          extra_config: %{ "test" => "value" }
+        }
+      ]
+    }
+
+    deltas = diff_config(new, old)
+    assert length(deltas.add) == 0
+    assert length(deltas.delete) == 0
+    assert length(deltas.change) == 1
+  end
+
   test "Monitors that have different checks are different monitors" do
     new = %{
       monitors: [
