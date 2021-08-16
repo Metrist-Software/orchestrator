@@ -97,6 +97,8 @@ defmodule Orchestrator.Configuration do
         nil -> false
         new_cfg ->
           # last_run_time always changes so compare without it
+          # NOTE: If anything in the config structure is added that changes
+          # on every run, this has to be updated
           Map.delete(new_cfg, :last_run_time) !== Map.delete(cfg, :last_run_time)
       end
     end)
