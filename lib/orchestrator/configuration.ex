@@ -96,7 +96,7 @@ defmodule Orchestrator.Configuration do
       case find_by_unique_key(new_list, cfg) do
         nil -> false
         new_cfg ->
-          # last run time always changes so filter compare without it
+          # last_run_time always changes so filter compare without it
           Map.delete(new_cfg, :last_run_time) !== Map.delete(cfg, :last_run_time)
       end
     end)
