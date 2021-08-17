@@ -51,7 +51,7 @@ defmodule Orchestrator.ConfigurationTest do
     assert length(deltas.change) == 0
   end
 
-  test "Changing the interval returns a :change delta" do
+  test "Changing something returns a :change delta" do
     new = %{
       monitors: [
         %{
@@ -76,22 +76,14 @@ defmodule Orchestrator.ConfigurationTest do
     assert length(deltas.change) == 1
   end
 
-  test "Monitors that have different checks are different monitors" do
+  test "Changing the last run time does not produce a delta" do
     new = %{
       monitors: [
         %{
           monitor_logical_name: "foodog",
-          steps: [
-            %{check_logical_name: "check_two"}
-          ],
-          interval_secs: 120
-        },
-        %{
-          monitor_logical_name: "foodog",
-          steps: [
-            %{check_logical_name: "check_one"}
-          ],
-          interval_secs: 60
+          interval_secs: 120,
+          last_run_time: ~N[2020-01-02 03:04:05],
+          extra_config: %{ "test" => "value" }
         }
       ]
     }
@@ -100,16 +92,15 @@ defmodule Orchestrator.ConfigurationTest do
       monitors: [
         %{
           monitor_logical_name: "foodog",
-          steps: [
-            %{check_logical_name: "check_one"}
-          ],
-          interval_secs: 60
+          interval_secs: 120,
+          last_run_time: ~N[2020-12-11 10:09:08],
+          extra_config: %{ "test" => "value" }
         }
       ]
     }
 
     deltas = diff_config(new, old)
-    assert length(deltas.add) == 1
+    assert length(deltas.add) == 0
     assert length(deltas.delete) == 0
     assert length(deltas.change) == 0
   end

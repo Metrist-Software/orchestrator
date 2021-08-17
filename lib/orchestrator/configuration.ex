@@ -95,8 +95,11 @@ defmodule Orchestrator.Configuration do
     Enum.filter(old_list, fn cfg ->
       case find_by_unique_key(new_list, cfg) do
         nil -> false
-        # TODO: probably filter out last run time and then change on _everything_
-        new_cfg -> new_cfg.interval_secs != cfg.interval_secs
+        new_cfg ->
+          # last_run_time always changes so compare without it
+          # NOTE: If anything in the config structure is added that changes
+          # on every run, this has to be updated
+          Map.delete(new_cfg, :last_run_time) !== Map.delete(cfg, :last_run_time)
       end
     end)
   end
