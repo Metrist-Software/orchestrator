@@ -11,15 +11,16 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   cd priv/runner
   ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
 
+  Note, you should use the dotnet publish dirs for the location.
+  If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir
+
   Supports absolute and relative paths for -m
 
   Supports "rundll" & "exe" for -t
 
   Can be run completely isolated as it does not send telemetry/errors to API's. It instead uses opts \\ [] to pass overrides
-  for those to the protocol it just outputs the values to the :stdout via [TELEMETRY_REPORT] & [ERROR]
+  for those to the protocol. Tt just outputs the values to the :stdout via [TELEMETRY_REPORT] & [ERROR]
 
-  Note, you should use the dotnet publish dirs for the location.
-  If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir
 
   "=" signs in extra_config keys are not supported
 
