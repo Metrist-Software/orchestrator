@@ -49,7 +49,7 @@ defmodule Orchestrator.ConfigFetcher do
     %State{state | current_config: new_config}
   end
 
-  defp schedule_fetch(delay \\ 10000) do
+  defp schedule_fetch(delay \\ 60000) do
     Process.send_after(self(), :fetch, delay)
   end
 end
