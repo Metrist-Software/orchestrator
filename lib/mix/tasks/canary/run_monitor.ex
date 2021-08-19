@@ -17,8 +17,13 @@ defmodule Mix.Tasks.Canary.RunMonitor do
 
   Can be run completely isolated as it does not send telemetry/errors just outputs the values to the :stdout via [TELEMETRY_REPORT] & [ERROR]
 
+  Note, you should use the dotnet publish dirs for the location.
+  If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir
+
+  "=" signs in extra_config keys are not supported
+
   Examples:
-    dotnet dll invoker run with 3 steps and 2 extra config values
+    dotnet dll invoker run with 3 steps and 2 extra config values (in this case the extra_config values aren't used)
     mix canary.run_monitor -t rundll -m "../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish" -l testsignal -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
 
     exe invoker with 1 step and no extra_config
@@ -51,7 +56,11 @@ defmodule Mix.Tasks.Canary.RunMonitor do
         ]
       )
 
-    extra_config_mapping = Keyword.get_values(opts, :extra_config) |> Enum.map(fn x -> String.split(x, "=") |> List.to_tuple() end) |> Map.new()
+    extra_config_mapping =
+      Keyword.get_values(opts, :extra_config)
+      |> Enum.map(fn x -> String.split(x, "=", parts: 2)
+      |> List.to_tuple() end)
+      |> Map.new()
 
     cfg = %{
       :extra_config => extra_config_mapping,
@@ -62,10 +71,17 @@ defmodule Mix.Tasks.Canary.RunMonitor do
       :steps => Keyword.get_values(opts, :steps) |> Enum.map(fn step -> %{ :check_logical_name => step } end)
     }
 
-    Logger.info("Running with config #{inspect cfg}")
+    Logger.info("Running #{cfg.monitor_logical_name} with config #{inspect cfg}")
 
     telemetry_fun = fn (logical_name, step, time) -> Logger.info("#{logical_name} - [TELEMETRY_REPORT] Step: #{step} - Value: #{time}") end
     error_fun = fn (logical_name, step, rest) -> Logger.info("Error #{logical_name} - [ERROR] Step: #{step} - Error: #{rest}") end
+
+    opts_args =
+      [
+      error_report_fun: error_fun,
+      telemetry_report_fun: telemetry_fun
+      ]
+      |> add_executable_arg(opts[:monitor_location], opts[:run_type])
 
     run_fun = case opts[:run_type] do
       "exe" ->
@@ -77,12 +93,13 @@ defmodule Mix.Tasks.Canary.RunMonitor do
     run_fun.
     (
       cfg,
-      [executable: Path.expand(opts[:monitor_location]),
-      error_report_fun: error_fun,
-      telemetry_report_fun: telemetry_fun]
+      opts_args
     )
     |> Task.await(600_000)
 
     Logger.info("Run complete")
   end
+
+  defp add_executable_arg(args, monitor_location, "exe"), do: Keyword.put(args, :executable, Path.expand(monitor_location))
+  defp add_executable_arg(args, monitor_location, "rundll"), do: Keyword.put(args, :executable_folder, Path.expand(monitor_location))
 end
