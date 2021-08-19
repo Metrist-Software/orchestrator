@@ -15,20 +15,25 @@ defmodule Orchestrator.DotNetDLLInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
-  def invoke(config) do
+  def invoke(config, opts \\ []) do
     # Pretty much everything is handled by the runner for now, so all we need to do
     # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
     runner = Path.join(runner_dir, "Canary.Shared.Monitoring.Runner")
+
+    executable_folder = Keyword.get(opts, :executable_folder, nil)
+    args = [config.monitor_logical_name]
+    args = if executable_folder, do: [executable_folder | args] |> Enum.reverse(), else: args
+    Logger.debug("#{inspect args}")
 
     Task.async(fn ->
       port =
         Port.open({:spawn_executable, runner}, [
                     :binary,
                     :stderr_to_stdout,
-                    args: [config.monitor_logical_name]
+                    args: args
                   ])
-      Orchestrator.ProtocolHandler.start_protocol(config, port)
+      Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
 

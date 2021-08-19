@@ -7,7 +7,7 @@ defmodule Orchestrator.NilInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
-  def invoke(config) do
+  def invoke(config, _opts \\ []) do
     Task.async(fn ->
       Logger.info("Nil invocation on #{inspect config}")
       :nil_invoke_complete

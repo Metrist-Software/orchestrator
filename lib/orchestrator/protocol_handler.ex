@@ -16,26 +16,32 @@ defmodule Orchestrator.ProtocolHandler do
       monitor_logical_name: String.t(),
       steps: [String.t()],
       io_handler: pid,
+      telemetry_report_fun: function(),
+      error_report_fun: function(),
       current_step: String.t(),
       step_start_time: integer()
     }
-    defstruct [:monitor_logical_name, :steps, :io_handler, :current_step, :step_start_time]
+    defstruct [:monitor_logical_name, :steps, :io_handler, :telemetry_report_fun, :error_report_fun, :current_step, :step_start_time]
   end
 
-  def start_link(monitor_logical_name, steps, io_handler) do
+  def start_link(monitor_logical_name, steps, io_handler, opts \\ []) do
     # We only need the step name for now, this simplifies the code a bit.
     steps = Enum.map(steps, &(&1.check_logical_name))
-    GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler})
+
+    error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/3)
+    telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/3)
+
+    GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun })
   end
 
-  def start_protocol(config, port) do
+  def start_protocol(config, port, opts \\ []) do
     Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
 
     ref = Port.monitor(port)
     Logger.debug("Monitoring port, ref is #{inspect ref}")
     :ok = handle_handshake(port, config)
     Logger.debug("Handshake done")
-    {:ok, pid} = start_link(config.monitor_logical_name, config.steps, self())
+    {:ok, pid} = start_link(config.monitor_logical_name, config.steps, self(), opts)
     wait_for_complete(port, ref, config.monitor_logical_name, pid)
     Logger.info("Monitor #{config.monitor_logical_name} is complete")
   end
@@ -119,8 +125,8 @@ defmodule Orchestrator.ProtocolHandler do
   # Server side of protocol handling.
 
   @impl true
-  def init({monitor_logical_name, steps, io_handler}) do
-    {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, io_handler: io_handler}}
+  def init({monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun}) do
+    {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, io_handler: io_handler, telemetry_report_fun: telemetry_report_fun, error_report_fun: error_report_fun}}
   end
 
   @impl true
@@ -148,7 +154,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = <<"Step Time ", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       {time, _} = Float.parse(rest)
-      Orchestrator.APIClient.write_telemetry(state.monitor_logical_name, state.current_step, time)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step, time)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -156,7 +162,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = "Step OK"}, state) do
     when_current_step(msg, state, fn ->
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
-      Orchestrator.APIClient.write_telemetry(state.monitor_logical_name, state.current_step, time_taken / 1)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step, time_taken / 1)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -164,7 +170,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = <<"Step Error", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       Logger.error("#{state.monitor_logical_name}: step error #{state.current_step}: #{rest}")
-      Orchestrator.APIClient.write_error(state.monitor_logical_name, state.current_step, rest)
+      state.error_report_fun.(state.monitor_logical_name, state.current_step, rest)
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
       {:stop, :normal, %State{state | current_step: nil, step_start_time: nil}}
