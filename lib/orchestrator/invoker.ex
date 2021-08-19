@@ -8,5 +8,5 @@ defmodule Orchestrator.Invoker do
   region (or instance, host, ...) we are running in. Must return a task, `Orchestrator.MonitorScheduler`
   will then have its hands free to keep an eye on the clock, etcetera.
   """
-  @callback invoke(config :: map()) :: Task.t()
+  @callback invoke(config :: map(), opts :: []) :: Task.t()
 end

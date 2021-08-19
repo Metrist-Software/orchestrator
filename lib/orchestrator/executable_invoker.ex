@@ -11,13 +11,13 @@ defmodule Orchestrator.ExecutableInvoker do
   @behaviour Orchestrator.Invoker
 
   @impl true
-  def invoke(config) do
+  def invoke(config, opts \\ []) do
     Logger.debug("Invoking #{inspect(config)}")
-    {dir, executable} = maybe_download(config.run_spec.name)
-    # executable is relative to dir, make it absolute
-    executable = Path.join(dir, executable)
-    executable = Path.expand(executable)
-    Logger.debug("Running #{executable} from #{dir}")
+
+    executable = Keyword.get(opts, :executable, nil)
+    executable = unless executable, do: get_executable(config), else: executable
+
+    Logger.debug("Running #{executable}")
     if not File.exists?(executable) do
       raise "Executable #{executable} does not exist, exiting!"
     end
@@ -25,10 +25,19 @@ defmodule Orchestrator.ExecutableInvoker do
       port = Port.open({:spawn_executable, executable}, [
                          :binary,
                          :stderr_to_stdout,
-                         cd: dir
+                         cd: Path.dirname(executable)
                        ])
-      Orchestrator.ProtocolHandler.start_protocol(config, port)
+
+                       Logger.debug("Starting protocol")
+                       Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
+  end
+
+  defp get_executable(config) do
+    {dir, executable} = maybe_download(config.run_spec.name)
+    # executable is relative to dir, make it absolute
+    executable = Path.join(dir, executable)
+    Path.expand(executable)
   end
 
   defp maybe_download(name) do

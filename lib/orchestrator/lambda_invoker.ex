@@ -11,7 +11,7 @@ defmodule Orchestrator.LambdaInvoker do
   # we're off Lambda? Would anyone else want this over the simpler exe/dll options?
 
   @impl true
-  def invoke(config) do
+  def invoke(config, _opts \\ []) do
     region = Orchestrator.Application.aws_region()
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
