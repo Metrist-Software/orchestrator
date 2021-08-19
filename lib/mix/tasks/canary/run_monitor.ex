@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   @moduledoc """
   Uses the existing protocols & invokers to run montiors locally
 
-  Requires that ./priv/runner be linked to the runner output dir * via
+  Rundll requires that ./priv/runner be linked to the runner output dir * via
 
   cd priv/runner
   ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
@@ -15,7 +15,8 @@ defmodule Mix.Tasks.Canary.RunMonitor do
 
   Supports "rundll" & "exe" for -t
 
-  Can be run completely isolated as it does not send telemetry/errors just outputs the values to the :stdout via [TELEMETRY_REPORT] & [ERROR]
+  Can be run completely isolated as it does not send telemetry/errors to API's. It instead uses opts \\ [] to pass overrides
+  for those to the protocol it just outputs the values to the :stdout via [TELEMETRY_REPORT] & [ERROR]
 
   Note, you should use the dotnet publish dirs for the location.
   If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir
@@ -24,9 +25,11 @@ defmodule Mix.Tasks.Canary.RunMonitor do
 
   Examples:
     dotnet dll invoker run with 3 steps and 2 extra config values (in this case the extra_config values aren't used)
+    For run dll the -m value should be the published directory
     mix canary.run_monitor -t rundll -m "../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish" -l testsignal -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
 
-    exe invoker with 1 step and no extra_config
+    exe invoker with 1 step and no extra_config.
+    For exe invokers the -m value should be an executable file
     mix canary.run_monitor -t "exe" -m "../aws-serverless/shared/zoomclient/zoomclient" -l Zoom -s JoinCall
   """
   @shortdoc "Run a monitor locally from any location via exe invoker or runner invoker utilizing the full protocol"
@@ -95,7 +98,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
       cfg,
       opts_args
     )
-    |> Task.await(600_000)
+    |> Task.await(:infinity)
 
     Logger.info("Run complete")
   end
