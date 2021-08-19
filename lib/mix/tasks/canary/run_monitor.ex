@@ -77,32 +77,29 @@ defmodule Mix.Tasks.Canary.RunMonitor do
 
     Logger.info("Running #{cfg.monitor_logical_name} with config #{inspect cfg}")
 
-    telemetry_fun = fn (logical_name, step, time) -> Logger.info("#{logical_name} - [TELEMETRY_REPORT] Step: #{step} - Value: #{time}") end
-    error_fun = fn (logical_name, step, rest) -> Logger.info("Error #{logical_name} - [ERROR] Step: #{step} - Error: #{rest}") end
-
-    opts_args =
-      [
-      error_report_fun: error_fun,
-      telemetry_report_fun: telemetry_fun
-      ]
-      |> add_executable_arg(opts[:monitor_location], opts[:run_type])
-
-    run_fun = case opts[:run_type] do
-      "exe" ->
-        &Orchestrator.ExecutableInvoker.invoke/2
-      "rundll" ->
-        &Orchestrator.DotNetDLLInvoker.invoke/2
-    end
-
-    run_fun.
+    get_invoker(opts[:run_type]).
     (
       cfg,
-      opts_args
+      get_args(opts)
     )
     |> Task.await(:infinity)
 
     Logger.info("Run complete")
   end
+
+  defp get_args(opts) do
+    telemetry_fun = fn (logical_name, step, time) -> Logger.info("#{logical_name} - [TELEMETRY_REPORT] Step: #{step} - Value: #{time}") end
+    error_fun = fn (logical_name, step, rest) -> Logger.info("Error #{logical_name} - [ERROR] Step: #{step} - Error: #{rest}") end
+
+    [
+    error_report_fun: error_fun,
+    telemetry_report_fun: telemetry_fun
+    ]
+    |> add_executable_arg(opts[:monitor_location], opts[:run_type])
+  end
+
+  defp get_invoker("exe"), do: &Orchestrator.ExecutableInvoker.invoke/2
+  defp get_invoker("rundll"), do: &Orchestrator.DotNetDLLInvoker.invoke/2
 
   defp add_executable_arg(args, monitor_location, "exe"), do: Keyword.put(args, :executable, Path.expand(monitor_location))
   defp add_executable_arg(args, monitor_location, "rundll"), do: Keyword.put(args, :executable_folder, Path.expand(monitor_location))
