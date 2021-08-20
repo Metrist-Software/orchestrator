@@ -30,7 +30,7 @@ defmodule Orchestrator.MonitorSupervisor do
   defp stop_deleted(supervisor_name, monitor_configs) do
     registry = reg_name(supervisor_name)
     Enum.map(monitor_configs, fn monitor_config ->
-      id = registry_key(monitor_config)
+      id = Orchestrator.Configuration.unique_key(monitor_config)
       [{pid, _}] = Registry.lookup(registry, id)
       case DynamicSupervisor.terminate_child(supervisor_name, pid) do
         :ok ->
@@ -43,10 +43,10 @@ defmodule Orchestrator.MonitorSupervisor do
 
   defp start_added(supervisor_name, monitor_configs) do
     Enum.map(monitor_configs, fn monitor_config ->
-      id = registry_key(monitor_config)
+      id = Orchestrator.Configuration.unique_key(monitor_config)
       name = child_name(supervisor_name, id)
       monitor_config = Orchestrator.Configuration.translate_config(monitor_config)
-      case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.MonitorScheduler, [config: monitor_config, name: name]}) do
+      case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.MonitorScheduler, [name: name]}) do
         {:ok, pid} ->
           Logger.info("Started child #{inspect id} with config #{inspect redact(monitor_config)} as #{inspect pid}")
         {:error, message} ->
@@ -57,7 +57,7 @@ defmodule Orchestrator.MonitorSupervisor do
 
   defp update_changed(supervisor_name, monitor_configs) do
     Enum.map(monitor_configs, fn monitor_config ->
-      name = child_name(supervisor_name, registry_key(monitor_config))
+      name = child_name(supervisor_name, Orchestrator.Configuration.unique_key(monitor_config))
       monitor_config = Orchestrator.Configuration.translate_config(monitor_config)
       GenServer.cast(name, {:config_change, monitor_config})
     end)
@@ -81,9 +81,5 @@ defmodule Orchestrator.MonitorSupervisor do
         {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
     end)
     |> Map.new()
-  end
-
-  def registry_key(monitor_config) do
-    {monitor_config.monitor_logical_name, Enum.map(monitor_config.steps, fn step -> step.check_logical_name end)}
   end
 end

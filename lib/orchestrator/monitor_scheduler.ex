@@ -14,8 +14,8 @@ defmodule Orchestrator.MonitorScheduler do
   @never "1858-11-07 00:00:00"
 
   def start_link(opts) do
-    config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
+    config = Orchestrator.Configuration.get_config(name)
     GenServer.start_link(__MODULE__, config, name: name)
   end
 

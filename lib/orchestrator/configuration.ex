@@ -64,6 +64,34 @@ defmodule Orchestrator.Configuration do
 
   require Logger
 
+  def init() do
+    # Stores all configs based on their unique key
+    :ets.new(__MODULE__, [:set, :private, :named_table, read_concurrency: true])
+  end
+
+  @doc """
+  Given deltas, stores configs in a read concurrency ETS table for retrieval using get_config
+  """
+  def store_configs(deltas) do
+    Enum.each([deltas.add | deltas.change], fn elem -> :ets.insert(__MODULE__, { unique_key(elem), elem }) end)
+    Enum.each(deltas.delete, fn elem -> :ets.delete(__MODULE__, unique_key(elem)) end )
+  end
+
+  @doc """
+  If store_configs has been called, this will retrieve a config by its unique id
+  """
+  def get_config(name), do: :ets.lookup(__MODULE__, name)
+
+  @doc """
+  Given an individual monitor config, return its unique key
+  """
+  def unique_key(monitor_config) do
+    steps = monitor_config
+    |> Map.get(:steps, [])
+    |> Enum.map(fn step -> step.check_logical_name end)
+    {monitor_config.monitor_logical_name, steps}
+  end
+
   @doc """
   Given a new and old config, pick out the relevant changes and return a list of deltas. Deltas are basically
   commands to delete, add, or update monitors.
@@ -107,13 +135,6 @@ defmodule Orchestrator.Configuration do
   defp find_by_unique_key(list, config) do
     key = unique_key(config)
     Enum.find(list, fn elem -> key == unique_key(elem) end)
-  end
-
-  defp unique_key(config) do
-    steps = config
-    |> Map.get(:steps, [])
-    |> Enum.map(fn step -> step.check_logical_name end)
-    {config.monitor_logical_name, steps}
   end
 
   @doc """
