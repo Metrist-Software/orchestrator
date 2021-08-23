@@ -78,7 +78,6 @@ defmodule CanaryIPA.Agent do
               current_requests_by_pid: Map.delete(state.current_requests_by_pid, source_pid)}
       {method, host, path, start_ts} ->
         dt = delta_time(ts, start_ts)
-        Logger.info("Delta for #{method} #{host}#{path} from #{inspect start_ts} to #{inspect ts} is #{dt}")
         send_data(method, host, path, dt, state)
         %State{state |
               current_requests_by_pid: Map.delete(state.current_requests_by_pid, source_pid)}
