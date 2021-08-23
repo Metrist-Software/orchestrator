@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: develop #checkout develop
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
       - name: Create new base image
