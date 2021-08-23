@@ -102,7 +102,7 @@ defmodule Orchestrator.IPAServer do
     case Enum.find(config, fn {_, v} -> matches?(method, host, path, v) end) do
       {{m, c}, v} ->
         {value, _} = Float.parse(value)
-        Logger.info("We are sending #{method}/#{host}/#{path}/#{value} as #{m}/#{c} because #{inspect(v)} matches")
+        Logger.info("We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
         Orchestrator.APIClient.write_telemetry(m, c, value)
       _ ->
         Logger.info("#{method}/#{host}/#{path} does not match anything in our configuration")
