@@ -72,13 +72,12 @@ defmodule CanaryIPA.Agent do
     end
   end
   defp process_event(other, _ts, _source_pid, state) do
-    Logger.debug("Ignore event #{inspect(other)}")
     state
   end
 
   defp send_data(method, host, path, dt, state) do
     method = String.upcase("#{method}")
-    :gen_udp.send(state.socket, state.host, state.port, "1 #{method} #{host} #{path} #{dt}")
+    :gen_udp.send(state.socket, state.host, state.port, "0 #{method} #{host} #{path} #{dt}")
   end
 
   defp delta_time(stop, start) do

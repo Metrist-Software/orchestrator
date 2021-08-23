@@ -98,7 +98,7 @@ defmodule Orchestrator.ExecutableInvoker do
     File.dir?(loc) and File.exists?(Path.join(loc, name))
   end
 
-  defp download(path) do
+  def download(path) do
     {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(@monitor_distributions_url <> path)
     body
   end
