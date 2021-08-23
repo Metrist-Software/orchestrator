@@ -82,7 +82,6 @@ defmodule Orchestrator.ProtocolHandler do
   end
 
   def handle_message(pid, monitor_logical_name, message) do
-    message = String.trim(message)
     case Integer.parse(message) do
       {len, rest} ->
         message_body = String.slice(rest, 1, len)
