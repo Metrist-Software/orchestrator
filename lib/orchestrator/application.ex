@@ -21,6 +21,7 @@ defmodule Orchestrator.Application do
     configure_api_token()
 
     children = [
+      CanaryIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
