@@ -65,7 +65,7 @@ defmodule Orchestrator.Configuration do
   require Logger
 
   def init() do
-    # Stores all configs based on their unique key
+    # Stores configs based on their unique key (logical_name + steps)
     :ets.new(__MODULE__, [:set, :private, :named_table, read_concurrency: true])
   end
 

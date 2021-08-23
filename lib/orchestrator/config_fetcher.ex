@@ -44,7 +44,7 @@ defmodule Orchestrator.ConfigFetcher do
   defp run_fetch(state) do
     new_config = state.config_fetch_fun.()
     deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
-    # We want to store them so that we can retrieve them from MonitorSchedulers
+    # We want to store them on every fetch so that we can retrieve them from MonitorSchedulers
     Orchestrator.Configuration.store_configs(deltas)
     Logger.info("- deltas: add=#{length(deltas.add)} delete=#{length(deltas.delete)} change=#{length(deltas.change)}")
     Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
