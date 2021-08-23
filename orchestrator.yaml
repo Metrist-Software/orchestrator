@@ -24,7 +24,7 @@ Resources:
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
-              Value: !Ref BackendAPIHostname
+              Value: !Ref AppAPIHostname
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: CANARY_INVOCATION_STYLE
@@ -93,7 +93,7 @@ Resources:
             - Name: CANARY_INSTANCE_ID
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
-              Value: !Ref BackendAPIHostname
+              Value: !Ref AppAPIHostname
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: ENVIRONMENT_TAG
@@ -213,7 +213,7 @@ Resources:
             - Name: CANARY_API_TOKEN
               Value: !Sub "@secret@:/${EnvironmentTagName}/private-cma/canary-api-token#token"
             - Name: CANARY_API_HOST
-              Value: !Ref BackendAPIHostname
+              Value: !Ref AppAPIHostname
             - Name: CANARY_INSTANCE_ID
               Value: !Sub "canary-private-${AWS::Region}"
             - Name: CANARY_TELEMETRY_HOST
@@ -491,9 +491,6 @@ Parameters:
   EnvConfigDatabaseLogicalName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/database/logicalName
-  BackendAPIHostname:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiEndpoints/backendAPI
   ContainerVersion:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/orchestrator/container/version
