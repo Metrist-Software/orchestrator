@@ -17,17 +17,17 @@ defmodule Orchestrator.IPAServer do
       "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/run-config)
     },
-    # An exercise for the reader is how we can measure this without
-    # going into an endless loop
-    # {"canary", "SendTelemetry"} => %{
-    #   "method" => ~r(POST),
-    #   "host" => ~r(app.*\.canarymonitor\.com),
-    #   "url" => ~r(api/agent/telemetry)
-    #}
+    # Note that this has special support in the IPA agent to
+    # exclude the sendig of our own telemetry
+    {"canary", "SendTelemetry"} => %{
+      "method" => ~r(POST),
+      "host" => ~r(app.*\.canarymonitor\.com),
+      "url" => ~r(api/agent/telemetry)
+    },
     {"canary", "GetLatestMonitorBuild"} => %{
       "method" => ~r(GET),
       "host" => ~r(monitor-distributions.canarymonitor.com),
-      "url" => ~r(-latest.*txt)
+      "url" => ~r(latest.*txt)
     }
   }
 

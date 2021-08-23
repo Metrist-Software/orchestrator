@@ -49,12 +49,21 @@ defmodule CanaryIPA.Agent do
   end
 
   defp process_event([_level, 'request', :hackney, opts], ts, source_pid, state) do
-    method = Keyword.get(opts, :method)
-    url = Keyword.get(opts, :url)
-    host = hackney_url(url, :host)
-    path = hackney_url(url, :path)
-    %State{state |
-           current_requests_by_pid: Map.put(state.current_requests_by_pid, source_pid, {method, host, path, ts})}
+    with body <- Keyword.get(opts, :body, "{}"),
+         {:ok, decoded} <- Jason.decode(body),
+         %{"check_logical_name" => "SendTelemetry", "monitor_logical_name" => "canary"} <- decoded do
+      Logger.debug("Refusing to enter endless loop on telemetry send request: #{inspect opts}")
+      %State{state |
+             current_requests_by_pid: Map.put(state.current_requests_by_pid, source_pid, :ignore)}
+    else
+      _ ->
+        method = Keyword.get(opts, :method)
+        url = Keyword.get(opts, :url)
+        host = hackney_url(url, :host)
+        path = hackney_url(url, :path)
+        %State{state |
+               current_requests_by_pid: Map.put(state.current_requests_by_pid, source_pid, {method, host, path, ts})}
+    end
   end
 
   defp process_event([_level, 'got response', :hackney, _opts], ts, source_pid, state) do
@@ -63,6 +72,10 @@ defmodule CanaryIPA.Agent do
         Logger.warn("Cannot find process #{inspect source_pid} that started request, ignoring")
         Logger.debug("Current state: #{inspect state}")
         state
+      :ignore ->
+        Logger.debug("Ignoring response on suppressed telemetry request")
+        %State{state |
+              current_requests_by_pid: Map.delete(state.current_requests_by_pid, source_pid)}
       {method, host, path, start_ts} ->
         dt = delta_time(ts, start_ts)
         Logger.info("Delta for #{method} #{host}#{path} from #{inspect start_ts} to #{inspect ts} is #{dt}")
@@ -71,7 +84,7 @@ defmodule CanaryIPA.Agent do
               current_requests_by_pid: Map.delete(state.current_requests_by_pid, source_pid)}
     end
   end
-  defp process_event(other, _ts, _source_pid, state) do
+  defp process_event(_other, _ts, _source_pid, state) do
     state
   end
 
