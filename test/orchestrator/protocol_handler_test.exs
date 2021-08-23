@@ -11,7 +11,6 @@ defmodule Orchestrator.ProtocolHandlerTest do
 
   test "Multiple messages where last is incomplete returns last message and :incomplete message returns {:incomplete, message}" do
     {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Second Created")
-    Logger.debug(message)
     assert result == :incomplete
     assert message == "00041 Log Second Created"
   end
@@ -22,9 +21,8 @@ defmodule Orchestrator.ProtocolHandlerTest do
     assert message == :nil
   end
 
-  test "Single complete message with leading/trailing zero's will succeed with {:ok, nil}" do
-    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", " 00041 Log Info Created card 6102e3cde5a2f61a447 ")
-    assert result == :ok
-    assert message == :nil
+  test "Empty log message works" do
+    result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
+    assert {:ok, :nil} == result
   end
 end
