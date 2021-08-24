@@ -27,7 +27,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   Examples:
     dotnet dll invoker run with 3 steps and 2 extra config values (in this case the extra_config values aren't used)
     For run dll the -m value should be the published directory
-    mix canary.run_monitor -t rundll -m "../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish" -l testsignal -s PullCode -e test1=1 -e test2=2
+    mix canary.run_monitor -t rundll -m "../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish" -l testsignal -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
 
     exe invoker with 1 step and no extra_config.
     For exe invokers the -m value should be an executable file
