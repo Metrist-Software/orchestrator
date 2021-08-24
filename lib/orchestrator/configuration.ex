@@ -76,7 +76,7 @@ defmodule Orchestrator.Configuration do
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
       [{_name, config}] ->
-        config
+        translate_config(config)
       _ ->
         nil
     end
