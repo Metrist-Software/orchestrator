@@ -76,6 +76,8 @@ defmodule Orchestrator.Configuration do
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
       [{_name, config}] ->
+        # could do this on store but should be fine here
+        # (only pulls when it starts a new child)
         translate_config(config)
       _ ->
         nil
