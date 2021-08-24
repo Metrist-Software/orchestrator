@@ -9,7 +9,28 @@ defmodule Orchestrator.IPAServer do
 
   @port 51712
   @any ~r/.*/
-  @default_config %{}
+  # The default config forwards some internal data
+  # You can choose whether to include this in your config or not.
+  @default_config %{
+    {"canary", "GetRunConfig"} => %{
+      "method" => ~r(GET),
+      "host" => ~r(app.*\.canarymonitor\.com),
+      "url" => ~r(api/agent/run-config)
+    },
+    # Note that this has special support in the IPA agent to
+    # exclude the sendig of our own telemetry
+    {"canary", "SendTelemetry"} => %{
+      "method" => ~r(POST),
+      "host" => ~r(app.*\.canarymonitor\.com),
+      "url" => ~r(api/agent/telemetry)
+    },
+    {"canary", "GetLatestMonitorBuild"} => %{
+      "method" => ~r(GET),
+      "host" => ~r(monitor-distributions.canarymonitor.com),
+      "url" => ~r(latest.*txt)
+    }
+  }
+
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, [])
@@ -38,8 +59,6 @@ defmodule Orchestrator.IPAServer do
   end
 
   def handle_info({:udp, _socket, _host, _port, msg}, config) do
-    Logger.debug("Has message! #{inspect(msg)}")
-
     cleaned_msg =
       msg
       |> List.to_string()
@@ -83,7 +102,7 @@ defmodule Orchestrator.IPAServer do
     case Enum.find(config, fn {_, v} -> matches?(method, host, path, v) end) do
       {{m, c}, v} ->
         {value, _} = Float.parse(value)
-        Logger.info("We are sending #{method}/#{host}/#{path}/#{value} as #{m}/#{c} because #{inspect(v)} matches")
+        Logger.info("We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
         Orchestrator.APIClient.write_telemetry(m, c, value)
       _ ->
         Logger.info("#{method}/#{host}/#{path} does not match anything in our configuration")
