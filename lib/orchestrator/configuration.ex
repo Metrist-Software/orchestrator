@@ -71,7 +71,7 @@ defmodule Orchestrator.Configuration do
   end
 
   @doc """
-  If store_configs has been called, this will retrieve a config by its unique id
+  Retrieve a config by its unique id
   """
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
