@@ -45,7 +45,6 @@ defmodule Orchestrator.MonitorSupervisor do
     Enum.map(monitor_configs, fn monitor_config ->
       id = Orchestrator.Configuration.unique_key(monitor_config)
       name = child_name(supervisor_name, id)
-      monitor_config = Orchestrator.Configuration.translate_config(monitor_config)
       case DynamicSupervisor.start_child(supervisor_name, {Orchestrator.MonitorScheduler, [name: name, config_id: id]}) do
         {:ok, pid} ->
           Logger.info("Started child #{inspect id} with config #{inspect redact(monitor_config)} as #{inspect pid}")
