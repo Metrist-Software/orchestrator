@@ -74,6 +74,12 @@ defmodule Orchestrator.ConfigurationTest do
     assert length(deltas.add) == 0
     assert length(deltas.delete) == 0
     assert length(deltas.change) == 1
+
+    # Extra assert as the orchestrator was successfully determining the delta previously
+    # but was returning the same old config as the delta
+    [change_config | _] = deltas.change
+    [new_config | _] = Map.get(new, :monitors)
+    assert change_config === new_config
   end
 
   test "Changing the last run time does not produce a delta" do

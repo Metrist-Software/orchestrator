@@ -64,6 +64,36 @@ defmodule Orchestrator.Configuration do
 
   require Logger
 
+  def init() do
+    # Stores configs based on their unique key (logical_name + steps)
+    Logger.info("Configuration ETS initialized.")
+    :ets.new(__MODULE__, [:set, :public, :named_table, read_concurrency: true])
+  end
+
+  @doc """
+  Retrieve a config by its unique id
+  """
+  def get_config(name) do
+    case :ets.lookup(__MODULE__, name) do
+      [{_name, config}] ->
+        # could do this on store but should be fine here
+        # (only pulls when it starts a new child)
+        translate_config(config)
+      _ ->
+        nil
+    end
+  end
+
+  @doc """
+  Given an individual monitor config, return its unique key
+  """
+  def unique_key(monitor_config) do
+    steps = monitor_config
+    |> Map.get(:steps, [])
+    |> Enum.map(fn step -> step.check_logical_name end)
+    {monitor_config.monitor_logical_name, steps}
+  end
+
   @doc """
   Given a new and old config, pick out the relevant changes and return a list of deltas. Deltas are basically
   commands to delete, add, or update monitors.
@@ -74,6 +104,7 @@ defmodule Orchestrator.Configuration do
       delete: find_deleted(new_config, old_config),
       change: find_changed(new_config, old_config)
     }
+    |> store_configs
   end
 
   defp find_added(new_config, old_config) do
@@ -92,14 +123,18 @@ defmodule Orchestrator.Configuration do
     new_list = Map.get(new_config, :monitors, [])
     old_list = Map.get(old_config, :monitors, [])
 
-    Enum.filter(old_list, fn cfg ->
+    Enum.reduce(old_list, [], fn cfg, acc ->
       case find_by_unique_key(new_list, cfg) do
-        nil -> false
+        nil -> acc
         new_cfg ->
           # last_run_time always changes so compare without it
           # NOTE: If anything in the config structure is added that changes
           # on every run, this has to be updated
-          Map.delete(new_cfg, :last_run_time) !== Map.delete(cfg, :last_run_time)
+          if Map.delete(new_cfg, :last_run_time) !== Map.delete(cfg, :last_run_time) do
+            [ new_cfg | acc ]
+          else
+            acc
+          end
       end
     end)
   end
@@ -107,13 +142,6 @@ defmodule Orchestrator.Configuration do
   defp find_by_unique_key(list, config) do
     key = unique_key(config)
     Enum.find(list, fn elem -> key == unique_key(elem) end)
-  end
-
-  defp unique_key(config) do
-    steps = config
-    |> Map.get(:steps, [])
-    |> Enum.map(fn step -> step.check_logical_name end)
-    {config.monitor_logical_name, steps}
   end
 
   @doc """
@@ -170,4 +198,11 @@ defmodule Orchestrator.Configuration do
   end
 
   def translate_value(straight), do: straight
+
+  defp store_configs(deltas) do
+    Enum.each(deltas.add, fn elem -> :ets.insert(__MODULE__, { unique_key(elem), elem }) end)
+    Enum.each(deltas.change, fn elem -> :ets.insert(__MODULE__, { unique_key(elem), elem }) end)
+    Enum.each(deltas.delete, fn elem -> :ets.delete(__MODULE__, unique_key(elem)) end )
+    deltas
+  end
 end

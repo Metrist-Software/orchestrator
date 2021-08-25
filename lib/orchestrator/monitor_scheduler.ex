@@ -14,8 +14,10 @@ defmodule Orchestrator.MonitorScheduler do
   @never "1858-11-07 00:00:00"
 
   def start_link(opts) do
-    config = Keyword.get(opts, :config)
     name = Keyword.get(opts, :name)
+    config = Keyword.get(opts, :config_id)
+    |> Orchestrator.Configuration.get_config()
+
     GenServer.start_link(__MODULE__, config, name: name)
   end
 
@@ -29,6 +31,7 @@ defmodule Orchestrator.MonitorScheduler do
   @impl true
   def handle_cast({:config_change, new_config}, state) do
     # We simply adopt the new config; the next run will then use the new data for scheduling.
+    Logger.info("Setting new config of #{inspect new_config}")
     {:noreply, %State{state | config: new_config}}
   end
 

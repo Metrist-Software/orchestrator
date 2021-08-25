@@ -10,11 +10,13 @@ defmodule Orchestrator.Application do
   def start(_type, _config) do
     print_header()
 
-    rg_string = System.get_env("CANARY_RUN_GROUPS", "")
-    run_groups = parse_run_groups(rg_string)
-
     ll_config = System.get_env("CANARY_LOGGING_LEVEL", "Info")
     set_logging(String.downcase(ll_config))
+
+    configure_configs()
+
+    rg_string = System.get_env("CANARY_RUN_GROUPS", "")
+    run_groups = parse_run_groups(rg_string)
 
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance(), run_groups) end
 
@@ -52,6 +54,8 @@ defmodule Orchestrator.Application do
   def api_token, do: Application.get_env(:orchestrator, :api_token)
 
   def ipa_loopback_only?, do: Application.get_env(:orchestrator, :ipa_loopback_only)
+
+  defp configure_configs(), do: Orchestrator.Configuration.init()
 
   defp parse_run_groups(""), do: []
   defp parse_run_groups(string) do
