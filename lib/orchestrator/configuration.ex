@@ -138,6 +138,7 @@ defmodule Orchestrator.Configuration do
   # This is mostly for temporary overrides during migrations.
   # TODO remove backend code that sets this to awslambda in agent_controller.
   defp maybe_override_run_spec(%{name: "zoomclient"}), do: %{name: "zoomclient", run_type: "exe"}
+  defp maybe_override_run_spec(%{name: "snowflake"}), do: %{name: "snowflake", run_type: "exe"}
   defp maybe_override_run_spec(run_spec), do: run_spec
 
   @doc """
