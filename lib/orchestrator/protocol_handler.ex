@@ -231,6 +231,7 @@ defmodule Orchestrator.ProtocolHandler do
       {:noreply, state}
     else
       Logger.error("Timeout on step #{inspect state.current_step}, exiting")
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: did not complete within #{state.current_step.timeout_secs} seconds")
       send_exit(state)
       {:stop, :normal, state}
     end
