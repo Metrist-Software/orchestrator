@@ -14,7 +14,10 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
       - name: Create new base image
+        env:
+          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
         run: |
+          docker login --username canarymonitoring --password $DOCKER_HUB_TOKEN
           git config --global user.email "nobodye@canarymonitor.com"
           git config --global user.name "Github Action Bot"
           ./refresh-base.sh
