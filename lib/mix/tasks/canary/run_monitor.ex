@@ -45,13 +45,14 @@ defmodule Mix.Tasks.Canary.RunMonitor do
           monitor_location: :string,
           monitor_logical_name: :string,
           extra_config: :keep,
-          steps: :keep
+          steps: :keep,
+          timeout: :float,
         ],[
           t: :run_type,
-          m: :monitor_location,
-          l: :monitor_logical_name,
+          l: :monitor_location,
+          n: :monitor_logical_name,
           e: :extra_config,
-          s: :steps
+          s: :steps,
         ],[
           :run_type,
           :monitor_location,
@@ -72,7 +73,13 @@ defmodule Mix.Tasks.Canary.RunMonitor do
       :last_run_time => nil,
       :monitor_logical_name => opts[:monitor_logical_name],
       :run_spec => opts[:run_type],
-      :steps => Keyword.get_values(opts, :steps) |> Enum.map(fn step -> %{ :check_logical_name => step } end)
+      :steps =>
+        opts
+        |> Keyword.get_values(:steps)
+        |> Enum.map(fn step ->
+          %{check_logical_name: step,
+            timeout_secs: (opts[:timeout] || 60.0)}
+        end)
     }
 
     Logger.info("Running #{cfg.monitor_logical_name} with config #{inspect cfg}")
