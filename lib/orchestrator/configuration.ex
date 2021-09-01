@@ -6,14 +6,7 @@ defmodule Orchestrator.Configuration do
   {
   "monitors": [
     {
-      "extra_config": null,
-      "interval_secs": 120,
-      "last_run_time": null,
-      "monitor_logical_name": "testsignal",
-      "run_spec": null,
-      "steps": []
-    },
-    {
+      "id": "23846123486712ewnfdvlkjhv",
       "extra_config": {
         "ApiToken": "<secret api token>",
         "Url": "https://canmon.jfrog.io/artifactory/example-repo-local/"
@@ -37,26 +30,6 @@ defmodule Orchestrator.Configuration do
         }
       ]
     },
-    {
-      "extra_config": {
-        "ApiToken": "<secret api token>",
-        "StoreId": "<secret store id>"
-      },
-      "interval_secs": 120,
-      "last_run_time": null,
-      "monitor_logical_name": "moneris",
-      "run_spec": null,
-      "steps": [
-        {
-          "check_logical_name": "TestPurchase",
-          "timeout_secs": 90.0,
-        },
-        {
-          "check_logical_name": "TestRefund",
-          "timeout_secs": 15.0,
-        }
-      ]
-    }
   ]
   }
   ```
@@ -92,12 +65,7 @@ defmodule Orchestrator.Configuration do
   @doc """
   Given an individual monitor config, return its unique key
   """
-  def unique_key(monitor_config) do
-    steps = monitor_config
-    |> Map.get(:steps, [])
-    |> Enum.map(fn step -> step.check_logical_name end)
-    {monitor_config.monitor_logical_name, steps}
-  end
+  def unique_key(monitor_config), do: monitor_config.id
 
   @doc """
   Given a new and old config, pick out the relevant changes and return a list of deltas. Deltas are basically

@@ -9,6 +9,7 @@ defmodule Orchestrator.ConfigurationTest do
     new = %{
       monitors: [
         %{
+          id: "id-1",
           extra_config: %{},
           interval_secs: 120,
           last_run_time: nil,
@@ -33,6 +34,7 @@ defmodule Orchestrator.ConfigurationTest do
     old = %{
       monitors: [
         %{
+          id: "id-2",
           extra_config: %{},
           interval_secs: 120,
           last_run_time: nil,
@@ -55,6 +57,7 @@ defmodule Orchestrator.ConfigurationTest do
     new = %{
       monitors: [
         %{
+          id: "id-3",
           monitor_logical_name: "foodog",
           interval_secs: 120
         }
@@ -64,6 +67,7 @@ defmodule Orchestrator.ConfigurationTest do
     old = %{
       monitors: [
         %{
+          id: "id-3",
           monitor_logical_name: "foodog",
           interval_secs: 60
         }
@@ -86,6 +90,7 @@ defmodule Orchestrator.ConfigurationTest do
     new = %{
       monitors: [
         %{
+          id: "id-4",
           monitor_logical_name: "foodog",
           interval_secs: 120,
           last_run_time: ~N[2020-01-02 03:04:05],
@@ -97,6 +102,7 @@ defmodule Orchestrator.ConfigurationTest do
     old = %{
       monitors: [
         %{
+          id: "id-4",
           monitor_logical_name: "foodog",
           interval_secs: 120,
           last_run_time: ~N[2020-12-11 10:09:08],
