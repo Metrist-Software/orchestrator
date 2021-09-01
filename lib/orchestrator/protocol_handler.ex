@@ -10,6 +10,9 @@ defmodule Orchestrator.ProtocolHandler do
   @minor 1
   @max_monitor_runtime 15 * 60 * 1_000
 
+  # Tag to represent a step error from one of CANARY's monitors for log filtering
+  @monitor_error_tag "CANARY_MONITOR_ERROR"
+
 
   defmodule State do
     @type t() :: %__MODULE__{
@@ -170,7 +173,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = <<"Step Error", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       state = cancel_timer(state)
-      Logger.error("#{state.monitor_logical_name}: step error #{state.current_step}: #{rest}")
+      Logger.error("#{state.monitor_logical_name}: step error #{state.current_step}: #{rest} - #{@monitor_error_tag}")
       state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, rest)
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
@@ -231,7 +234,7 @@ defmodule Orchestrator.ProtocolHandler do
       {:noreply, state}
     else
       Logger.error("Timeout on step #{inspect state.current_step}, exiting")
-      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds")
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{@monitor_error_tag}")
       send_exit(state)
       {:stop, :normal, state}
     end
