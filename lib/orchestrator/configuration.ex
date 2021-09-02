@@ -24,13 +24,16 @@ defmodule Orchestrator.Configuration do
       "run_spec": null,
       "steps": [
         {
-          "check_logical_name": "UploadArtifact"
+          "check_logical_name": "UploadArtifact",
+          "timeout_secs": 90.0,
         },
         {
-          "check_logical_name": "DownloadArtifact"
+          "check_logical_name": "DownloadArtifact",
+          "timeout_secs": 30.0,
         },
         {
-          "check_logical_name": "DeleteArtifact"
+          "check_logical_name": "DeleteArtifact",
+          "timeout_secs": 90.0,
         }
       ]
     },
@@ -45,10 +48,12 @@ defmodule Orchestrator.Configuration do
       "run_spec": null,
       "steps": [
         {
-          "check_logical_name": "TestPurchase"
+          "check_logical_name": "TestPurchase",
+          "timeout_secs": 90.0,
         },
         {
-          "check_logical_name": "TestRefund"
+          "check_logical_name": "TestRefund",
+          "timeout_secs": 15.0,
         }
       ]
     }

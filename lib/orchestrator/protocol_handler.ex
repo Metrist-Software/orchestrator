@@ -22,15 +22,14 @@ defmodule Orchestrator.ProtocolHandler do
       telemetry_report_fun: function(),
       error_report_fun: function(),
       current_step: String.t(),
-      step_start_time: integer()
+      step_start_time: integer(),
+      step_timeout_timer: reference()
     }
-    defstruct [:monitor_logical_name, :steps, :io_handler, :telemetry_report_fun, :error_report_fun, :current_step, :step_start_time]
+    defstruct [:monitor_logical_name, :steps, :io_handler, :telemetry_report_fun, :error_report_fun,
+               :current_step, :step_start_time, :step_timeout_timer]
   end
 
   def start_link(monitor_logical_name, steps, io_handler, opts \\ []) do
-    # We only need the step name for now, this simplifies the code a bit.
-    steps = Enum.map(steps, &(&1.check_logical_name))
-
     error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/3)
     telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/3)
 
@@ -155,24 +154,27 @@ defmodule Orchestrator.ProtocolHandler do
   end
   def handle_cast({:message, msg = <<"Step Time ", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
+      state = cancel_timer(state)
       {time, _} = Float.parse(rest)
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step, time)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
   end
   def handle_cast({:message, msg = "Step OK"}, state) do
     when_current_step(msg, state, fn ->
+      state = cancel_timer(state)
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step, time_taken / 1)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
   end
   def handle_cast({:message, msg = <<"Step Error", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
+      state = cancel_timer(state)
       Logger.error("#{state.monitor_logical_name}: step error #{state.current_step}: #{rest} - #{@monitor_error_tag}")
-      state.error_report_fun.(state.monitor_logical_name, state.current_step, rest)
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, rest)
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
       {:stop, :normal, %State{state | current_step: nil, step_start_time: nil}}
@@ -198,17 +200,44 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
+  defp cancel_timer(state) do
+    case state.step_timeout_timer do
+      nil ->
+        state
+      timer ->
+        Process.cancel_timer(timer)
+        %State{state | step_timeout_timer: nil}
+    end
+  end
+
   @impl true
   def handle_info(:start_step, state) when length(state.steps) > 0 do
-    [step | steps] = state.steps
-    Logger.info("#{state.monitor_logical_name}: Starting step #{step}")
-    send_msg("Run Step #{step}", state)
-    {:noreply, %State{state | steps: steps, current_step: step, step_start_time: :erlang.monotonic_time(:millisecond)}}
+    [step | remaining_steps] = state.steps
+    Logger.info("#{state.monitor_logical_name}: Starting step #{inspect step}")
+
+    send_msg("Run Step #{step.check_logical_name}", state)
+    timer = Process.send_after(self(), :step_timeout, round(step.timeout_secs * 1_000))
+
+    {:noreply, %State{state |
+                      steps: remaining_steps,
+                      current_step: step,
+                      step_start_time: :erlang.monotonic_time(:millisecond),
+                      step_timeout_timer: timer}}
   end
   def handle_info(:start_step, state) do
     Logger.info("#{state.monitor_logical_name}: All steps done, asking monitor to exit")
     send_exit(state)
     {:noreply, state}
+  end
+  def handle_info(:step_timeout, state) do
+    if is_nil(state.current_step) do
+      {:noreply, state}
+    else
+      Logger.error("Timeout on step #{inspect state.current_step}, exiting")
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{@monitor_error_tag}")
+      send_exit(state)
+      {:stop, :normal, state}
+    end
   end
 
   defp send_exit(state) do
