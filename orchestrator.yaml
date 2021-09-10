@@ -6,7 +6,6 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-
         - Image: !Sub canarymonitor/agent:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
@@ -161,6 +160,11 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
+            - !If
+              - "IsDev"
+              - Name: CANARY_PREVIEW_MODE
+                Value: "true"
+              - !Ref AWS::NoValue
       Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 4096
@@ -478,6 +482,9 @@ Conditions:
     - !Equals
       - 'true'
       - !Ref MonitorsOnly
+  IsDev: !Equals
+      - 'dev1'
+      - !Ref EnvironmentTagName      
 Parameters:
   EnvironmentTagName:
     Type: String
