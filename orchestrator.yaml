@@ -1,77 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  # LambdaOrchestrator is the temporary instance that triggers the old Lambda monitors
-  LambdaOrchestratorTask:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      ContainerDefinitions:
-
-        - Image: !Sub canarymonitor/agent:${ContainerVersion}
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-group: !Ref LambdaOrchestratorTaskLogGroup
-              awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: logs
-          Name: orchestrator
-          ReadonlyRootFilesystem: false
-          Environment:
-            - Name: AWS_REGION
-              Value: !Ref AWS::Region
-            - Name: CANARY_API_TOKEN
-              Value: !Sub "@secret@:/${EnvironmentTagName}/canary-internal/api-token#token"
-            - Name: CANARY_INSTANCE_ID
-              Value: !Ref AWS::Region
-            - Name: CANARY_API_HOST
-              Value: !Ref AppAPIHostname
-            - Name: CANARY_TELEMETRY_HOST
-              Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
-            - Name: CANARY_INVOCATION_STYLE
-              Value: lambda
-            - Name: ENVIRONMENT_TAG
-              Value: !Sub ${EnvironmentTagName}
-            - Name: SECRETS_NAMESPACE
-              Value: !Sub /${EnvironmentTagName}/
-            - Name: CANARY_INVOCATION_STYLE
-              Value: awslambda
-            - Name: CANARY_RUN_GROUPS
-              Value: "AWS Lambda"
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
-      Cpu: 512
-      ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
-      Memory: 1024
-      NetworkMode: awsvpc
-      RequiresCompatibilities:
-        - FARGATE
-      TaskRoleArn: !GetAtt OrchestratorTaskTaskRole.Arn
-      Volumes: []
-    DependsOn: LambdaOrchestratorTaskLogGroup
-  LambdaOrchestratorService:
-    Type: AWS::ECS::Service
-    Properties:
-      ServiceName: !Sub ${AWS::StackName}-LambdaOrchestratorService
-      TaskDefinition: !Ref LambdaOrchestratorTask
-      DesiredCount: 1
-      EnableExecuteCommand: true
-      DeploymentConfiguration:
-        MaximumPercent: 100
-        MinimumHealthyPercent: 0
-      DeploymentController:
-        Type: ECS
-      LaunchType: FARGATE
-      NetworkConfiguration:
-        AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          Subnets:
-            - Fn::ImportValue:
-                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet1"
-            - Fn::ImportValue:
-                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCPrivateSubnet2"
-          SecurityGroups:
-            - Fn::ImportValue:
-                !Sub "${NetworkStackName}-${EnvironmentTagName}-CanaryVPCDefaultSecruityGroup"
   OrchestratorTask:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -161,6 +90,11 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
+            - !If
+              - "IsDev"
+              - Name: CANARY_PREVIEW_MODE
+                Value: "true"
+              - !Ref AWS::NoValue
       Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 4096
@@ -478,6 +412,9 @@ Conditions:
     - !Equals
       - 'true'
       - !Ref MonitorsOnly
+  IsDev: !Equals
+      - 'dev1'
+      - !Ref EnvironmentTagName      
 Parameters:
   EnvironmentTagName:
     Type: String
