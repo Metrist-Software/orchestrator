@@ -5,7 +5,14 @@
 #
 set -euo pipefail
 
-case "$GITHUB_REF" in
+if [ "$#" -ne 0 ]
+then
+    github_ref=$1
+else
+    github_ref=""
+fi
+
+case "$github_ref" in
     refs/heads/main)
         qualifier=""
         ;;
@@ -13,6 +20,8 @@ case "$GITHUB_REF" in
         qualifier="-preview"
         ;;
 esac
+
+echo "Using GITHUB_REF $github_ref and qualifier $qualifier"
 
 dist=https://monitor-distributions.canarymonitor.com
 
