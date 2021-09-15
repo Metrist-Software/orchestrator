@@ -3,7 +3,8 @@ FROM canarymonitor/agent:build-base-2021.37 AS build
 COPY mix.exs mix.lock install-runner.sh ./
 #COPY config config
 COPY priv priv
-RUN ./install-runner.sh
+ARG GITHUB_REF=""
+RUN ./install-runner.sh $GITHUB_REF
 RUN mix do deps.get, deps.compile
 COPY lib lib
 #COPY rel rel
