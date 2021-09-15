@@ -64,7 +64,7 @@ defmodule Orchestrator.ProtocolHandler do
             # call wait_for_complete normally
             wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
           {:error, message} ->
-            Logger.error("Error processing message #{message}. Skipping.")
+            Logger.warn("Skipping unparsable message: #{message}")
             # call wait_for_complete normally but skip the bad message
             wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
         end
