@@ -99,7 +99,6 @@ defmodule Orchestrator.ProtocolHandler do
         end
       :error ->
         if String.length(message) > 0 do
-          Logger.debug("#{monitor_logical_name}: stdout: #{message}")
           {:error, message}
         else
           # This is actually the catch all. Odd but this
