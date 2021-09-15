@@ -22,14 +22,15 @@ defmodule Orchestrator.ExecutableInvoker do
       raise "Executable #{executable} does not exist, exiting!"
     end
     Task.async(fn ->
-      port = Port.open({:spawn_executable, executable}, [
-                         :binary,
-                         :stderr_to_stdout,
-                         cd: Path.dirname(executable)
-                       ])
+      port =
+        Port.open({:spawn_executable, executable}, [
+          :binary,
+          :stderr_to_stdout,
+          cd: Path.dirname(executable)
+         ])
 
-                       Logger.debug("Starting protocol")
-                       Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
+      Logger.debug("Starting protocol")
+      Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
 
