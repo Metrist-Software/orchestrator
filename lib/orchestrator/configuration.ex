@@ -154,7 +154,11 @@ defmodule Orchestrator.Configuration do
   Environment interpolation is simple: only "${WORD}" is supported.
   """
   def translate_value(<<"@secret@:", name::binary>>) do
-    case Orchestrator.Application.secrets_source().fetch(name) do
+    secret = name
+    |> translate_value()
+    |> Orchestrator.Application.secrets_source().fetch()
+
+    case secret do
       nil -> "<<ERROR: secret #{name} not found>>"
       other -> translate_value(other)
     end
