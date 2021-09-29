@@ -82,6 +82,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
             timeout_secs: (opts[:timeout] || 60.0)}
         end)
     }
+    |> Orchestrator.Configuration.translate_config()
 
     Logger.info("Running #{cfg.monitor_logical_name} with config #{inspect cfg}")
 
