@@ -368,6 +368,32 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Needed for Terraform things
+        - PolicyName: TerraformStatsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource:
+                  !Sub arn:aws:dynamodb::${AWS::AccountId}:table/cmtf-infra
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: arn:aws:s3:::cmtf-infra/terraform/*
+        # Needed for AWSRDS monitor
+        - PolicyName: AWSRDSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:*
+                Resource:
+                  !Sub arn:aws:rds::${AWS::AccountId}:cluster:monitordb-*
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -414,7 +440,7 @@ Conditions:
       - !Ref MonitorsOnly
   IsDev: !Equals
       - 'dev1'
-      - !Ref EnvironmentTagName      
+      - !Ref EnvironmentTagName
 Parameters:
   EnvironmentTagName:
     Type: String
