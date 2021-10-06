@@ -393,7 +393,7 @@ Resources:
                 Action:
                   - rds:*
                 Resource:
-                  !Sub arn:aws:rds::${AWS::AccountId}:cluster:monitordb-*
+                  !Sub arn:aws:rds::${AWS::AccountId}:*:monitordb-*
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
