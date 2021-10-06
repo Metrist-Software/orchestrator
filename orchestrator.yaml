@@ -377,6 +377,7 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
+                  - dynamodb:DeleteItem
                 Resource: arn:aws:dynamodb:us-west-2:147803588724:table/cmtf-infra
               - Effect: Allow
                 Action:
