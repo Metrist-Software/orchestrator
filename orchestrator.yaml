@@ -377,8 +377,7 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
-                Resource:
-                  !Sub arn:aws:dynamodb::${AWS::AccountId}:table/cmtf-infra
+                Resource: arn:aws:dynamodb:us-west-2:147803588724:table/cmtf-infra
               - Effect: Allow
                 Action:
                   - s3:PutObject
