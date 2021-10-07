@@ -402,6 +402,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - ecs:CreateService
+                  - ecs:DeleteService
                 Resource:
                   !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
   PrivateCMATaskLogGroup:
