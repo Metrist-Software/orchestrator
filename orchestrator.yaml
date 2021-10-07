@@ -394,6 +394,16 @@ Resources:
                   - rds:*
                 Resource:
                   !Sub arn:aws:rds:*:${AWS::AccountId}:*:monitordb-*
+        # Needed for AWSECS monitor
+        - PolicyName: ECSCreateService
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:CreateService
+                Resource:
+                  !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
