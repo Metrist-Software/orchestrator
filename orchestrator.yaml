@@ -395,7 +395,7 @@ Resources:
                 Resource:
                   !Sub arn:aws:rds:*:${AWS::AccountId}:*:monitordb-*
         # Needed for AWSECS monitor
-        - PolicyName: ECSCreateService
+        - PolicyName: MonitorAWSECS
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -405,6 +405,11 @@ Resources:
                   - ecs:DeleteService
                 Resource:
                   !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:Describe*
+                Resource:
+                  !Sub arn:aws:elasticloadbalancing:*:${AWS::AccountId}:*
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
