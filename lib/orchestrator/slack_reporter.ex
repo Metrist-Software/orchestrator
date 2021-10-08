@@ -12,7 +12,7 @@ defmodule Orchestrator.SlackReporter do
     else
       body = %{
         channel: channel,
-        text: ":x: *Error running #{monitor_logical_name}/#{check_logical_name}*\n#{message}"
+        text: ":x: *Error running #{monitor_logical_name}/#{check_logical_name} in #{Orchestrator.Application.instance()}*\n#{message}"
       }
 
       case Jason.encode(body) do
