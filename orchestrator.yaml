@@ -403,6 +403,7 @@ Resources:
                 Action:
                   - ecs:CreateService
                   - ecs:DeleteService
+                  - ecs:UpdateService
                 Resource:
                   !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
               - Effect: Allow
