@@ -74,13 +74,16 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
-    Orchestrator.DotNetDLLInvoker.invoke(cfg)
+    opts = [error_report_fun: get_monitor_error_handler("dll")]
+    Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
   end
   defp do_run(cfg = %{run_spec: %{run_type: "exe"}}) do
-    Orchestrator.ExecutableInvoker.invoke(cfg)
+    opts = [error_report_fun: get_monitor_error_handler("exe")]
+    Orchestrator.ExecutableInvoker.invoke(cfg, opts)
   end
   defp do_run(cfg = %{run_spec: %{run_type: "awslambda"}}) do
-    Orchestrator.LambdaInvoker.invoke(cfg)
+    opts = [error_report_fun: get_monitor_error_handler("awslambda")]
+    Orchestrator.LambdaInvoker.invoke(cfg, opts)
   end
   defp do_run(cfg = %{run_spec: %{run_type: _}}) do
     Logger.warn("Unknown run specification in config: #{inspect Orchestrator.MonitorSupervisor.redact(cfg)}")
@@ -89,11 +92,12 @@ defmodule Orchestrator.MonitorScheduler do
   defp do_run(cfg) do
     invocation_style = Orchestrator.Application.invocation_style()
     Logger.info("No run specification given, running based on configured invocation style #{invocation_style}")
+    opts = [error_report_fun: get_monitor_error_handler(invocation_style)]
     case invocation_style do
       "rundll" ->
-        Orchestrator.DotNetDLLInvoker.invoke(cfg)
+        Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
       "awslambda" ->
-        Orchestrator.LambdaInvoker.invoke(cfg)
+        Orchestrator.LambdaInvoker.invoke(cfg, opts)
       other ->
         Logger.warn("Unknown invocation style #{other}, ignoring.")
         Task.async(fn -> :ok end)
@@ -135,4 +139,28 @@ defmodule Orchestrator.MonitorScheduler do
     next_run = NaiveDateTime.add(last_run, interval, :second)
     max(NaiveDateTime.diff(next_run, now, :second), 0)
   end
- end
+
+  @dotnet_http_error_match ~r/HttpRequestException.*(40[13])/
+
+  def get_monitor_error_handler(run_type) do
+    fn monitor_logical_name, check_logical_name, message ->
+      monitor_error_handler(run_type, monitor_logical_name, check_logical_name, message)
+    end
+  end
+
+  def monitor_error_handler("dll", monitor_logical_name, check_logical_name, message) do
+    with [_match, status] <- Regex.run(@dotnet_http_error_match, message) do
+      Orchestrator.SlackReporter.send_monitor_error(
+        monitor_logical_name,
+        check_logical_name,
+        "Received HTTP #{status} response"
+      )
+    end
+
+    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message)
+  end
+
+  def monitor_error_handler(_, monitor_logical_name, check_logical_name, message) do
+    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message)
+  end
+end
