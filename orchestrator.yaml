@@ -408,8 +408,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - elasticloadbalancing:Describe*
-                Resource:
-                  !Sub arn:aws:elasticloadbalancing:*:${AWS::AccountId}:*
+                Resource: *
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
