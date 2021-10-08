@@ -408,7 +408,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - elasticloadbalancing:Describe*
-                Resource: *
+                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
