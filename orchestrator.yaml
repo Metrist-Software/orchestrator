@@ -407,6 +407,10 @@ Resources:
                   !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
               - Effect: Allow
                 Action:
+                  - ecs:Describe*
+                Resource: '*'
+              - Effect: Allow
+                Action:
                   - elasticloadbalancing:Describe*
                 Resource: '*'
   PrivateCMATaskLogGroup:
