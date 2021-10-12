@@ -37,6 +37,8 @@ Resources:
               Value: !Ref EnableCleanup
             - Name: SLACK_ALERTING_CHANNEL
               Value: !Ref OpsChannel
+            - Name: SLACK_API_TOKEN
+              Value: !Sub "@secret@:/${EnvironmentTagName}/slack/api-token#token"
             # Specifically for Cognito monitor
             - Name: USER_POOL
               Value: !Ref CognitoTestUserPool

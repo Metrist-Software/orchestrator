@@ -98,10 +98,9 @@ else
     Application.put_env(:orchestrator, :api_token, token)
   end
   defp configure_slack_reporter do
-    secrets_namespace = System.get_env("SECRETS_NAMESPACE")
-    secrets_src = secrets_source()
+    token = System.get_env("SLACK_API_TOKEN")
+    |> Orchestrator.Configuration.translate_value()
 
-    token = secrets_src.fetch("#{secrets_namespace}slack/api-token#token")
     Application.put_env(:slack, :api_token, token)
 
     slack_alerting_channel = System.get_env("SLACK_ALERTING_CHANNEL")
