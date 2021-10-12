@@ -45,4 +45,9 @@ defmodule Orchestrator.SlackReporter do
 
     HTTPoison.post(@slack_url, message, headers)
   end
+
+  def is_configured?() do
+    !(is_nil(Application.get_env(:slack, :api_token)) ||
+      is_nil(Application.get_env(:slack, :reporting_channel)))
+  end
 end

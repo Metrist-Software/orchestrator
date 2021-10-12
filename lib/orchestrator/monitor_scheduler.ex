@@ -146,10 +146,10 @@ defmodule Orchestrator.MonitorScheduler do
     end
   end
 
-  if !is_nil(Application.get_env(:slack, :api_token) && !is_nil(Application.get_env(:slack, :reporting_channel))) do
-    @dotnet_http_error_match ~r/HttpRequestException.*(40[13])/
+  @dotnet_http_error_match ~r/HttpRequestException.*(40[13])/
 
-    def monitor_error_handler("dll", monitor_logical_name, check_logical_name, message) do
+  def monitor_error_handler("dll", monitor_logical_name, check_logical_name, message) do
+    if Orchestrator.SlackReporter.is_configured? do
       with [_match, status] <- Regex.run(@dotnet_http_error_match, message) do
         Orchestrator.SlackReporter.send_monitor_error(
           monitor_logical_name,
@@ -157,9 +157,9 @@ defmodule Orchestrator.MonitorScheduler do
           "Received HTTP #{status} response"
         )
       end
-
-      Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message)
     end
+
+    monitor_error_handler(nil, monitor_logical_name, check_logical_name, message)
   end
 
   def monitor_error_handler(_, monitor_logical_name, check_logical_name, message) do
