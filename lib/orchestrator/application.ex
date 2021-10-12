@@ -100,11 +100,11 @@ else
   defp configure_slack_reporter do
     token = System.get_env("SLACK_API_TOKEN")
     |> Orchestrator.Configuration.translate_value()
-
     Application.put_env(:slack, :api_token, token)
 
-    slack_alerting_channel = System.get_env("SLACK_ALERTING_CHANNEL")
-    Application.put_env(:slack, :reporting_channel, slack_alerting_channel)
+    channel = System.get_env("SLACK_ALERTING_CHANNEL")
+    |> Orchestrator.Configuration.translate_value()
+    Application.put_env(:slack, :reporting_channel, channel)
   end
 end
 
