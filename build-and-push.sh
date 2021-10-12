@@ -5,6 +5,15 @@
 #
 set -eou pipefail
 
+case "${GITHUB_REF:-}" in
+    refs/heads/master)
+        qualifier=""
+        ;;
+    *)
+        qualifier="-preview"
+        ;;
+esac
+
 version=$(git rev-parse --short HEAD)
 image_tag=canarymonitor/agent:$version
 
@@ -13,7 +22,7 @@ docker tag agent:$version $image_tag
 docker push $image_tag
 
 # `latest` is what the Helm chart uses by default.
-latest_tag=canarymonitor/agent:latest
+latest_tag=canarymonitor/agent:latest$qualifier
 docker tag $image_tag $latest_tag
 docker push $latest_tag
 
