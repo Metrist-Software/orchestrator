@@ -372,6 +372,52 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Needed for Terraform things
+        - PolicyName: TerraformStatsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource: arn:aws:dynamodb:us-west-2:147803588724:table/cmtf-infra
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: arn:aws:s3:::cmtf-infra/terraform/*
+        # Needed for AWSRDS monitor
+        - PolicyName: AWSRDSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:*
+                Resource:
+                  !Sub arn:aws:rds:*:${AWS::AccountId}:*:monitordb-*
+        # Needed for AWSECS monitor
+        - PolicyName: MonitorAWSECS
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:CreateService
+                  - ecs:DeleteService
+                  - ecs:UpdateService
+                Resource:
+                  !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
+              - Effect: Allow
+                Action:
+                  - ecs:Describe*
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:Describe*
+                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
