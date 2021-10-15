@@ -26,6 +26,8 @@ defmodule Orchestrator.Invoker do
       # to start the child process, at which point the environment will have been copied and we can safely continue.
       port = :global.trans({__MODULE__, self()}, fn ->
         System.put_env("TMPDIR", tmpdir)
+        System.put_env("TEMP", tmpdir)
+        System.put_env("TMP", tmpdir)
         port_fn.()
       end)
 
