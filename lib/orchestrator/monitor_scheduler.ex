@@ -23,6 +23,7 @@ defmodule Orchestrator.MonitorScheduler do
 
   @impl true
   def init(config) do
+    Orchestrator.Application.set_monitor_metadata(config)
     Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
     schedule_initially(config)
     {:ok, %State{config: config}}

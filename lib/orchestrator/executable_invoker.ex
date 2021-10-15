@@ -29,7 +29,6 @@ defmodule Orchestrator.ExecutableInvoker do
           cd: Path.dirname(executable)
          ])
 
-      Logger.debug("Starting protocol")
       Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
