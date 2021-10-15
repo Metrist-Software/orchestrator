@@ -20,15 +20,11 @@ defmodule Orchestrator.CommandInvoker do
 
     Logger.debug("Running #{command_line}")
 
-    Task.async(fn ->
-      port =
+    Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn, command_line}, [
           :binary,
           :stderr_to_stdout
         ])
-
-      Logger.debug("Starting protocol")
-      Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
 end

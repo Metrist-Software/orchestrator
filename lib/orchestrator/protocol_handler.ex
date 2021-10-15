@@ -36,8 +36,8 @@ defmodule Orchestrator.ProtocolHandler do
     GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun })
   end
 
-  def start_protocol(config, port, opts \\ []) do
-    Logger.info("Opened port for #{config.monitor_logical_name} as #{inspect(port)}")
+  def run_protocol(config, port, opts \\ []) do
+    Logger.info("Opened port as #{inspect(port)}")
 
     ref = Port.monitor(port)
     Logger.debug("Monitoring port, ref is #{inspect ref}")
@@ -45,14 +45,14 @@ defmodule Orchestrator.ProtocolHandler do
     Logger.debug("Handshake done")
     {:ok, pid} = start_link(config.monitor_logical_name, config.steps, self(), opts)
     wait_for_complete(port, ref, config.monitor_logical_name, pid)
-    Logger.info("Monitor #{config.monitor_logical_name} is complete")
+    Logger.info("Monitor is complete")
   end
 
   defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
       {:DOWN, ^ref, :port, ^port, reason} ->
         Logger.info(
-          "Monitor #{monitor_logical_name}: Received DOWN message, reason: #{inspect(reason)}, completing invocation."
+          "Received DOWN message, reason: #{inspect(reason)}, completing invocation."
         )
 
       {^port, {:data, data}} ->
@@ -78,7 +78,7 @@ defmodule Orchestrator.ProtocolHandler do
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
     after
       @max_monitor_runtime ->
-        Logger.error("Monitor #{monitor_logical_name}: Monitor did not complete in time, killing it")
+        Logger.error("Monitor did not complete in time, killing it")
         Port.close(port)
     end
   end
@@ -126,12 +126,13 @@ defmodule Orchestrator.ProtocolHandler do
 
   @impl true
   def init({monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun}) do
+    Orchestrator.Application.set_monitor_metadata(monitor_logical_name, steps)
     {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, io_handler: io_handler, telemetry_report_fun: telemetry_report_fun, error_report_fun: error_report_fun}}
   end
 
   @impl true
   def handle_cast({:message, "Configured"}, state) do
-    Logger.info("Monitor #{state.monitor_logical_name} fully configured, start stepping")
+    Logger.info("Monitor fully configured, start stepping")
     start_step()
     {:noreply, state}
   end
@@ -224,7 +225,7 @@ defmodule Orchestrator.ProtocolHandler do
                       step_timeout_timer: timer}}
   end
   def handle_info(:start_step, state) do
-    Logger.info("#{state.monitor_logical_name}: All steps done, asking monitor to exit")
+    Logger.info("All steps done, asking monitor to exit")
     send_exit(state)
     {:noreply, state}
   end
@@ -254,7 +255,7 @@ defmodule Orchestrator.ProtocolHandler do
   defp do_log(level, message, state) do
     message = String.trim(message)
     if String.length(message) > 0 do
-      Logger.log(level, "#{state.monitor_logical_name} received log: #{message}")
+      Logger.log(level, "Received log: #{message}")
     end
     {:noreply, state}
   end

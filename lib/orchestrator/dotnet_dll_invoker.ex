@@ -26,15 +26,12 @@ defmodule Orchestrator.DotNetDLLInvoker do
     args = if executable_folder, do: [executable_folder | args] |> Enum.reverse(), else: args
     Logger.debug("#{inspect args}")
 
-    Task.async(fn ->
-      port =
+    Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn_executable, runner}, [
                     :binary,
                     :stderr_to_stdout,
                     args: args
                   ])
-      Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
-
 end
