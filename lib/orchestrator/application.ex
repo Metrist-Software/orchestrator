@@ -12,6 +12,10 @@ defmodule Orchestrator.Application do
 
     ll_config = System.get_env("CANARY_LOGGING_LEVEL", "Info")
     set_logging(String.downcase(ll_config))
+    #  Monitors can have very long logging outputs and truncating them throws awa
+    #  potentially important information.
+    Logger.configure(truncate: :infinity)
+    Logger.configure_backend(:console, metadata: [:monitor])
 
     configure_configs()
 
@@ -65,6 +69,18 @@ defmodule Orchestrator.Application do
   defp parse_run_groups(""), do: []
   defp parse_run_groups(string) do
     String.split(string, ",")
+  end
+
+  def set_monitor_metadata(monitor_config) do
+    step_names =
+      monitor_config.steps
+      |> Enum.map(&(&1.check_logical_name))
+      |> Enum.join(",")
+    meta = "#{monitor_config.monitor_logical_name}(#{step_names})"
+    Logger.metadata(monitor: meta)
+  end
+  def set_monitor_metadata(monitor_logical_name, steps) do
+    set_monitor_metadata(%{monitor_logical_name: monitor_logical_name, steps: steps})
   end
 
   defp set_logging("all"), do: Logger.configure(level: :debug)

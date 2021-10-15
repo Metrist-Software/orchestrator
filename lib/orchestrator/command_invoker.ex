@@ -20,7 +20,7 @@ defmodule Orchestrator.CommandInvoker do
 
     Logger.debug("Running #{command_line}")
 
-    Invoker.run_monitor(config, opts, fn ->
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn, command_line}, [
           :binary,
           :stderr_to_stdout

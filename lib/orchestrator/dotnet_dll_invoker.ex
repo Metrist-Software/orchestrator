@@ -10,8 +10,6 @@ defmodule Orchestrator.DotNetDLLInvoker do
   """
   require Logger
 
-  @max_monitor_runtime 15 * 60 * 1_000
-
   @behaviour Orchestrator.Invoker
 
   @impl true
@@ -26,7 +24,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
     args = if executable_folder, do: [executable_folder | args] |> Enum.reverse(), else: args
     Logger.debug("#{inspect args}")
 
-    Invoker.run_monitor(config, opts, fn ->
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn_executable, runner}, [
                     :binary,
                     :stderr_to_stdout,

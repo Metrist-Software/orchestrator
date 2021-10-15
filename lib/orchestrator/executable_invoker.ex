@@ -22,7 +22,7 @@ defmodule Orchestrator.ExecutableInvoker do
       raise "Executable #{executable} does not exist, exiting!"
     end
 
-    Invoker.run_monitor(config, opts, fn ->
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn_executable, executable}, [
           :binary,
           :stderr_to_stdout,
