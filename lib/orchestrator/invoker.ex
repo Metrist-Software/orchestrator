@@ -34,6 +34,8 @@ defmodule Orchestrator.Invoker do
       Orchestrator.ProtocolHandler.run_protocol(config, port, opts)
 
       File.rm_rf!(tmpdir)
+
+      :ok
     end)
   end
 end
