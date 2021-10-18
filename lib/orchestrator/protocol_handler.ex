@@ -36,7 +36,7 @@ defmodule Orchestrator.ProtocolHandler do
     GenServer.start_link(__MODULE__, {monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun })
   end
 
-  def start_protocol(config, port, opts \\ []) do
+  def run_protocol(config, port, opts \\ []) do
     Orchestrator.Application.set_monitor_metadata(config)
     Logger.info("Opened port as #{inspect(port)}")
 

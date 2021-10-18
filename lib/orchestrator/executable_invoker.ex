@@ -21,15 +21,13 @@ defmodule Orchestrator.ExecutableInvoker do
     if not File.exists?(executable) do
       raise "Executable #{executable} does not exist, exiting!"
     end
-    Task.async(fn ->
-      port =
+
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
         Port.open({:spawn_executable, executable}, [
           :binary,
           :stderr_to_stdout,
           cd: Path.dirname(executable)
          ])
-
-      Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
 

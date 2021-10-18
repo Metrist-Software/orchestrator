@@ -27,6 +27,8 @@ defmodule Orchestrator.Application do
     configure_api_token()
     configure_slack_reporter()
 
+    configure_temp_dir()
+
     children = [
       CanaryIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
@@ -93,6 +95,10 @@ defmodule Orchestrator.Application do
   defp set_logging("critical"), do: Logger.configure(level: :critical)
   defp set_logging("alert"), do: Logger.configure(level: :alert)
   defp set_logging("emergency"), do: Logger.configure(level: :emergency)
+
+  # We overwrite this when starting monitors, so stash it at startup.
+  defp configure_temp_dir(), do: Application.put_env(:orchestrator, :temp_dir, System.tmp_dir())
+  def temp_dir(), do: Application.get_env(:orchestrator, :temp_dir, System.tmp_dir())
 
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
