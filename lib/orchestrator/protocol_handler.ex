@@ -37,6 +37,7 @@ defmodule Orchestrator.ProtocolHandler do
   end
 
   def run_protocol(config, port, opts \\ []) do
+    Orchestrator.Application.set_monitor_metadata(config)
     Logger.info("Opened port as #{inspect(port)}")
 
     ref = Port.monitor(port)
