@@ -27,7 +27,6 @@ defmodule Orchestrator.CommandInvoker do
           :stderr_to_stdout
         ])
 
-      Logger.debug("Starting protocol")
       Orchestrator.ProtocolHandler.start_protocol(config, port, opts)
     end)
   end
