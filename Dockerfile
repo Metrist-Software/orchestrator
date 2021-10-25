@@ -1,4 +1,4 @@
-FROM canarymonitor/agent:build-base-2021.42 AS build
+FROM canarymonitor/agent:build-base-2021.43 AS build
 
 COPY mix.exs mix.lock install-runner.sh ./
 #COPY config config
@@ -11,7 +11,7 @@ COPY lib lib
 
 RUN mix do compile, release
 
-FROM canarymonitor/agent:runtime-base-2021.42 AS app
+FROM canarymonitor/agent:runtime-base-2021.43 AS app
 
 COPY --from=build --chown=nobody:nogroup /app/_build/prod/rel/bakeware/ ./
 USER nobody:nogroup
