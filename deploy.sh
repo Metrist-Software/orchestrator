@@ -51,7 +51,10 @@ dev1)
   if [ -n "$local_deploy" ]; then
     parameter_overrides="--parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag"
   else
-    aws ssm put-parameter --name "/dev1/orchestrator/container/version" --value $container_tag
+    aws ssm put-parameter --name "/dev1/orchestrator/container/version" \
+      --value $container_tag \
+      --type String \
+      --overwrite
   fi
 
   aws cloudformation deploy \
@@ -63,7 +66,11 @@ dev1)
   ;;
 prod)
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
-    echo aws ssm put-parameter --name "/${env}/orchestrator/container/version" --value $container_tag
+    echo aws ssm put-parameter --name "/${env}/orchestrator/container/version" \
+      --value $container_tag \
+      --type String \
+      --overwrite
+
     echo aws cloudformation deploy \
       --template-file "${out_basepath}/orchestrator-${env}.yaml" \
       --stack-name "orchestrator-${env}" \
