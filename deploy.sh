@@ -26,7 +26,7 @@ if [ ! -v STACKERY_ENVIRONMENT ]; then
   refs/heads/main)
     STACKERY_ENVIRONMENT=prod
     ;;
-  refs/heads/develop | local | refs/heads/929*)
+  refs/heads/develop | local | refs/heads/1501*)
     STACKERY_ENVIRONMENT=dev1
     ;;
   *)
@@ -44,7 +44,6 @@ for env in "${!env_tag_aws_region[@]}"; do
   sed "s/<EnvironmentName>/$env/g" orchestrator.yaml >"${out_basepath}/orchestrator-${env}.yaml"
 done
 
-
 # Deploy
 case $STACKERY_ENVIRONMENT in
 dev1)
@@ -52,11 +51,10 @@ dev1)
   if [ -z "$local_deploy" ]; then
     parameter_overrides="--parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag"
   else
-    echo aws ssm --name "/dev1/orchestrator/container/version" \
-      --value container_tag
+    aws ssm --name "/dev1/orchestrator/container/version" --value $container_tag
   fi
 
-  echo aws cloudformation deploy \
+  aws cloudformation deploy \
     --template-file "${out_basepath}/orchestrator-dev1.yaml" \
     --stack-name "orchestrator-dev1" $parameter_overrides \
     --capabilities CAPABILITY_NAMED_IAM \
@@ -65,8 +63,7 @@ dev1)
   ;;
 prod)
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
-    echo aws ssm --name "/${env}/orchestrator/container/version" \
-      --value container_tag
+    echo aws ssm --name "/${env}/orchestrator/container/version" --value $container_tag
     echo aws cloudformation deploy \
       --template-file "${out_basepath}/orchestrator-${env}.yaml" \
       --stack-name "orchestrator-${env}" \
