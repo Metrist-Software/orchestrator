@@ -48,7 +48,7 @@ done
 case $STACKERY_ENVIRONMENT in
 dev1)
   parameter_overrides=""
-  if [ -z "$local_deploy" ]; then
+  if [ -n "$local_deploy" ]; then
     parameter_overrides="--parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag"
   else
     aws ssm --name "/dev1/orchestrator/container/version" --value $container_tag
