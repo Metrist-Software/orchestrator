@@ -28,7 +28,7 @@ if [ ! -v STACKERY_ENVIRONMENT ]; then
   refs/heads/main)
     STACKERY_ENVIRONMENT=prod
     ;;
-  refs/heads/develop | local | refs/heads/1501*)
+  refs/heads/develop | local)
     STACKERY_ENVIRONMENT=dev1
     ;;
   *)
