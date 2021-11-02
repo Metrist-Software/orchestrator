@@ -5,7 +5,7 @@
 #  We use "GITHUB_REF" as the indicator of a CI or a local deploy.
 #
 set -eo pipefail # For safety
-# set -vx          # For debugging
+set -vx          # For debugging
 
 declare -A env_tag_aws_region
 env_tag_aws_region=(
