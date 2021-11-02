@@ -47,14 +47,12 @@ done
 # Deploy
 case $STACKERY_ENVIRONMENT in
 dev1)
-  region=${env_tag_aws_region["dev1"]}
   aws cloudformation deploy \
     --template-file "${out_basepath}/orchestrator-dev1.yaml" \
     --stack-name "orchestrator-dev1" \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag \
-    --region $region \
-    --no-execute-changeset
+    --region ${env_tag_aws_region["dev1"]}
   ;;
 prod)
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
