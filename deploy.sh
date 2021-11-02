@@ -57,6 +57,7 @@ dev1)
     --region ${env_tag_aws_region[dev1]}
   ;;
 prod)
+  # Orchestrator runs everywhere that monitors run.
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
     aws cloudformation deploy \
       --template-file "${out_basepath}/orchestrator-${env}.yaml" \
