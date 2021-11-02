@@ -5,15 +5,17 @@
 #  We use "GITHUB_REF" as the indicator of a CI or a local deploy.
 #
 set -eo pipefail # For safety
-set -vx          # For debugging
+# set -vx          # For debugging
 
 declare -A env_tag_aws_region
-env_tag_aws_region["dev1"]="us-east-1"
-env_tag_aws_region["prod"]="us-west-2"
-env_tag_aws_region["prod2"]="us-east-2"
-env_tag_aws_region["prod-mon-us-east-1"]="us-east-1"
-env_tag_aws_region["prod-mon-us-west-1"]="us-west-1"
-env_tag_aws_region["prod-mon-ca-central-1"]="ca-central-1"
+env_tag_aws_region=(
+  ["dev1"]="us-east-1"
+  ["prod"]="us-west-2"
+  ["prod2"]="us-east-2"
+  ["prod-mon-us-east-1"]="us-east-1"
+  ["prod-mon-us-west-1"]="us-west-1"
+  ["prod-mon-ca-central-1"]="ca-central-1"
+)
 
 local_deploy=""
 if [ -z "$GITHUB_REF" ]; then
@@ -52,18 +54,16 @@ dev1)
     --stack-name "orchestrator-dev1" \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag \
-    --region ${env_tag_aws_region["dev1"]}
+    --region ${env_tag_aws_region[dev1]}
   ;;
 prod)
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
-    region=${env_tag_aws_region["$env"]}
-    echo aws cloudformation deploy \
+    aws cloudformation deploy \
       --template-file "${out_basepath}/orchestrator-${env}.yaml" \
       --stack-name "orchestrator-${env}" \
       --capabilities CAPABILITY_NAMED_IAM \
       --region ${env_tag_aws_region["$env"]} \
-      --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag \
-      --no-execute-changeset &
+      --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag &
   done
   wait
   ;;
