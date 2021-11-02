@@ -48,12 +48,14 @@ done
 case $STACKERY_ENVIRONMENT in
 dev1)
   parameter_overrides=""
+  region=${env_tag_aws_region["dev1"]}
   if [ -n "$local_deploy" ]; then
     parameter_overrides="--parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag"
   else
     aws ssm put-parameter --name "/dev1/orchestrator/container/version" \
       --value $container_tag \
       --type String \
+      --region $region \
       --overwrite
   fi
 
@@ -61,13 +63,14 @@ dev1)
     --template-file "${out_basepath}/orchestrator-dev1.yaml" \
     --stack-name "orchestrator-dev1" $parameter_overrides \
     --capabilities CAPABILITY_NAMED_IAM \
-    --region ${env_tag_aws_region["dev1"]} \
+    --region $region \
     --no-execute-changeset
   ;;
 prod)
   for env in prod prod2 prod-mon-us-east-1 prod-mon-us-west-1 prod-mon-ca-central-1; do
+    region=${env_tag_aws_region["$env"]}
     echo aws ssm put-parameter --name "/${env}/orchestrator/container/version" \
-      --value $container_tag \
+      --region $region \
       --type String \
       --overwrite
 
