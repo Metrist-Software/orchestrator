@@ -479,8 +479,7 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/database/logicalName
   ContainerVersion:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/orchestrator/container/version
+    Type: String
   EnvConfigapiEndpointstelemetryAPIAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/telemetryAPI

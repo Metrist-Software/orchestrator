@@ -53,7 +53,7 @@ dev1)
     --template-file "${out_basepath}/orchestrator-dev1.yaml" \
     --stack-name "orchestrator-dev1" \
     --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag \
+    --parameters ParameterKey=ContainerVersion,ParameterValue=$container_tag \
     --region ${env_tag_aws_region[dev1]}
   ;;
 prod)
@@ -64,7 +64,7 @@ prod)
       --stack-name "orchestrator-${env}" \
       --capabilities CAPABILITY_NAMED_IAM \
       --region ${env_tag_aws_region["$env"]} \
-      --parameter-overrides ParameterKey=ContainerVersion,ParameterValue=$container_tag &
+      --parameters ParameterKey=ContainerVersion,ParameterValue=$container_tag &
   done
   wait
   ;;
