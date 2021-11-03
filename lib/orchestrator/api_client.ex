@@ -105,7 +105,7 @@ defmodule Orchestrator.APIClient do
   end
 
   defp base_url_and_headers do
-    host = System.get_env("CANARY_API_HOST", "app.canarymonitor.com")
+    host = System.get_env("CANARY_API_HOST", "app.metrist.io")
 
     transport =
       if String.starts_with?(host, ["localhost", "172."]),
