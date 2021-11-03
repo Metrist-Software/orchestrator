@@ -480,6 +480,7 @@ Parameters:
     Default: /<EnvironmentName>/database/logicalName
   ContainerVersion:
     Type: String
+    Descrption: Container version (injected by parameter override at deployment time)
   EnvConfigapiEndpointstelemetryAPIAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/telemetryAPI
