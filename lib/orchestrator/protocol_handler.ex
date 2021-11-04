@@ -9,6 +9,7 @@ defmodule Orchestrator.ProtocolHandler do
   @major 1
   @minor 1
   @max_monitor_runtime 15 * 60 * 1_000
+  @exit_timeout 5 * 60 * 1_000
 
   # Tag to represent a step error from one of CANARY's monitors for log filtering
   @monitor_error_tag "CANARY_MONITOR_ERROR"
@@ -74,8 +75,12 @@ defmodule Orchestrator.ProtocolHandler do
         Orchestrator.ProtocolHandler.write(port, message)
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
 
+      :force_exit ->
+        Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
+        Port.close(port)
+
       msg ->
-        Logger.debug("Monitor #{monitor_logical_name}: Ignoring message #{inspect(msg)}")
+        Logger.debug("Ignoring message #{inspect(msg)}")
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
     after
       @max_monitor_runtime ->
@@ -244,6 +249,7 @@ defmodule Orchestrator.ProtocolHandler do
   defp send_exit(state) do
     do_cleanup = if Orchestrator.Application.do_cleanup?(), do: "1", else: "0"
     send_msg("Exit #{do_cleanup}", state)
+    Process.send_after(state.io_handler, :force_exit, @exit_timeout)
   end
 
   defp send_msg(msg, state) do

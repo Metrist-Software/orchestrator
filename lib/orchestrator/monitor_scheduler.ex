@@ -55,23 +55,26 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   # As we're a GenServer, all Task completion messages arrive as info messages.
+  # We receive two messages - one for task completion, one for process completion. We treat
+  # the first one as purely informal - if the task process crashes, we want to know as well so
+  # we only change state on the :DOWN message which we will always get.
 
   @impl true
   def handle_info({_task_ref, {:error, error}}, state) do
     Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
-    {:noreply, %State{state | task: nil, overtime: false}}
+    {:noreply, state}
   end
 
   @impl true
   def handle_info({_task_ref, result}, state) do
     Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
-    {:noreply, %State{state | task: nil, overtime: false}}
+    {:noreply, state}
   end
 
   @impl true
-  def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal}, state) do
-    # Safely ignored, we did the work in the task completion handlers, above
-    {:noreply, state}
+  def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal} = msg, state) do
+    Logger.debug("Task down message received: #{inspect msg}")
+    {:noreply, %State{state | task: nil, overtime: false}}
   end
 
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
@@ -131,6 +134,7 @@ defmodule Orchestrator.MonitorScheduler do
   defp schedule_initially(config) do
     {:ok, last_run} = NaiveDateTime.from_iso8601(config.last_run_time || @never)
     time_to_next_run = time_to_next_run(last_run, config.interval_secs) + :rand.uniform(config.interval_secs)
+    Logger.debug("Schedule next run in #{time_to_next_run} seconds")
     Process.send_after(self(), :run, time_to_next_run * 1_000)
   end
 
