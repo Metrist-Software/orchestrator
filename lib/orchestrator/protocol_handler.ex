@@ -327,7 +327,11 @@ defmodule Orchestrator.ProtocolHandler do
         Port.close(port)
       pid ->
         Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
-        Port.open({:spawn, "kill -9 #{maybe_pid}"}, [])
+        # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
+        kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
+        kill.(15)
+        Process.sleep(1_000)
+        kill.(9)
     end
   end
 
