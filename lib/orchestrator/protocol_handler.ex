@@ -323,8 +323,10 @@ defmodule Orchestrator.ProtocolHandler do
     |> Keyword.get(:os_pid)
     case maybe_pid do
       nil ->
+        Logger.info("No OS process id associated with port, just closing it")
         Port.close(port)
       pid ->
+        Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
         Port.open({:spawn, "kill -9 #{maybe_pid}"}, [])
     end
   end
