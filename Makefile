@@ -32,5 +32,5 @@ tail_log_prod:
 # TODO proper container names, etc.
 exec_dev:
 	@echo "Use 'bin/orchestrator remote' to get an IEx shell once connected"
-	aws ecs execute-command --region=us-east-1 --command /bin/sh --interactive --container orchestrator --cluster default --task \
+	aws ecs execute-command --region=us-east-1 --command /bin/bash --interactive --container orchestrator --cluster default --task \
 	    `aws ecs list-tasks --region=us-east-1 --service-name=orchestrator-dev1-OrchestratorService | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`

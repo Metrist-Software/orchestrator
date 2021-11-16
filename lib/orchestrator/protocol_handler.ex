@@ -77,7 +77,7 @@ defmodule Orchestrator.ProtocolHandler do
 
       :force_exit ->
         Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
-        Port.close(port)
+        kill_or_close(port)
 
       msg ->
         Logger.debug("Ignoring message #{inspect(msg)}")
@@ -85,7 +85,7 @@ defmodule Orchestrator.ProtocolHandler do
     after
       @max_monitor_runtime ->
         Logger.error("Monitor did not complete in time, killing it")
-        Port.close(port)
+        kill_or_close(port)
     end
   end
 
@@ -311,6 +311,28 @@ defmodule Orchestrator.ProtocolHandler do
     msg = len <> " " <> msg
     Port.command(port, msg)
     Logger.debug("Sent message: #{inspect msg}")
+  end
+
+  # Monitors should not have to do any shutdown activities by the time
+  # we really want to force quit them, so if a port has an associated
+  # OS process, we just send it a KILL signal to guarantee success. Otherwise,
+  # we close the port and hope for the best.
+  defp kill_or_close(port) do
+    maybe_pid = port
+    |> Port.info()
+    |> Keyword.get(:os_pid)
+    case maybe_pid do
+      nil ->
+        Logger.info("No OS process id associated with port, just closing it")
+        Port.close(port)
+      pid ->
+        Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
+        # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
+        kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
+        kill.(15)
+        Process.sleep(1_000)
+        kill.(9)
+    end
   end
 
 end
