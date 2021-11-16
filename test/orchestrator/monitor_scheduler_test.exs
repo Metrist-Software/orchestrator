@@ -20,4 +20,14 @@ defmodule Orchestrator.MonitorSchedulerTest do
     interval = 60
     assert time_to_next_run(last_run, interval, now) == 27
   end
+
+  test "401 style errors go to Slack" do
+    error = "You are talking too much, go away (HttpRequestException 401)"
+    assert [_match, _capture] = Regex.run(dotnet_http_error_match(), error)
+  end
+
+  test "429 style errors go to Slack" do
+    error = "You are talking too much, go away (HttpRequestException 429)"
+    assert [_match, _capture] = Regex.run(dotnet_http_error_match(), error)
+  end
 end
