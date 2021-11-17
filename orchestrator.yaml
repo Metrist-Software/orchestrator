@@ -39,6 +39,8 @@ Resources:
               Value: !Ref OpsChannel
             - Name: SLACK_API_TOKEN
               Value: !Sub "@secret@:/${EnvironmentTagName}/slack/api-token#token"
+            - Name: WEBHOOKS_API_ENDPOINT
+              Value: !Sub ${WebhooksAPIEndpoint}
             # Specifically for Cognito monitor
             - Name: USER_POOL
               Value: !Ref CognitoTestUserPool
@@ -538,6 +540,9 @@ Parameters:
   SendGridToEmail:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/email/sendgridToEmail
+  WebhooksAPIEndpoint:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName/apiEndpoints/webhooksAPI
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
