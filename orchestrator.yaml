@@ -542,7 +542,7 @@ Parameters:
     Default: /<EnvironmentName>/email/sendgridToEmail
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName/apiEndpoints/webhooksAPI
+    Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
