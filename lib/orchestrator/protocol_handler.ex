@@ -253,7 +253,6 @@ defmodule Orchestrator.ProtocolHandler do
   end
   def handle_info(:check_webhook_wait, state) do
     wait = state.webhook_waiting_for
-    Logger.info("#{state.monitor_logical_name}: Checking for webhook wait with UID #{wait}")
     case Orchestrator.APIClient.get_webhook(wait, state.monitor_logical_name) do
       nil ->
         # Check every 5 seconds or until we are killed
@@ -261,6 +260,7 @@ defmodule Orchestrator.ProtocolHandler do
         {:noreply, state}
       webhook ->
         json = Jason.encode!(webhook)
+        Logger.info("Found webhook. Returning #{json}")
         send_msg("Webhook Wait Response #{json}", state)
         {:noreply, %State{state | webhook_waiting_for: nil}}
     end
