@@ -23,6 +23,8 @@ Resources:
               Value: !Ref AWS::Region
             - Name: CANARY_API_HOST
               Value: !Ref AppAPIHostname
+            - Name: CANARY_WEBHOOK_HOST
+              Value: !Ref AppAPIHostname
             - Name: CANARY_TELEMETRY_HOST
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: ENVIRONMENT_TAG

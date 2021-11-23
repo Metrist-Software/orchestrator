@@ -125,3 +125,28 @@ to exit, it sends a simple
     Exit
 
 message to indicate that things may be shutdown.
+
+## Processing Webhooks (Optional)
+
+A monitor can ask that the orchestrator resolve a webhook for the monitor by sending `Wait For Webhook <uid>` where uid is a unique
+element that will show up in the webhook response.
+
+The orchestrator will query the API at `CANARY_WEBHOOK_HOST` at `CANARY_WEBHOOK_HOST/webhook/<monitor_logical_name>/<instance_name>/<uid>`
+for the data and will return the data in the following form when found.
+
+```
+{
+  "content_type": "application/json",
+  "data": "{\n    \"test1231\": \"555\"\n}",
+  "inserted_at": "2021-11-23T02:32:54.410861Z",
+  "instance_name": "us-east-2",
+  "monitor_logical_name": "awsiam"
+}
+```
+
+It us up to the WEBHOOK API to response to a `GET` request structured like the above with appropriate webhook response that matches it
+where the body of the webhook includes the `<uid>`. It should be returned in the above JSON format
+
+The processing monitor should use the inserted_at timestamp to determine the total time and not the delay from when they request a wait
+and the response as that can be artificially inflated.
+
