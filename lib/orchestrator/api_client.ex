@@ -46,6 +46,22 @@ defmodule Orchestrator.APIClient do
     })
   end
 
+  def get_webhook(uid, monitor_logical_name) do
+    Logger.info("Checking for webhoook with uid #{uid} for monitor #{monitor_logical_name} with instance #{Orchestrator.Application.instance()}")
+    {url, headers} = base_url_and_headers()
+
+    {:ok, %HTTPoison.Response{status_code: status_code, body: body}} =
+      HTTPoison.get("#{url}/webhook/#{monitor_logical_name}/#{Orchestrator.Application.instance()}/#{uid}", headers)
+
+    case status_code do
+      200 ->
+        {:ok, webhook} = Jason.decode(body, keys: :atoms)
+        webhook
+      _ ->
+        nil
+    end
+  end
+
   @backoff [5000, 2500, 500, 100]
 
   defp post_with_retries(path, msg) do
