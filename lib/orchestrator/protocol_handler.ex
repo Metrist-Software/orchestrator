@@ -194,7 +194,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, <<"Wait For Webhook", rest::binary>>}, state) do
     Logger.info("Monitor requested wait for #{rest}")
     start_webhook_wait()
-    {:noreply, %State{state | webhook_waiting_for: rest}}
+    {:noreply, %State{state | webhook_waiting_for: String.trim(rest)}}
   end
   def handle_cast({:message, other}, state) do
     Logger.error("Unexpected message: [#{inspect other}] received, exiting")
@@ -260,11 +260,7 @@ defmodule Orchestrator.ProtocolHandler do
         Process.send_after(self(), :check_webhook_wait, round(5 * 1_000))
         {:noreply, state}
       webhook ->
-        payload = %{
-          time: webhook.inserted_at,
-          data: webhook.data
-        }
-        json = Jason.encode!(payload)
+        json = Jason.encode!(webhook)
         send_msg("Webhook Wait Response #{json}", state)
         {:noreply, %State{state | webhook_waiting_for: nil}}
     end
