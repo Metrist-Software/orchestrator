@@ -46,6 +46,23 @@ defmodule Orchestrator.APIClient do
     })
   end
 
+  def get_webhook(uid, monitor_logical_name) do
+    instance_name = Orchestrator.Application.instance()
+    Logger.info("Checking for webhoook with uid #{uid} for monitor #{monitor_logical_name} with instance #{instance_name}")
+    {url, headers} = base_webhooks_url_and_headers()
+
+    {:ok, %HTTPoison.Response{status_code: status_code, body: body}} =
+      HTTPoison.get("#{url}/#{monitor_logical_name}/#{instance_name}/#{uid}", headers)
+
+    case status_code do
+      200 ->
+        {:ok, webhook} = Jason.decode(body, keys: :atoms)
+        webhook
+      _ ->
+        nil
+    end
+  end
+
   @backoff [5000, 2500, 500, 100]
 
   defp post_with_retries(path, msg) do
@@ -105,8 +122,21 @@ defmodule Orchestrator.APIClient do
   end
 
   defp base_url_and_headers do
-    host = System.get_env("CANARY_API_HOST", "app.metrist.io")
+    System.get_env("CANARY_API_HOST", "app.metrist.io")
+    |> do_get_base_url_and_headers("api/agent")
+  end
 
+  defp base_webhooks_url_and_headers do
+    case System.get_env("CANARY_WEBHOOK_HOST", nil) do
+      nil -> raise "Attempted to access Webhooks API but CANARY_WEBHOOK_HOST was not set!"
+      host ->
+        host
+        |> do_get_base_url_and_headers("api/webhook")
+    end
+  end
+
+  defp do_get_base_url_and_headers(nil, _), do: raise "Attempted to get base url and headers, but host was nil"
+  defp do_get_base_url_and_headers(host, url) do
     transport =
       if String.starts_with?(host, ["localhost", "172."]),
         do: "http",
@@ -114,6 +144,6 @@ defmodule Orchestrator.APIClient do
 
     api_token = Orchestrator.Application.api_token()
 
-    {"#{transport}://#{host}/api/agent", [{"Authorization", "Bearer #{api_token}"}]}
+    {"#{transport}://#{host}/#{url}", [{"Authorization", "Bearer #{api_token}"}]}
   end
 end

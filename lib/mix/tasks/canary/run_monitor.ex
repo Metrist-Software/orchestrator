@@ -41,6 +41,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
 
   def run(args) do
     Mix.Task.run("app.config")
+    setup_hackney_for_external_webhook_processing()
 
     {opts, []} =
       Helpers.do_parse_args(
@@ -50,11 +51,13 @@ defmodule Mix.Tasks.Canary.RunMonitor do
           extra_config: :keep,
           steps: :keep,
           timeout: :float,
+          monitor_name: :string
         ],[
           t: :run_type,
           l: :monitor_location,
           e: :extra_config,
           s: :steps,
+          m: :monitor_name
         ],[
           :run_type,
           :monitor_location,
@@ -72,7 +75,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
       :extra_config => extra_config_mapping,
       :interval_secs => -1,
       :last_run_time => nil,
-      :monitor_logical_name => 'mix task run',
+      :monitor_logical_name => opts[:monitor_name] || 'mix task run',
       :run_spec => opts[:run_type],
       :steps =>
         opts
@@ -114,4 +117,10 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   defp add_executable_arg(args, monitor_location, "exe"), do: Keyword.put(args, :executable, Path.expand(monitor_location))
   defp add_executable_arg(args, monitor_location, "rundll"), do: Keyword.put(args, :executable_folder, Path.expand(monitor_location))
   defp add_executable_arg(args, monitor_location, "cmd"), do: Keyword.put(args, :command_line, monitor_location)
+
+  defp setup_hackney_for_external_webhook_processing() do
+    # Needed if you are going to test external webhook processing
+    Application.ensure_all_started(:hackney)
+    Application.put_env(:orchestrator, :api_token, System.get_env("CANARY_API_TOKEN", "fake-token"))
+  end
 end
