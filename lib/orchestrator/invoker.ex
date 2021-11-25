@@ -2,6 +2,7 @@ defmodule Orchestrator.Invoker do
   @moduledoc """
   Behaviour definition for modules that can act as a monitor invoker.
   """
+  require Logger
 
   defmodule(TmpName, do: use(Puid, charset: :safe64, bits: 64))
 
@@ -30,6 +31,9 @@ defmodule Orchestrator.Invoker do
         System.put_env("TMP", tmpdir)
         port_fn.()
       end)
+      pid = Keyword.get(Port.info(port), :os_pid)
+      Logger.info("Started monitor with OS pid #{pid}")
+      Logger.metadata(os_pid: pid)
 
       Orchestrator.ProtocolHandler.run_protocol(config, port, opts)
 

@@ -15,7 +15,7 @@ defmodule Orchestrator.Application do
     #  Monitors can have very long logging outputs and truncating them throws awa
     #  potentially important information.
     Logger.configure(truncate: :infinity)
-    Logger.configure_backend(:console, metadata: [:monitor])
+    Logger.configure_backend(:console, metadata: [:monitor, :os_pid])
 
     configure_configs()
 
