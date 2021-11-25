@@ -135,7 +135,7 @@ defmodule Orchestrator.APIClient do
     end
   end
 
-  defp do_get_base_url_and_headers(nil, _), do: raise "Attempted to get base url and headers, but host was nil
+  defp do_get_base_url_and_headers(nil, _), do: raise "Attempted to get base url and headers, but host was nil"
   defp do_get_base_url_and_headers(host, url) do
     transport =
       if String.starts_with?(host, ["localhost", "172."]),
