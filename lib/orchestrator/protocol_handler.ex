@@ -24,10 +24,11 @@ defmodule Orchestrator.ProtocolHandler do
       error_report_fun: function(),
       current_step: String.t(),
       step_start_time: integer(),
-      step_timeout_timer: reference()
+      step_timeout_timer: reference(),
+      webhook_waiting_for: String.t()
     }
     defstruct [:monitor_logical_name, :steps, :io_handler, :telemetry_report_fun, :error_report_fun,
-               :current_step, :step_start_time, :step_timeout_timer]
+               :current_step, :step_start_time, :step_timeout_timer, :webhook_waiting_for]
   end
 
   def run_protocol(config, port, opts \\ []) do
@@ -190,6 +191,11 @@ defmodule Orchestrator.ProtocolHandler do
     Logger.info("Monitor completed shutdown")
     {:stop, :normal, state}
   end
+  def handle_cast({:message, <<"Wait For Webhook", rest::binary>>}, state) do
+    Logger.info("Monitor requested wait for #{rest}")
+    start_webhook_wait()
+    {:noreply, %State{state | webhook_waiting_for: String.trim(rest)}}
+  end
   def handle_cast({:message, other}, state) do
     Logger.error("Unexpected message: [#{inspect other}] received, exiting")
     send_exit(state)
@@ -245,6 +251,21 @@ defmodule Orchestrator.ProtocolHandler do
       {:stop, :normal, state}
     end
   end
+  def handle_info(:check_webhook_wait, state) do
+    wait = state.webhook_waiting_for
+    case Orchestrator.APIClient.get_webhook(wait, state.monitor_logical_name) do
+      nil ->
+        # Check every 5 seconds or until we are killed
+        Process.send_after(self(), :check_webhook_wait, round(5 * 1_000))
+        {:noreply, state}
+      webhook ->
+        json = Jason.encode!(webhook)
+        Logger.info("Found webhook. Returning #{json}")
+        send_msg("Webhook Wait Response #{json}", state)
+        {:noreply, %State{state | webhook_waiting_for: nil}}
+    end
+  end
+
 
   defp send_exit(state) do
     do_cleanup = if Orchestrator.Application.do_cleanup?(), do: "1", else: "0"
@@ -259,6 +280,11 @@ defmodule Orchestrator.ProtocolHandler do
   defp start_step() do
     send self(), :start_step
   end
+
+  defp start_webhook_wait() do
+    send self(), :check_webhook_wait
+  end
+
   defp do_log(level, message, state) do
     message = String.trim(message)
     if String.length(message) > 0 do
