@@ -2,7 +2,7 @@ FROM elixir:1.11-slim AS build
 
 ENV REFRESHED_AT 20210712T152504Z
 RUN apt-get update
-RUN apt-get install -y build-essential zstd git curl unzip procps
+RUN apt-get install -y build-essential zstd git curl unzip
 
 WORKDIR /app
 
