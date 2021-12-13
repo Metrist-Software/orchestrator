@@ -54,11 +54,6 @@ Resources:
             # Specifically for Kinesis monitor
             - Name: KINESIS_STREAM_NAME (still in use - FIXME)
               Value: !Ref KinesisMonitorStream
-            # Specifically for SES monitor
-            - Name: SES_FROM_EMAIL
-              Value: !Ref SESFromEmail
-            - Name: SES_TO_EMAIL
-              Value: !Ref SESToEmail
             # Specifically for SQS monitor
             - Name: QUEUE_URL
               Value: !Ref SQSTestQueue
@@ -493,13 +488,6 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
-   # For SES monitor
-  SESFromEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/defaultFromEmail
-  SESToEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sesToEmail
   # For Heroku monitor
   HerokuStackName:
     Type: AWS::SSM::Parameter::Value<String>
