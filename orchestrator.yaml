@@ -43,7 +43,7 @@ Resources:
               Value: !Sub "@secret@:/${EnvironmentTagName}/slack/api-token#token"
             - Name: WEBHOOKS_API_ENDPOINT
               Value: !Sub ${WebhooksAPIEndpoint}
-            # Specifically for Cognito monitor
+            # Specifically for Cognito monitor (still in use - FIXME)
             - Name: USER_POOL
               Value: !Ref CognitoTestUserPool
             # Specifically for EC2 monitor
@@ -52,7 +52,7 @@ Resources:
             - Name: AMI_ID
               Value: !Ref AmiId
             # Specifically for Kinesis monitor
-            - Name: KINESIS_STREAM_NAME
+            - Name: KINESIS_STREAM_NAME (still in use - FIXME)
               Value: !Ref KinesisMonitorStream
             # Specifically for SES monitor
             - Name: SES_FROM_EMAIL
@@ -88,11 +88,6 @@ Resources:
                   !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
             - Name: PAGERDUTY_SERVICE_ID
               Value: !Ref PagerdutyServiceId
-            # Specifically for Sentry monitor
-            - Name: SENTRY_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
             # Specifically for SendGrid monitor
             - Name: SENDGRID_FROM_EMAIL
               Value: !Ref SendGridFromEmail
@@ -367,17 +362,6 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for the Sentry monitor
-        - PolicyName: SentryReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
         # Needed for Terraform things
         - PolicyName: TerraformStatsAccess
           PolicyDocument:
@@ -531,10 +515,6 @@ Parameters:
   PagerdutyServiceId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/monitors/pagerduty/serviceId
-  # For Sentry monitor
-  SentryStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/sentryStackName
   # For Sendgrid monitor
   SendGridFromEmail:
     Type: AWS::SSM::Parameter::Value<String>
