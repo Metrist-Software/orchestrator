@@ -71,16 +71,6 @@ Resources:
               Value:
                 Fn::ImportValue:
                   !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            # Specifically for Github monitor
-            - Name: GITHUB_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            # Specifically for Pagerduty monitor
-            - Name: PAGERDUTY_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
             - Name: PAGERDUTY_SERVICE_ID
               Value: !Ref PagerdutyServiceId
             # Specifically for SendGrid monitor
@@ -335,28 +325,6 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for the Github monitor
-        - PolicyName: GithubReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for the Pagerduty monitor
-        - PolicyName: PagerdutyReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
         # Needed for Terraform things
         - PolicyName: TerraformStatsAccess
           PolicyDocument:
@@ -492,14 +460,7 @@ Parameters:
   HerokuStackName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/stacks/herokuStackName
-  # For Github monitor
-  GithubStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/githubStackName
   # For Pagerduty monitor
-  PagerdutyStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/pagerDutyStackName
   PagerdutyServiceId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/monitors/pagerduty/serviceId
