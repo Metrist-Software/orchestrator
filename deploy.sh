@@ -69,3 +69,24 @@ prod)
   wait
   ;;
 esac
+
+# This is for GCP and hopefully at some point in time also for AWS. Maybe there is duplication
+# with the code above, but that's so that we can just throw away everything and keep just this
+# bit here.
+#
+
+case "${GITHUB_REF:-}" in
+    refs/heads/main)
+        qualifier=""
+        ;;
+    *)
+        qualifier="-preview"
+        ;;
+esac
+
+version=$(git rev-parse --short HEAD)
+image_tag=canarymonitor/agent:$version
+
+tag_file=orchestrator-latest$qualifier.txt
+echo $image_tag >/tmp/$tag_file
+aws s3 cp --region=us-west-2 /tmp/$tag_file s3://canary-private/version-stamps/$tag_file
