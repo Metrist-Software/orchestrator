@@ -29,12 +29,16 @@ tail_log_dev:
 tail_log_prod:
 	aws logs tail --region=us-west-2 --follow --since=0m /stackery/task/orchestrator-prod-OrchestratorTask/logs
 
-exec_dev: exec_help
-	aws ecs execute-command --region=us-east-1 --command /bin/bash --interactive --container orchestrator --cluster default --task \
-	    `aws ecs list-tasks --region=us-east-1 --service-name=orchestrator-dev1-OrchestratorService | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`
-exec_prod: exec_help
-	aws ecs execute-command --region=us-west-2 --command /bin/bash --interactive --container orchestrator --cluster default --task \
-	    `aws ecs list-tasks --region=us-west-2 --service-name=orchestrator-prod-OrchestratorService | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`
+exec_dev:
+	make AWS_REGION=us-east-1 ENV=dev1 exec
+
+exec_prod:
+	make AWS_REGION=us=west=2 ENV=prod exec
+
+exec: exec_help
+	aws ecs execute-command --region=${AWS_REGION} --command /bin/bash --interactive --container orchestrator --cluster default --task \
+	    `aws ecs list-tasks --region=${AWS_REGION} --service-name=orchestrator-${ENV}-OrchestratorService | jq '.taskArns[0]' | cut -d/ -f3 | sed 's/"//'`
+
 
 exec_help:
 	@echo
