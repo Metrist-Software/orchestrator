@@ -46,10 +46,11 @@ defmodule Orchestrator.ProtocolHandler do
                                         telemetry_report_fun,
                                         error_report_fun,
                                         os_pid})
-    wait_for_complete(port, ref, config.monitor_logical_name, pid)
+    result = wait_for_complete(port, ref, config.monitor_logical_name, pid)
     # Don't trust anything to exit voluntarily
     kill_or_close(port)
     Logger.info("Monitor is complete")
+    result
   end
 
   defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
@@ -58,6 +59,7 @@ defmodule Orchestrator.ProtocolHandler do
         Logger.info(
           "Received DOWN message, reason: #{inspect(reason)}, completing invocation."
         )
+        :ok
 
       {^port, {:data, data}} ->
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
@@ -79,6 +81,7 @@ defmodule Orchestrator.ProtocolHandler do
 
       :force_exit ->
         Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
+        {:error, :timeout}
 
       msg ->
         Logger.debug("Ignoring message #{inspect(msg)}")
@@ -86,6 +89,7 @@ defmodule Orchestrator.ProtocolHandler do
     after
       @max_monitor_runtime ->
         Logger.error("Monitor did not complete in time, killing it")
+        {:error, :timeout}
     end
   end
 
