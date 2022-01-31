@@ -66,8 +66,8 @@ defmodule Orchestrator.MonitorScheduler do
   def handle_info({task_ref, {:error, :timeout}}, state) do
     # We don't care about the DOWN message now, so let's demonitor and flush it
     Process.demonitor(task_ref, [:flush])
-    Logger.info("MET-427: Task timeout. Running cleanup")
-
+    Logger.info("Task timeout. Running cleanup")
+    # Run monitor cleanup if a encountered a timeout by passing an empty list of steps
     task = do_run(%{state.config | steps: []})
     {:noreply, %State{state | task: task}}
   end

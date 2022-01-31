@@ -358,11 +358,16 @@ defmodule Orchestrator.ProtocolHandler do
         Port.close(port)
       {_, pid} ->
         Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
-        # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
-        kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
-        kill.(15)
-        Process.sleep(1_000)
-        kill.(9)
+        # Wrapped System.cmd/2 call with try catch since it raises an ` Erlang error: :enoent` occasionally
+        try do
+          # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
+          kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
+          kill.(15)
+          Process.sleep(1_000)
+          kill.(9)
+        rescue
+          e -> Logger.error("Got error killing process #{inspect(pid)}: #{Exception.format(:error, e, __STACKTRACE__)}")
+        end
     end
   end
 
