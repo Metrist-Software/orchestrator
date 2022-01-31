@@ -45,7 +45,6 @@ defmodule Orchestrator.MonitorScheduler do
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
-      # We'll stub the actual run
       task = do_run(state.config)
       {:noreply, %State{state | task: task, overtime: false}}
     else

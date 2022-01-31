@@ -30,32 +30,4 @@ defmodule Orchestrator.MonitorSchedulerTest do
     error = "You are talking too much, go away (HttpRequestException 429)"
     assert [_match, _capture] = Regex.run(dotnet_http_error_match(), error)
   end
-
-  # @tag timeout: :infinity
-  # test "run scheduler" do
-  #   scheduler =
-  #     start_supervised!(
-  #       {Orchestrator.MonitorScheduler,
-  #        [
-  #          config_id: "config_id",
-  #          get_config_fn: fn _ ->
-  #            %{
-  #              monitor_logical_name: "test_monitor",
-  #              run_spec: %{name: "timeouttest", run_type: "exe"},
-  #              extra_config: %{},
-  #              interval_secs: 10,
-  #              last_run_time: nil,
-  #              steps: [
-  #                %{
-  #                  check_logical_name: "Test",
-  #                  description: "Description",
-  #                  timeout_secs: 20,
-  #                }
-  #              ]
-  #            }
-  #          end
-  #        ]}
-  #     )
-  #   Process.sleep(:timer.minutes(1000))
-  # end
 end
