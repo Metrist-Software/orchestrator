@@ -15,8 +15,10 @@ defmodule Orchestrator.MonitorScheduler do
 
   def start_link(opts) do
     name = Keyword.get(opts, :name)
-    config = Keyword.get(opts, :config_id)
-    |> Orchestrator.Configuration.get_config()
+    config_id = Keyword.get(opts, :config_id)
+    get_config_fn = Keyword.get(opts, :get_config_fn, &Orchestrator.Configuration.get_config/1)
+
+    config = get_config_fn.(config_id)
 
     GenServer.start_link(__MODULE__, config, name: name)
   end
@@ -58,6 +60,16 @@ defmodule Orchestrator.MonitorScheduler do
   # We receive two messages - one for task completion, one for process completion. We treat
   # the first one as purely informal - if the task process crashes, we want to know as well so
   # we only change state on the :DOWN message which we will always get.
+
+  @impl true
+  def handle_info({task_ref, {:error, :timeout}}, state) do
+    # We don't care about the DOWN message now, so let's demonitor and flush it
+    Process.demonitor(task_ref, [:flush])
+    Logger.info("Task timeout. Running cleanup")
+    # Run monitor cleanup if a encountered a timeout by passing an empty list of steps
+    task = do_run(%{state.config | steps: []})
+    {:noreply, %State{state | task: task}}
+  end
 
   @impl true
   def handle_info({_task_ref, {:error, error}}, state) do
