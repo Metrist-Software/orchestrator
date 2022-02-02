@@ -109,9 +109,9 @@ Resources:
                 Value: "true"
               - !Ref AWS::NoValue
             - Name: CLOUD_PLATFORM
-              Values: "aws"
+              Value: "aws"
             - Name: EXECUTION_REGION
-              Values: !Ref AWS::Region             
+              Value: !Ref AWS::Region             
       Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 4096
