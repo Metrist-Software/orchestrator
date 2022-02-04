@@ -108,6 +108,10 @@ Resources:
               - Name: CANARY_PREVIEW_MODE
                 Value: "true"
               - !Ref AWS::NoValue
+            - Name: CLOUD_PLATFORM
+              Value: "aws"
+            - Name: EXECUTION_REGION
+              Value: !Ref AWS::Region             
       Cpu: 2048
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 4096
@@ -175,6 +179,10 @@ Resources:
               Value: "Canary Monitoring Agent"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
+            - Name: CLOUD_PLATFORM
+              Value: "aws"
+            - Name: EXECUTION_REGION
+              Value: !Ref AWS::Region              
       Cpu: 512
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
       Memory: 1024
