@@ -75,11 +75,26 @@ defmodule Orchestrator.ExecutableInvoker do
     zip = download(zip_name(name, version))
     tmp = Path.join([System.tmp_dir(), "#{name}-#{version}.zip"])
     File.write!(tmp, zip, [:binary])
-    target = cache_location(name, version)
-    File.mkdir_p(target)
+
+    target = ensure_cache_dir(name, version)
+
     {:ok, files} = :zip.extract(String.to_charlist(tmp), cwd: String.to_charlist(target))
     Enum.map(files, &ensure_x_bit/1)
     File.rm(tmp)
+  end
+
+  defp ensure_cache_dir(name, version) do
+    top_level_cache = cache_location(name)
+
+    # Delete the old version if it exists as we've now downloaded a new one
+    if File.dir?(top_level_cache) do
+      File.rm_rf(top_level_cache)
+    end
+
+    version_specific_cache = cache_location(name, version)
+    File.mkdir_p(version_specific_cache)
+
+    version_specific_cache
   end
 
   # A bit dirty, but Erlang's unzip does not preserve the execute bit. It does not hurt to
@@ -103,6 +118,7 @@ defmodule Orchestrator.ExecutableInvoker do
 
   # A bunch of path/env helpers.
 
+  defp cache_location(name), do: Path.join([cache_path(), name])
   defp cache_location(name, version), do: Path.join([cache_path(), name, version])
 
   defp zip_name(name, version), do: "#{name}-#{version}-linux-x64.zip"
