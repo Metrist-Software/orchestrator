@@ -11,17 +11,29 @@ defmodule Orchestrator.IPAServer do
   @any ~r/.*/
   # The default config forwards some internal data
   # You can choose whether to include this in your config or not.
+  # For now we support both our old and new domains, we need to make sure that
+  # we have properly cleaned up old config before removing the rules here.
   @default_config %{
     {"canary", "GetRunConfig"} => %{
       "method" => ~r(GET),
       "host" => ~r(app.*\.metrist\.io),
       "url" => ~r(api/agent/run-config)
     },
+    {"canary", "GetRunConfig"} => %{
+      "method" => ~r(GET),
+      "host" => ~r(app.*\.canarymonitor\.com),
+      "url" => ~r(api/agent/run-config)
+    },
     # Note that this has special support in the IPA agent to
-    # exclude the sendig of our own telemetry
+    # exclude the sending of our own telemetry
     {"canary", "SendTelemetry"} => %{
       "method" => ~r(POST),
       "host" => ~r(app.*\.metrist\.io),
+      "url" => ~r(api/agent/telemetry)
+    },
+    {"canary", "SendTelemetry"} => %{
+      "method" => ~r(POST),
+      "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/telemetry)
     },
     {"canary", "GetLatestMonitorBuild"} => %{
@@ -53,7 +65,7 @@ defmodule Orchestrator.IPAServer do
           parse_config_file(file)
       end
 
-    Logger.info("Started listening on port #{@port} for IPA messages")
+    Logger.info("IPA: Started listening on port #{@port} for messages")
 
     {:ok, config}
   end
@@ -67,7 +79,7 @@ defmodule Orchestrator.IPAServer do
     try do
       handle_message(cleaned_msg, config)
     rescue
-      e -> Logger.error("Got error processing #{inspect(msg)}: #{Exception.format(:error, e, __STACKTRACE__)}")
+      e -> Logger.error("IPA: Got error processing #{inspect(msg)}: #{Exception.format(:error, e, __STACKTRACE__)}")
     end
 
     {:noreply, config}
@@ -95,17 +107,17 @@ defmodule Orchestrator.IPAServer do
   end
 
   def handle_message(other, _config) do
-    Logger.error("Unknown message <<#{inspect(other)}>>, skipping")
+    Logger.error("IPA: Unknown message <<#{inspect(other)}>>, skipping")
   end
 
   def maybe_send(method, host, path, value, config) do
     case Enum.find(config, fn {_, v} -> matches?(method, host, path, v) end) do
       {{m, c}, v} ->
         {value, _} = Float.parse(value)
-        Logger.info("We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
+        Logger.info("IPA: We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
         Orchestrator.APIClient.write_telemetry(m, c, value)
       _ ->
-        Logger.info("#{method}/#{host}/#{path} does not match anything in our configuration")
+        Logger.info("IPA: #{method}/#{host}/#{path} does not match anything in our configuration")
     end
   end
 
