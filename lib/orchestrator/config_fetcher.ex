@@ -42,14 +42,20 @@ defmodule Orchestrator.ConfigFetcher do
   end
 
   defp run_fetch(state) do
-    new_config = state.config_fetch_fun.()
-    deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
-    Logger.info("- deltas: add=#{length(deltas.add)} delete=#{length(deltas.delete)} change=#{length(deltas.change)}")
-    Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
-    %State{state | current_config: new_config}
+    try do
+      new_config = state.config_fetch_fun.()
+      deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
+      Logger.info("- deltas: add=#{length(deltas.add)} delete=#{length(deltas.delete)} change=#{length(deltas.change)}")
+      Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
+      %State{state | current_config: new_config}
+    rescue
+      e ->
+        Logger.warn("Error pulling configuration, nothing fetched: #{Exception.format(:error, e, __STACKTRACE__)}")
+        state
+    end
   end
 
-  defp schedule_fetch(delay \\ 60000) do
+  defp schedule_fetch(delay \\ 60_000) do
     Process.send_after(self(), :fetch, delay)
   end
 end
