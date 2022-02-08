@@ -41,7 +41,7 @@ defmodule CanaryIPA.Agent do
           process_event(event, ts, source_pid, state)
 
         other ->
-          Logger.info("Ignoring unknown trace message: #{inspect(other)}")
+          Logger.debug("Ignoring unknown trace message: #{inspect(other)}")
           state
       end
 

@@ -46,6 +46,16 @@ defmodule Orchestrator.APIClient do
     })
   end
 
+  def write_host_telemetry(telemetry) do
+    # No retries, error handling, etc - just one-shot and hope for the best.
+    {url, headers} = base_url_and_headers()
+    url = "#{url}/host_telemetry"
+    headers = [{"Content-Type", "application/json"} | headers]
+    msg = Jason.encode!(telemetry)
+    HTTPoison.post(url, msg, headers)
+    :ok
+  end
+
   def get_webhook(uid, monitor_logical_name) do
     instance_name = Orchestrator.Application.instance()
     Logger.info("Checking for webhoook with uid #{uid} for monitor #{monitor_logical_name} with instance #{instance_name}")
