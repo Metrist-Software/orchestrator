@@ -20,7 +20,7 @@ defmodule Orchestrator.APIClient do
       end
 
     {:ok, %HTTPoison.Response{body: body}} =
-      HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers)
+      HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers, request_options())
 
     {:ok, config} = Jason.decode(body, keys: :atoms)
 
@@ -46,13 +46,23 @@ defmodule Orchestrator.APIClient do
     })
   end
 
+  def write_host_telemetry(telemetry) do
+    # No retries, error handling, etc - just one-shot and hope for the best.
+    {url, headers} = base_url_and_headers()
+    url = "#{url}/host_telemetry"
+    headers = [{"Content-Type", "application/json"} | headers]
+    msg = Jason.encode!(telemetry)
+    HTTPoison.post(url, msg, headers, request_options())
+    :ok
+  end
+
   def get_webhook(uid, monitor_logical_name) do
     instance_name = Orchestrator.Application.instance()
     Logger.info("Checking for webhoook with uid #{uid} for monitor #{monitor_logical_name} with instance #{instance_name}")
     {url, headers} = base_webhooks_url_and_headers()
 
     {:ok, %HTTPoison.Response{status_code: status_code, body: body}} =
-      HTTPoison.get("#{url}/#{monitor_logical_name}/#{instance_name}/#{uid}", headers)
+      HTTPoison.get("#{url}/#{monitor_logical_name}/#{instance_name}/#{uid}", headers, request_options())
 
     case status_code do
       200 ->
@@ -79,7 +89,7 @@ defmodule Orchestrator.APIClient do
     # TODO This is quite primitive for now. We probably should queue this up to a genserver, blablabla. Genserver
     # can then also start batching messages.
 
-    case HTTPoison.post(url, msg, headers) do
+    case HTTPoison.post(url, msg, headers, request_options()) do
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         case div(status_code, 100) do
           2 ->
@@ -121,6 +131,15 @@ defmodule Orchestrator.APIClient do
     end
   end
 
+  defp request_options do
+    # This is mainly so we can run against the "fake" CA that a local backend will use. Another option
+    # is to actually install the CA system-wide but that comes with its own set of risks.
+    case System.get_env("CANARY_DISABLE_TLS_VERIFICATION") do
+      nil -> []
+      _ -> [ssl: [verify: :verify_none]]
+    end
+  end
+
   defp base_url_and_headers do
     System.get_env("CANARY_API_HOST", "app.metrist.io")
     |> do_get_base_url_and_headers("api/agent")
@@ -137,13 +156,8 @@ defmodule Orchestrator.APIClient do
 
   defp do_get_base_url_and_headers(nil, _), do: raise "Attempted to get base url and headers, but host was nil"
   defp do_get_base_url_and_headers(host, url) do
-    transport =
-      if String.starts_with?(host, ["localhost", "172."]),
-        do: "http",
-        else: "https"
-
     api_token = Orchestrator.Application.api_token()
 
-    {"#{transport}://#{host}/#{url}", [{"Authorization", "Bearer #{api_token}"}]}
+    {"https://#{host}/#{url}", [{"Authorization", "Bearer #{api_token}"}]}
   end
 end

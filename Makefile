@@ -7,6 +7,14 @@ run:
     # Note that this will run aganst wherever your AWS... env vars are pointed at
 	iex -S mix
 
+run_against_local:
+	CANARY_API_HOST=localhost:4443 \
+	CANARY_DISABLE_TLS_VERIFICATION=1  \
+	CANARY_INSTANCE_ID=`hostname` \
+	CANARY_API_TOKEN=fake-api-token-for-dev \
+	CANARY_RUN_GROUPS=local-development \
+	  iex -S mix
+
 release:
 	mkdir -p priv/
 	echo Revision: `git rev-parse --short HEAD` >priv/build.txt

@@ -30,6 +30,7 @@ defmodule Orchestrator.Application do
     configure_temp_dir()
 
     children = [
+      Orchestrator.HostTelemetry,
       CanaryIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
