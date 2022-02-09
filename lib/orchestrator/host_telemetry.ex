@@ -57,10 +57,12 @@ defmodule Orchestrator.HostTelemetry do
   end
 
   defp mem_usage() do
-    # Available is -/- buffers and cache, but that's probably what we want anyway.
+    # Available is including buffers and cache, but that's probably what we want anyway. It looks like `:available_memory` is
+    # not always available so we calculate it by hand.
     m = :memsup.get_system_memory_data()
-    used = m[:total_memory] - m[:available_memory]
-    used_fraction = used / m[:available_memory]
+    available = m[:free_memory] + m[:buffered_memory] + m[:cached_memory]
+    used = m[:total_memory] - available
+    used_fraction = used / available
     round(used_fraction * 100)
   end
 
