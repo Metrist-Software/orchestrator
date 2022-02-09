@@ -26,6 +26,7 @@ defmodule Orchestrator.HostTelemetry do
 
   @impl true
   def init(_args) do
+    Logger.info("Host telemetry: process starting, sending telemetry every #{@tick_time}ms")
     schedule_tick()
     :cpu_sup.util() # The first call may be garbage according to the manual.
     {:ok, %State{instance: Orchestrator.Application.instance()}}
@@ -40,7 +41,7 @@ defmodule Orchestrator.HostTelemetry do
 
   defp execute_tick(state) do
     telemetry = %{disk: disk_usage(), cpu: cpu_load(), mem: mem_usage(), instance: state.instance}
-    Logger.info("Host telemetry: #{inspect telemetry}")
+    Logger.info("Host telemetry: sending #{inspect telemetry}")
     Orchestrator.APIClient.write_host_telemetry(telemetry)
   end
 
@@ -51,11 +52,12 @@ defmodule Orchestrator.HostTelemetry do
   end
 
   defp cpu_load() do
-    # CPU load normalized to an integer percentags
+    # CPU load normalized to an integer percentage
     round(:cpu_sup.util())
   end
 
   defp mem_usage() do
+    # Available is -/- buffers and cache, but that's probably what we want anyway.
     m = :memsup.get_system_memory_data()
     used = m[:total_memory] - m[:available_memory]
     used_fraction = used / m[:available_memory]
