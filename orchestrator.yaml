@@ -39,7 +39,7 @@ Resources:
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
             - Name: CANARY_RUN_GROUPS
-              Value: !Sub "RunDLL,RunDLL-${AWS::Region}"
+              Value: !Sub "aws,aws:${AWS::Region},aws:${EnvironmentTagName},aws:${EnvironmentTagName}/${AWS::Region}"
             - Name: CANARY_CLEANUP_ENABLED
               Value: !Ref EnableCleanup
             - Name: SLACK_ALERTING_CHANNEL
