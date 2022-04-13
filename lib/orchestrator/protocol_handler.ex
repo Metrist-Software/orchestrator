@@ -12,7 +12,7 @@ defmodule Orchestrator.ProtocolHandler do
   @exit_timeout 5 * 60 * 1_000
 
   # Tag to represent a step error from one of CANARY's monitors for log filtering
-  @monitor_error_tag "CANARY_MONITOR_ERROR"
+  @monitor_error_tag "METRIST_MONITOR_ERROR"
 
 
   defmodule State do
