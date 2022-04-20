@@ -62,7 +62,7 @@ defmodule Orchestrator.ProtocolHandler do
         :ok
 
       {^port, {:data, data}} ->
-        IO.puts("Got data from port: [#{inspect data}] (#{String.length(data)} bytes)")
+        Logger.info("Got data from port: [#{inspect data}] (#{String.length(data)} bytes)")
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
             # append to returned partial message as this partial piece was not complete
