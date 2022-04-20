@@ -94,29 +94,35 @@ defmodule Orchestrator.ProtocolHandler do
   end
 
   def handle_message(pid, monitor_logical_name, message) do
-    case Integer.parse(message) do
-      {len, rest} ->
-        message_body = String.slice(rest, 1, len)
-        if (len > String.length(message_body)) do
-          # Incomplete message
-          # Send message back if we can't process it
-          # so that future data can be appended
-          {:incomplete, message}
-        else
-          GenServer.cast(pid, {:message, message_body})
-          # If there's more, try to process more (but it may be incomplete)
-          handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
-        end
-      :error ->
-        if String.length(message) > 0 do
-          {:error, message}
-        else
-          # This is actually the catch all. Odd but this
-          # is the success exit condition as there will either be an
-          # incomplete message left or nothing and nohting will trigger
-          # an :error trying to parse
-          {:ok, nil}
-        end
+    message_length = String.length(message)
+    if message_length in 1..4 do
+      IO.puts("Skipping message: [#{message}] as too short")
+      {:incomplete, message}
+    else
+      case Integer.parse(message) do
+        {len, rest} ->
+          message_body = String.slice(rest, 1, len)
+          if (len > String.length(message_body)) do
+            # Incomplete message
+            # Send message back if we can't process it
+            # so that future data can be appended
+            {:incomplete, message}
+          else
+            GenServer.cast(pid, {:message, message_body})
+            # If there's more, try to process more (but it may be incomplete)
+            handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
+          end
+        :error ->
+          if String.length(message) > 0 do
+            {:error, message}
+          else
+            # This is actually the catch all. Odd but this
+            # is the success exit condition as there will either be an
+            # incomplete message left or nothing and nohting will trigger
+            # an :error trying to parse
+            {:ok, nil}
+          end
+      end
     end
   end
 

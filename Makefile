@@ -41,7 +41,7 @@ exec_dev:
 	make AWS_REGION=us-east-1 ENV=dev1 exec
 
 exec_prod:
-	make AWS_REGION=us=west=2 ENV=prod exec
+	make AWS_REGION=us-west-2 ENV=prod exec
 
 exec: exec_help
 	aws ecs execute-command --region=${AWS_REGION} --command /bin/bash --interactive --container orchestrator --cluster default --task \
