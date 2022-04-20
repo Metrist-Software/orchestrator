@@ -62,6 +62,7 @@ defmodule Orchestrator.ProtocolHandler do
         :ok
 
       {^port, {:data, data}} ->
+        Logger.info("Got data from port: [#{inspect data}] (#{String.length(data)} bytes)")
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
             # append to returned partial message as this partial piece was not complete
@@ -84,7 +85,7 @@ defmodule Orchestrator.ProtocolHandler do
         {:error, :timeout}
 
       msg ->
-        Logger.debug("Ignoring message #{inspect(msg)}")
+        Logger.info("Ignoring message #{inspect(msg)}")
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
     after
       @max_monitor_runtime ->
