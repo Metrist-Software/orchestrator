@@ -99,7 +99,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_message(pid, monitor_logical_name, message) do
     message_length = String.length(message)
     if message_length in 1..4 do
-      IO.puts("Skipping message: [#{message}] as too short")
+      Logger.warn("Skipping message: [#{message}] as too short")
       {:incomplete, message}
     else
       case Integer.parse(message) do
