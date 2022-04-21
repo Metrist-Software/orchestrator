@@ -62,9 +62,6 @@ defmodule Orchestrator.ProtocolHandler do
         :ok
 
       {^port, {:data, data}} ->
-        if monitor_logical_name == "awselb" do
-          Logger.info("Got data from port: [#{inspect data}] (#{String.length(data)} bytes)")
-        end
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
             # append to returned partial message as this partial piece was not complete
