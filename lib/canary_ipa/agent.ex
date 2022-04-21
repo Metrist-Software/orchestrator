@@ -51,7 +51,7 @@ defmodule CanaryIPA.Agent do
   defp process_event([_level, 'request', :hackney, opts], ts, source_pid, state) do
     with body <- Keyword.get(opts, :body, "{}"),
          {:ok, decoded} <- Jason.decode(body),
-         %{"check_logical_name" => "SendTelemetry", "monitor_logical_name" => "canary"} <- decoded do
+         %{"check_logical_name" => "SendTelemetry", "monitor_logical_name" => "metrist"} <- decoded do
       Logger.debug("Refusing to enter endless loop on telemetry send request: #{inspect opts}")
       %State{state |
              current_requests_by_pid: Map.put(state.current_requests_by_pid, source_pid, :ignore)}

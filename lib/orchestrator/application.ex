@@ -31,7 +31,7 @@ defmodule Orchestrator.Application do
 
     children = [
       Orchestrator.HostTelemetry,
-      CanaryIPA.Agent,
+      MetristIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
