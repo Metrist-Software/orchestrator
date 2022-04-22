@@ -1,4 +1,4 @@
-defmodule CanaryIPA.Agent do
+defmodule MetristIPA.Agent do
   @moduledoc """
   Canary In-Process Agent for the BEAM ecosystem (Erlang, Elixir). This agent will forward timings of intercepted
   calls to the Canary Monitoring Agent for further processing.
