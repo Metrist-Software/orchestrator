@@ -1,7 +1,7 @@
-defmodule CanaryIPA.Agent do
+defmodule MetristIPA.Agent do
   @moduledoc """
-  Canary In-Process Agent for the BEAM ecosystem (Erlang, Elixir). This agent will forward timings of intercepted
-  calls to the Canary Monitoring Agent for further processing.
+  Metrist In-Process Agent for the BEAM ecosystem (Erlang, Elixir). This agent will forward timings of intercepted
+  calls to the Metrist Monitoring Agent for further processing.
 
   Interception is currently only implemented for Hackney, which comes with a tracing library. This means that libraries
   that use Hackney, like HTTPoison, will automatically work.
@@ -51,7 +51,7 @@ defmodule CanaryIPA.Agent do
   defp process_event([_level, 'request', :hackney, opts], ts, source_pid, state) do
     with body <- Keyword.get(opts, :body, "{}"),
          {:ok, decoded} <- Jason.decode(body),
-         %{"check_logical_name" => "SendTelemetry", "monitor_logical_name" => "canary"} <- decoded do
+         %{"check_logical_name" => "SendTelemetry", "monitor_logical_name" => "metrist"} <- decoded do
       Logger.debug("Refusing to enter endless loop on telemetry send request: #{inspect opts}")
       %State{state |
              current_requests_by_pid: Map.put(state.current_requests_by_pid, source_pid, :ignore)}
