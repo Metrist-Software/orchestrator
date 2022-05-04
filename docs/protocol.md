@@ -147,6 +147,17 @@ The metadata is parsed and sent along to the Metrist backend.
 
 Invalid metadata is ignored for successful step completions and is interpreted as part of the error message for errored steps.
 
+Example:
+
+    Step Time key1=value1,key2=3432 42.1
+
+Will be interpreted as metadata with the following keys and values:
+
+    key1: value1
+    key2: 42.0
+
+(because base16 "3432" converts to the string "42" which parses as a float value of "42.0")
+
 ## Processing Webhooks (Optional)
 
 A monitor can ask that the orchestrator resolve a webhook for the monitor by sending `Wait For Webhook <uid>` where uid is a unique
