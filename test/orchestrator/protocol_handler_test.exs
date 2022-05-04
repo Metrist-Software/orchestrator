@@ -91,7 +91,8 @@ defmodule Orchestrator.ProtocolHandlerTest do
       log = capture_log(fn ->
         assert %{} = parse_metadata("garbage")
       end)
-      assert String.contains?(log, "[warning] Could not parse as metadata: 'garbage', ignoring")
+      assert String.contains?(log, "Could not parse as metadata: 'garbage', ignoring")
+      assert String.contains?(log, "[warn") # It can be "warn" or "warning", so be lenient.
     end
 
     test "Basic single value works" do
