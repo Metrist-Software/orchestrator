@@ -35,7 +35,7 @@ defmodule Orchestrator.AWSSecretsManager do
             |> Jason.decode!()
             |> Map.get(selector)
         end
-      {:error, message} ->
+      {:error, _message} ->
         Logger.info("Secret #{name} not found, returning nil")
         nil
     end
