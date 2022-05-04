@@ -180,7 +180,7 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   def monitor_error_handler(_, monitor_logical_name, check_logical_name, message) do
-    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message)
+    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message, %{})
   end
 
   # Purely for testing the regex
