@@ -1,6 +1,7 @@
 defmodule Orchestrator.ProtocolHandlerTest do
   use ExUnit.Case, async: true
   require Logger
+  import ExUnit.CaptureLog
 
   alias Orchestrator.ProtocolHandler
 
@@ -25,4 +26,95 @@ defmodule Orchestrator.ProtocolHandlerTest do
     result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
     assert {:ok, :nil} == result
   end
+
+  describe "Metadata handling in monitor results" do
+    defp mkstate do
+      %ProtocolHandler.State{
+        step_start_time: 0,
+        monitor_logical_name: "mon",
+        current_step: %{
+          check_logical_name: "check",
+        },
+        step_timeout_timer: nil,
+        telemetry_report_fun: fn m, c, t, meta -> send self(), {:telemetry, m, c, t, meta} end,
+        error_report_fun: fn m, c, e, meta -> send self(), {:error, m, c, e, meta} end,
+        io_handler: self()
+      }
+    end
+
+    test "Metadata is handled correctly for orchestrator-timed steps" do
+      state = mkstate()
+
+      ProtocolHandler.handle_cast({:message, "Step OK"}, state)
+      assert_received {:telemetry, "mon", "check", _, %{}}
+
+      ProtocolHandler.handle_cast({:message, "Step OK key1=value1"}, state)
+      assert_received {:telemetry, "mon", "check", _, %{"key1" => "value1"}}
+    end
+
+    test "Metadata is handled correctly for monitor-timed steps" do
+      state = mkstate()
+
+      ProtocolHandler.handle_cast({:message, "Step Time 12.34"}, state)
+      assert_received {:telemetry, "mon", "check", 12.34, %{}}
+
+      ProtocolHandler.handle_cast({:message, "Step Time key1=value1,key2=3432 12.34"}, state)
+      assert_received {:telemetry, "mon", "check", 12.34, %{"key1" => "value1", "key2" => 42.0}}
+    end
+
+    test "Metadata is handled correctly for errored steps" do
+      state = mkstate()
+      capture_log(fn ->
+
+        ProtocolHandler.handle_cast({:message, "Step Error The cake is a lie"}, state)
+        assert_received {:error, "mon", "check", "The cake is a lie", %{}}
+
+        ProtocolHandler.handle_cast({:message, "Step Error key=value The cake really is a lie"}, state)
+        assert_received {:error, "mon", "check", "The cake really is a lie", %{"key" => "value"}}
+
+        ProtocolHandler.handle_cast({:message, "Step Error key=value,candle The cake still is a lie"}, state)
+        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie", %{}}
+      end)
+    end
+  end
+
+  describe "Parsing metadata conforms to protocol" do
+    import Orchestrator.ProtocolHandler, only: [parse_metadata: 1]
+
+    test "Empty or nil string parses to empty map" do
+      assert %{} == parse_metadata("")
+      assert %{} == parse_metadata(" ")
+      assert %{} == parse_metadata(nil)
+    end
+
+    test "Garbage is ignored but logs a warning" do
+      log = capture_log(fn ->
+        assert %{} = parse_metadata("garbage")
+      end)
+      assert String.contains?(log, "[warning] Could not parse as metadata: 'garbage', ignoring")
+    end
+
+    test "Basic single value works" do
+      assert %{"key" => "value"} == parse_metadata("key=value")
+      assert %{"key1" => "value1", "key2" => "value2"} == parse_metadata("key1=value1,key2=value2")
+    end
+
+    test "Base16 decode works" do
+      assert %{"key" => "value"} == parse_metadata("key=76616C7565")
+      assert %{"key" => 1.0} == parse_metadata("key=312E30")
+    end
+
+    test "Base16 decode is case-insensitive" do
+      assert %{"key" => "value"} == parse_metadata("key=76616c7565")
+    end
+
+    test "Numbers do not need to be encoded if they don't look like base16 strings" do
+      assert %{"key" => 1.0} == parse_metadata("key=1.0")
+    end
+
+    test "Like in JSON, there is no difference between integers and floats" do
+      assert %{"key" => 1.0} == parse_metadata("key=1")
+    end
+  end
+
 end

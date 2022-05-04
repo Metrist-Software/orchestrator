@@ -33,8 +33,8 @@ defmodule Orchestrator.ProtocolHandler do
 
   def run_protocol(config, port, opts \\ []) do
     Orchestrator.Application.set_monitor_metadata(config)
-    error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/3)
-    telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/3)
+    error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/4)
+    telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/4)
     os_pid = Keyword.get(Port.info(port), :os_pid)
 
     ref = Port.monitor(port)
@@ -166,17 +166,29 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = <<"Step Time ", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       state = cancel_timer(state)
-      {time, _} = Float.parse(rest)
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time)
+
+      {time, metadata} =
+        case String.split(rest) do
+          [just_the_timing] ->
+            {time, _} = Float.parse(just_the_timing)
+            {time, %{}}
+          [metadata, timing] ->
+            {time, _} = Float.parse(timing)
+            metadata = parse_metadata(metadata)
+            {time, metadata}
+        end
+
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time, metadata)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
   end
-  def handle_cast({:message, msg = "Step OK"}, state) do
+  def handle_cast({:message, msg = <<"Step OK", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       state = cancel_timer(state)
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1)
+      metadata = parse_metadata(rest)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1, metadata)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -185,11 +197,26 @@ defmodule Orchestrator.ProtocolHandler do
     when_current_step(msg, state, fn ->
       state = cancel_timer(state)
       Logger.error("#{state.monitor_logical_name}: step error #{state.current_step.check_logical_name}: #{rest} - #{@monitor_error_tag}")
-      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, rest)
+      rest = String.trim(rest)
+      {error_msg, metadata} =
+        case String.split(rest, " ", parts: 2) do
+          [just_one_word] ->
+            {just_one_word, %{}}
+          [maybe_meta, error_msg] ->
+            case parse_metadata(maybe_meta) do
+              m = %{} when map_size(m) == 0 ->
+                {rest, %{}}
+              meta ->
+                {error_msg, meta}
+            end
+        end
+      error_msg = String.trim(error_msg)
+
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, error_msg, metadata)
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
       {:stop, :normal, %State{state | current_step: nil, step_start_time: nil}}
-    end)
+      end)
   end
   def handle_cast({:message, <<"Exit", _::binary>>}, state) do
     Logger.info("Monitor completed shutdown")
@@ -250,7 +277,7 @@ defmodule Orchestrator.ProtocolHandler do
       {:noreply, state}
     else
       Logger.error("Timeout on step #{inspect state.current_step}, exiting")
-      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{@monitor_error_tag}")
+      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{@monitor_error_tag}", %{})
       send_exit(state)
       {:stop, :normal, state}
     end
@@ -368,6 +395,44 @@ defmodule Orchestrator.ProtocolHandler do
         rescue
           e -> Logger.error("Got error killing process #{inspect(pid)}: #{Exception.format(:error, e, __STACKTRACE__)}")
         end
+    end
+  end
+
+  # Public for testing
+  def parse_metadata(nil), do: %{}
+  def parse_metadata(s) do
+    try do
+	    try_parse_metadata(s)
+    rescue
+      _ ->
+        Logger.warn("Could not parse as metadata: '#{s}', ignoring")
+        %{}
+    end
+  end
+  defp try_parse_metadata(s) do
+    s
+    |> String.trim()
+    |> String.split(",")
+    |> Enum.map(fn elem ->
+      case String.split(elem, "=") do
+        [""] -> nil
+        [key, val] -> {key, try_decode(val)}
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Map.new()
+  end
+
+  defp try_decode(val) do
+    decoded =
+      case Base.decode16(String.upcase(val)) do
+        :error -> val
+        {:ok, decoded} -> decoded
+      end
+    case Float.parse(decoded) do
+      {val, ""} -> val
+      {_, _rest} -> decoded
+      :error -> decoded
     end
   end
 

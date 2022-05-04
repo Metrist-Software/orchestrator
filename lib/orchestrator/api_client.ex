@@ -1,6 +1,9 @@
 defmodule Orchestrator.APIClient do
   require Logger
 
+  @type metadata_value :: String.t() | number()
+  @type metadata :: %{String.t() => metadata_value()}
+
   def get_config(instance, run_groups) do
     Logger.info("Fetching config for instance #{instance} and run groups #{inspect run_groups}")
     {url, headers} = base_url_and_headers()
@@ -27,22 +30,26 @@ defmodule Orchestrator.APIClient do
     config
   end
 
-  def write_telemetry(monitor_logical_name, check_logical_name, value) do
+  @spec write_telemetry(String.t(), String.t(), float(), metadata())  :: {:ok, pid}
+  def write_telemetry(monitor_logical_name, check_logical_name, value, metadata) do
     post_with_retries("telemetry", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
-      value: value
+      value: value,
+      metadata: metadata
     })
   end
 
-  def write_error(monitor_logical_name, check_logical_name, message) do
+  @spec write_error(String.t(), String.t(), String.t(), metadata())  :: {:ok, pid}
+  def write_error(monitor_logical_name, check_logical_name, message, metadata) do
     post_with_retries("error", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
       message: message,
-      time: NaiveDateTime.utc_now()
+      time: NaiveDateTime.utc_now(),
+      metadata: metadata
     })
   end
 
