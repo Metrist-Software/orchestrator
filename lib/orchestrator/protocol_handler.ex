@@ -413,13 +413,12 @@ defmodule Orchestrator.ProtocolHandler do
     s
     |> String.trim()
     |> String.split(",")
-    |> Enum.map(fn elem ->
+    |> Enum.flat_map(fn elem ->
       case String.split(elem, "=") do
-        [""] -> nil
-        [key, val] -> {key, try_decode(val)}
+        [""] -> []
+        [key, val] -> [{key, try_decode(val)}]
       end
     end)
-    |> Enum.reject(&is_nil/1)
     |> Map.new()
   end
 
