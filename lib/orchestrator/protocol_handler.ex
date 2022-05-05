@@ -178,7 +178,7 @@ defmodule Orchestrator.ProtocolHandler do
             {time, metadata}
         end
 
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time, metadata)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time, metadata: metadata)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -188,7 +188,7 @@ defmodule Orchestrator.ProtocolHandler do
       state = cancel_timer(state)
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
       metadata = parse_metadata(rest)
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1, metadata)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1, metadata: metadata)
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -211,8 +211,13 @@ defmodule Orchestrator.ProtocolHandler do
             end
         end
       error_msg = String.trim(error_msg)
-
-      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, error_msg, metadata)
+      state.error_report_fun.(
+        state.monitor_logical_name,
+        state.current_step.check_logical_name,
+        error_msg,
+        metadata: metadata,
+        blocked_steps: get_blocked_steps(state.steps)
+      )
       # When a step errors, we are going to assume that subsequent steps will error as well.
       send_exit(state)
       {:stop, :normal, %State{state | current_step: nil, step_start_time: nil}}
@@ -277,7 +282,14 @@ defmodule Orchestrator.ProtocolHandler do
       {:noreply, state}
     else
       Logger.error("Timeout on step #{inspect state.current_step}, exiting")
-      state.error_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{@monitor_error_tag}", %{})
+      state.error_report_fun.(
+        state.monitor_logical_name,
+        state.current_step.check_logical_name,
+        "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{
+          @monitor_error_tag
+        }",
+        blocked_steps: get_blocked_steps(state.steps)
+      )
       send_exit(state)
       {:stop, :normal, state}
     end
@@ -434,5 +446,10 @@ defmodule Orchestrator.ProtocolHandler do
       :error -> decoded
     end
   end
+
+  defp get_blocked_steps(steps) when is_list(steps) do
+    Enum.map(steps, & &1.check_logical_name)
+  end
+  defp get_blocked_steps(_steps), do: []
 
 end

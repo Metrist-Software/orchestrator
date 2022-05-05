@@ -115,7 +115,7 @@ defmodule Orchestrator.IPAServer do
       {{m, c}, v} ->
         {value, _} = Float.parse(value)
         Logger.info("IPA: We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
-        Orchestrator.APIClient.write_telemetry(m, c, value, %{})
+        Orchestrator.APIClient.write_telemetry(m, c, value, [])
       _ ->
         Logger.info("IPA: #{method}/#{host}/#{path} does not match anything in our configuration")
     end

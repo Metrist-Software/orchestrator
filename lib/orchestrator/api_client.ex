@@ -30,26 +30,28 @@ defmodule Orchestrator.APIClient do
     config
   end
 
-  @spec write_telemetry(String.t(), String.t(), float(), metadata())  :: {:ok, pid}
-  def write_telemetry(monitor_logical_name, check_logical_name, value, metadata) do
+  @spec write_telemetry(String.t(), String.t(), float(), [metadata: metadata()])  :: {:ok, pid}
+  def write_telemetry(monitor_logical_name, check_logical_name, value, opts \\ []) do
     post_with_retries("telemetry", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
       value: value,
-      metadata: metadata
+      metadata: opts[:metadata] || %{},
     })
   end
 
-  @spec write_error(String.t(), String.t(), String.t(), metadata())  :: {:ok, pid}
-  def write_error(monitor_logical_name, check_logical_name, message, metadata) do
+  @type write_error_opts :: [metadata: metadata(), blocked_steps: [binary()]]
+  @spec write_error(String.t(), String.t(), String.t(), write_error_opts()) :: {:ok, pid}
+  def write_error(monitor_logical_name, check_logical_name, message, opts \\ []) do
     post_with_retries("error", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
       message: message,
       time: NaiveDateTime.utc_now(),
-      metadata: metadata
+      metadata: opts[:metadata] || %{},
+      blocked_steps: opts[:blocked_steps] ||  []
     })
   end
 
