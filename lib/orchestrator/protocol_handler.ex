@@ -204,7 +204,7 @@ defmodule Orchestrator.ProtocolHandler do
             {just_one_word, %{}}
           [maybe_meta, error_msg] ->
             case parse_metadata(maybe_meta) do
-              m = %{} when map_size(m) == 0 ->
+              m when m == %{} ->
                 {rest, %{}}
               meta ->
                 {error_msg, meta}
