@@ -103,16 +103,16 @@ to run a step function. The step function can either be self-timed (often, a ste
 than the actual check, so in that case the step function will execute the setup and then time the code that runs the actual check), which
 should return:
 
-    Step Time <time-in-milliseconds>
+    Step Time [key1=val1,key2=val2,...] <time-in-milliseconds>
 
 (where time can be a float but expect the micro/nanosecond part to be truncated), or if it is not self-timed:
 
-    Step OK
+    Step OK [key1=val1,key2=val2,...]
 
 The orchestrator will then take care of the timing. In both cases, if an error occurs that prevents the step from generating a timing,
 it should be signalled as follows:
 
-    Step Error <error message>
+    Step Error [key1=val1,key2=val2,...] <error message>
 
 In the latter case, it is up to the orchestrator to decide whether to run any more steps.
 
@@ -125,6 +125,38 @@ to exit, it sends a simple
     Exit
 
 message to indicate that things may be shutdown.
+
+### Metadata
+
+In the commands above, `[key1=val1,key2=val2,...]` represents optional metadata. Note that, for sake of simplicity, metadata
+has some restrictions:
+
+* Keys need to be strings that cannot contain whitespace, commas, or equals signs.
+* Values need to be strings that cannot contain whitespace, commas, or equals signs, but:
+  * If the string decodes as a [base16 string](https://hexdocs.pm/elixir/Base.html#module-base-16-alphabet), it will be decoded as such before further processing;
+  * If the string converts to a float using [`String.to_float/1`](https://hexdocs.pm/elixir/String.html#to_float/1), it
+    will be converted to a floating point number before further processing.
+
+Note that the potential confusion between base16 encoded strings and integers almost requires monitors to pass along numbers as a
+base16 encoded string. In fact, it is probably good practice to wrap everything in base16.
+
+Base16 interpretation is case-insensitive. Note that base64 and base32 would be more concise, but the use of the equals sign for
+padding in these encodings prevents us from using it.
+
+The metadata is parsed and sent along to the Metrist backend.
+
+Invalid metadata is ignored for successful step completions and is interpreted as part of the error message for errored steps.
+
+Example:
+
+    Step Time key1=value1,key2=3432 42.1
+
+Will be interpreted as metadata with the following keys and values:
+
+    key1: value1
+    key2: 42.0
+
+(because base16 "3432" converts to the string "42" which parses as a float value of "42.0")
 
 ## Processing Webhooks (Optional)
 
@@ -149,4 +181,3 @@ where the body of the webhook includes the `<uid>`. It should be returned in the
 
 The processing monitor should use the inserted_at timestamp to determine the total time and not the delay from when they request a wait
 and the response as that can be artificially inflated.
-
