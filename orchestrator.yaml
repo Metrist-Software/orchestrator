@@ -40,12 +40,8 @@ Resources:
               Value: rundll
             - Name: CANARY_RUN_GROUPS
               Value: !Sub "aws,aws:${AWS::Region},aws:${EnvironmentTagName},aws:${EnvironmentTagName}/${AWS::Region}"
-            - !If
-              - "IsDev"
-              - Name: CANARY_CLEANUP_ENABLED
-                Value: "false"
-              - Name: CANARY_CLEANUP_ENABLED
-                Value: "true"
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
             - Name: SLACK_ALERTING_CHANNEL
               Value: !Ref OpsChannel
             - Name: SLACK_API_TOKEN
@@ -107,11 +103,8 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
-            - !If
-              - "IsDev"
-              - Name: CANARY_PREVIEW_MODE
-                Value: "true"
-              - !Ref AWS::NoValue
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -563,6 +556,12 @@ Parameters:
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
+  EnableCleanup:
+    Type: AWS::SSM::Parameter::Value<String>
+    - !If
+    - "IsDev"
+    - Default: "false"
+    - Default: "true"
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
