@@ -40,8 +40,12 @@ Resources:
               Value: rundll
             - Name: CANARY_RUN_GROUPS
               Value: !Sub "aws,aws:${AWS::Region},aws:${EnvironmentTagName},aws:${EnvironmentTagName}/${AWS::Region}"
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+            - !If
+              - "IsDev"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "false"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "true"
             - Name: SLACK_ALERTING_CHANNEL
               Value: !Ref OpsChannel
             - Name: SLACK_API_TOKEN
