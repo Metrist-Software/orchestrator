@@ -103,8 +103,6 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -174,12 +172,8 @@ Resources:
               Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_RUN_GROUPS
               Value: "Canary Monitoring Agent"
-            - !If
-              - "IsDev"
-              - Name: CANARY_CLEANUP_ENABLED
-                Value: "false"
-              - Name: CANARY_CLEANUP_ENABLED
-                Value: "true"
+            - Name: CANARY_CLEANUP_ENABLED
+              Value: !Ref EnableCleanup
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
