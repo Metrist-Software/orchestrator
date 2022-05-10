@@ -177,8 +177,12 @@ Resources:
               Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_RUN_GROUPS
               Value: "Canary Monitoring Agent"
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+            - !If
+              - "IsDev"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "false"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "true"
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -506,9 +510,6 @@ Parameters:
   AppAPIHostname:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/appAPI
-  EnableCleanup:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/monitors/enableCleanup
   OpsChannel:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/internal/opsChannel
