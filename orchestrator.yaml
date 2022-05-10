@@ -40,8 +40,12 @@ Resources:
               Value: rundll
             - Name: CANARY_RUN_GROUPS
               Value: !Sub "aws,aws:${AWS::Region},aws:${EnvironmentTagName},aws:${EnvironmentTagName}/${AWS::Region}"
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+            - !If
+              - "IsDev"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "false"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "true"
             - Name: SLACK_ALERTING_CHANNEL
               Value: !Ref OpsChannel
             - Name: SLACK_API_TOKEN
@@ -103,6 +107,11 @@ Resources:
               Value: !Ref SendGridFromEmail
             - Name: SENDGRID_TO_EMAIL
               Value: !Ref SendGridToEmail
+            - !If
+              - "IsDev"
+              - Name: CANARY_PREVIEW_MODE
+                Value: "true"
+              - !Ref AWS::NoValue
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -172,8 +181,12 @@ Resources:
               Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_RUN_GROUPS
               Value: "Canary Monitoring Agent"
-            - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+            - !If
+              - "IsDev"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "false"
+              - Name: CANARY_CLEANUP_ENABLED
+                Value: "true"
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -549,13 +562,7 @@ Parameters:
     Default: /<EnvironmentName>/email/sendgridToEmail
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
-  EnableCleanup:
-    Type: AWS::SSM::Parameter::Value<String>
-    - !If
-    - "IsDev"
-    - Default: "false"
-    - Default: "true"
+    Default: /<EnvironmentName>/apiEndpoints/webhooksAPI    
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName
