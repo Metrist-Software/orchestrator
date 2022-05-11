@@ -41,7 +41,7 @@ Resources:
             - Name: CANARY_RUN_GROUPS
               Value: !Sub "aws,aws:${AWS::Region},aws:${EnvironmentTagName},aws:${EnvironmentTagName}/${AWS::Region}"
             - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+              Value: "true"
             - Name: SLACK_ALERTING_CHANNEL
               Value: !Ref OpsChannel
             - Name: SLACK_API_TOKEN
@@ -178,7 +178,7 @@ Resources:
             - Name: CANARY_RUN_GROUPS
               Value: "Canary Monitoring Agent"
             - Name: CANARY_CLEANUP_ENABLED
-              Value: !Ref EnableCleanup
+              Value: "true"
             - Name: CLOUD_PLATFORM
               Value: "aws"
             - Name: EXECUTION_REGION
@@ -417,6 +417,11 @@ Resources:
                   - rds:*
                 Resource:
                   !Sub arn:aws:rds:*:${AWS::AccountId}:*:monitordb-*
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                Resource:
+                  !Sub arn:aws:rds:*:${AWS::AccountId}:*:*                  
         # Needed for AWSECS monitor
         - PolicyName: MonitorAWSECS
           PolicyDocument:
@@ -506,9 +511,6 @@ Parameters:
   AppAPIHostname:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/appAPI
-  EnableCleanup:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/monitors/enableCleanup
   OpsChannel:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/internal/opsChannel
@@ -557,7 +559,7 @@ Parameters:
     Default: /<EnvironmentName>/email/sendgridToEmail
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
+    Default: /<EnvironmentName>/apiEndpoints/webhooksAPI    
 Metadata:
   EnvConfigParameters:
     NetworkStackName: stacks.networkStackName

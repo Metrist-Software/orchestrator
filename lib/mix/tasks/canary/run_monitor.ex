@@ -100,8 +100,8 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   end
 
   defp get_args(opts) do
-    telemetry_fun = fn (logical_name, step, time) -> Logger.info("#{logical_name} - [TELEMETRY_REPORT] Step: #{step} - Value: #{time}") end
-    error_fun = fn (logical_name, step, rest) -> Logger.info("Error #{logical_name} - [ERROR] Step: #{step} - Error: #{rest}") end
+    telemetry_fun = fn (logical_name, step, time, metadata) -> Logger.info("#{logical_name} - [TELEMETRY_REPORT] Step: #{step} - Value: #{time}. Metadata #{inspect metadata}") end
+    error_fun = fn (logical_name, step, rest, metadata) -> Logger.info("Error #{logical_name} - [ERROR] Step: #{step} - Error: #{rest}. Metadata #{inspect metadata}") end
 
     [
     error_report_fun: error_fun,
