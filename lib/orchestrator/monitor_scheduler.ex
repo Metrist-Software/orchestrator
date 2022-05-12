@@ -158,14 +158,14 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   def get_monitor_error_handler(run_type) do
-    fn monitor_logical_name, check_logical_name, message, metadata ->
-      monitor_error_handler(run_type, monitor_logical_name, check_logical_name, message, metadata)
+    fn monitor_logical_name, check_logical_name, message, opts ->
+      monitor_error_handler(run_type, monitor_logical_name, check_logical_name, message, opts)
     end
   end
 
   @dotnet_http_error_match ~r/HttpRequestException.*(40[13]|429)/
 
-  def monitor_error_handler("dll", monitor_logical_name, check_logical_name, message, metadata) do
+  def monitor_error_handler("dll", monitor_logical_name, check_logical_name, message, opts) do
     if Orchestrator.SlackReporter.is_configured? do
       with [_match, status] <- Regex.run(@dotnet_http_error_match, message) do
         Orchestrator.SlackReporter.send_monitor_error(
@@ -176,11 +176,11 @@ defmodule Orchestrator.MonitorScheduler do
       end
     end
 
-    monitor_error_handler(nil, monitor_logical_name, check_logical_name, message, metadata)
+    monitor_error_handler(nil, monitor_logical_name, check_logical_name, message, opts)
   end
 
-  def monitor_error_handler(_, monitor_logical_name, check_logical_name, message, metadata) do
-    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message, metadata)
+  def monitor_error_handler(_, monitor_logical_name, check_logical_name, message, opts) do
+    Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message, opts)
   end
 
   # Purely for testing the regex

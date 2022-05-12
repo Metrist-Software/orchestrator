@@ -46,20 +46,20 @@ defmodule Orchestrator.ProtocolHandlerTest do
       state = mkstate()
 
       ProtocolHandler.handle_cast({:message, "Step OK"}, state)
-      assert_received {:telemetry, "mon", "check", _, %{}}
+      assert_received {:telemetry, "mon", "check", _, [metadata: %{}]}
 
       ProtocolHandler.handle_cast({:message, "Step OK key1=value1"}, state)
-      assert_received {:telemetry, "mon", "check", _, %{"key1" => "value1"}}
+      assert_received {:telemetry, "mon", "check", _, [metadata: %{"key1" => "value1"}]}
     end
 
     test "Metadata is handled correctly for monitor-timed steps" do
       state = mkstate()
 
       ProtocolHandler.handle_cast({:message, "Step Time 12.34"}, state)
-      assert_received {:telemetry, "mon", "check", 12.34, %{}}
+      assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{}]}
 
       ProtocolHandler.handle_cast({:message, "Step Time key1=value1,key2=3432 12.34"}, state)
-      assert_received {:telemetry, "mon", "check", 12.34, %{"key1" => "value1", "key2" => 42.0}}
+      assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{"key1" => "value1", "key2" => 42.0}]}
     end
 
     test "Metadata is handled correctly for errored steps" do
@@ -67,13 +67,13 @@ defmodule Orchestrator.ProtocolHandlerTest do
       capture_log(fn ->
 
         ProtocolHandler.handle_cast({:message, "Step Error The cake is a lie"}, state)
-        assert_received {:error, "mon", "check", "The cake is a lie", %{}}
+        assert_received {:error, "mon", "check", "The cake is a lie", [metadata: %{}, blocked_steps: _]}
 
         ProtocolHandler.handle_cast({:message, "Step Error key=value The cake really is a lie"}, state)
-        assert_received {:error, "mon", "check", "The cake really is a lie", %{"key" => "value"}}
+        assert_received {:error, "mon", "check", "The cake really is a lie", [metadata: %{"key" => "value"}, blocked_steps: _]}
 
         ProtocolHandler.handle_cast({:message, "Step Error key=value,candle The cake still is a lie"}, state)
-        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie", %{}}
+        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie", [metadata: %{}, blocked_steps: _]}
       end)
     end
   end
