@@ -49,7 +49,14 @@ defmodule Orchestrator.HostTelemetry do
   end
 
   defp execute_tick(state) do
-    telemetry = %{disk: disk_usage(), cpu: round(Enum.sum(state.cpu_samples) / Enum.count(state.cpu_samples)) , mem: mem_usage(), instance: state.instance, max_cpu: Enum.max(state.cpu_samples)}
+    telemetry =
+      %{
+        disk: disk_usage(),
+        cpu: round(Enum.sum(state.cpu_samples) / Enum.count(state.cpu_samples)) ,
+        mem: mem_usage(),
+        instance: state.instance,
+        max_cpu: Enum.max(state.cpu_samples)
+      }
     Logger.info("Host telemetry: sending #{inspect telemetry}")
     Orchestrator.APIClient.write_host_telemetry(telemetry)
   end
