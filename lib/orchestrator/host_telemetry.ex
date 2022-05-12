@@ -44,8 +44,7 @@ defmodule Orchestrator.HostTelemetry do
   @impl true
   def handle_info(:cpu_check, state) do
     schedule_cpu_check()
-    cpu_load = cpu_load()
-    {:noreply, %State{state | cpu_samples: [ cpu_load | state.cpu_samples ]}}
+    {:noreply, %State{state | cpu_samples: [ cpu_load() | state.cpu_samples ]}}
   end
 
   defp execute_tick(state) do
