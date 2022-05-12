@@ -18,7 +18,7 @@ defmodule Orchestrator.HostTelemetry do
   @cpu_check_time 1_000
 
   defmodule State do
-    defstruct [:instance, :max_cpu]
+    defstruct [:instance, :cpu_samples]
   end
 
   def start_link(_args) do
@@ -31,29 +31,25 @@ defmodule Orchestrator.HostTelemetry do
     schedule_cpu_check()
     schedule_tick()
     :cpu_sup.util() # The first call may be garbage according to the manual.
-    {:ok, %State{instance: Orchestrator.Application.instance()}}
+    {:ok, %State{instance: Orchestrator.Application.instance(), cpu_samples: []}}
   end
 
   @impl true
   def handle_info(:tick, state) do
     schedule_tick()
     execute_tick(state)
-    {:noreply, %State{ state | max_cpu: 0 }}
+    {:noreply, %State{ state | cpu_samples: [] }}
   end
 
   @impl true
   def handle_info(:cpu_check, state) do
     schedule_cpu_check()
     cpu_load = cpu_load()
-    max_cpu_load = case state.max_cpu < cpu_load || !state.max_cpu do
-      true -> cpu_load
-      _ -> state.max_cpu
-    end
-    {:noreply, %State{state | max_cpu: max_cpu_load}}
+    {:noreply, %State{state | cpu_samples: [ cpu_load | state.cpu_samples ]}}
   end
 
   defp execute_tick(state) do
-    telemetry = %{disk: disk_usage(), cpu: cpu_load(), mem: mem_usage(), instance: state.instance, max_cpu: state.max_cpu}
+    telemetry = %{disk: disk_usage(), cpu: round(Enum.sum(state.cpu_samples) / Enum.count(state.cpu_samples)) , mem: mem_usage(), instance: state.instance, max_cpu: Enum.max(state.cpu_samples)}
     Logger.info("Host telemetry: sending #{inspect telemetry}")
     Orchestrator.APIClient.write_host_telemetry(telemetry)
   end
