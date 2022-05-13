@@ -1,4 +1,4 @@
-FROM elixir:1.11-slim AS build
+FROM elixir:1.13.4-slim AS build
 
 ENV REFRESHED_AT 20210712T152504Z
 RUN apt-get update
