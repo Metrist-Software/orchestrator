@@ -112,9 +112,9 @@ Resources:
               Value: "aws"
             - Name: EXECUTION_REGION
               Value: !Ref AWS::Region             
-      Cpu: 2048
+      Cpu: 4096
       ExecutionRoleArn: !GetAtt OrchestratorTaskExecutionRole.Arn
-      Memory: 4096
+      Memory: 8192
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
