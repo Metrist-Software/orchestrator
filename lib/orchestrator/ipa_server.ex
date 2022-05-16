@@ -11,17 +11,10 @@ defmodule Orchestrator.IPAServer do
   @any ~r/.*/
   # The default config forwards some internal data
   # You can choose whether to include this in your config or not.
-  # For now we support both our old and new domains, we need to make sure that
-  # we have properly cleaned up old config before removing the rules here.
   @default_config %{
     {"metrist", "GetRunConfig"} => %{
       "method" => ~r(GET),
       "host" => ~r(app.*\.metrist\.io),
-      "url" => ~r(api/agent/run-config)
-    },
-    {"metrist", "GetRunConfig"} => %{
-      "method" => ~r(GET),
-      "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/run-config)
     },
     # Note that this has special support in the IPA agent to
@@ -29,11 +22,6 @@ defmodule Orchestrator.IPAServer do
     {"metrist", "SendTelemetry"} => %{
       "method" => ~r(POST),
       "host" => ~r(app.*\.metrist\.io),
-      "url" => ~r(api/agent/telemetry)
-    },
-    {"metrist", "SendTelemetry"} => %{
-      "method" => ~r(POST),
-      "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/telemetry)
     },
     {"metrist", "GetLatestMonitorBuild"} => %{

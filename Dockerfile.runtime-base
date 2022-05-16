@@ -1,6 +1,7 @@
-# This is valid as long as the elixir image above is based on an erlang image that
-# is built from this image.
-FROM debian:buster AS app
+# This is valid as long as the build-base image is based on an erlang image that
+# is built from this image. A quick peek in https://github.com/erlang/docker-erlang-otp
+# should confirm that.
+FROM debian:bullseye AS app
 
 #RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
 RUN apt-get update && \
