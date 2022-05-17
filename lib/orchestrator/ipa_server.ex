@@ -17,7 +17,7 @@ defmodule Orchestrator.IPAServer do
       "host" => ~r(app.*\.metrist\.io),
       "url" => ~r(api/agent/run-config)
     },
-    {"canary", "GetRunConfig"} => %{
+    {"metrist", "GetRunConfig"} => %{
       "method" => ~r(GET),
       "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/run-config)
@@ -29,7 +29,7 @@ defmodule Orchestrator.IPAServer do
       "host" => ~r(app.*\.metrist\.io),
       "url" => ~r(api/agent/telemetry)
     },
-    {"canary", "SendTelemetry"} => %{
+    {"metrist", "SendTelemetry"} => %{
       "method" => ~r(POST),
       "host" => ~r(app.*\.canarymonitor\.com),
       "url" => ~r(api/agent/telemetry)
