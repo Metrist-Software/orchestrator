@@ -276,7 +276,12 @@ Resources:
                   - secretsmanager:GetSecretValue
                   - secretsmanager:DescribeSecret
                   - secretsmanager:GetResourcePolicy
-                Resource: !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+                Resource:
+                  - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+                  - !If # TODO: Remove this once EnvironmentTagName is transitioned to only use `dev1`/`prod`
+                    - IsDev
+                    - !Ref AWS::NoValue # Don't need anything for dev since the above covers it
+                    - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/prod/*
         # Specifically for the Kinesis monitor
         - PolicyName: AccessKinesisMonitorStream
           PolicyDocument:
