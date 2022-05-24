@@ -36,7 +36,7 @@ defmodule Orchestrator.IPAServer do
     },
     {"metrist", "GetLatestMonitorBuild"} => %{
       "method" => ~r(GET),
-      "host" => ~r(monitor-distributions.canarymonitor.com),
+      "host" => ~r(monitor-distributions.metrist.io),
       "url" => ~r(latest.*txt)
     }
   }

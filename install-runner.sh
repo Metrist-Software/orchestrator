@@ -23,7 +23,7 @@ esac
 
 echo "Using GITHUB_REF $github_ref and qualifier $qualifier"
 
-dist=https://monitor-distributions.canarymonitor.com
+dist=https://monitor-distributions.metrist.io
 
 latest=$(curl $dist/runner-latest$qualifier.txt)
 echo "Installing runner version $latest"
