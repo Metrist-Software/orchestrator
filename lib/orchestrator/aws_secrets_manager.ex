@@ -13,6 +13,7 @@ defmodule Orchestrator.AWSSecretsManager do
   @impl true
   def fetch(name) do
     Logger.debug("get_secret(#{name})")
+    Logger.info("Getting secret #{name} from region #{System.get_env("AWS_REGION")}")
 
     # We may be called in various stages of the life cycle, including really
     # early, so make sure that what ExAws needs is up and running.
@@ -35,8 +36,8 @@ defmodule Orchestrator.AWSSecretsManager do
             |> Jason.decode!()
             |> Map.get(selector)
         end
-      {:error, _message} ->
-        Logger.info("Secret #{name} not found, returning nil")
+      {:error, message} ->
+        Logger.info("Secret #{name} not found, returning nil. Got message #{inspect(message)}")
         nil
     end
   end
