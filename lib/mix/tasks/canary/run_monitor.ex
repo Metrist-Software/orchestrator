@@ -121,6 +121,6 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   defp setup_hackney_for_external_webhook_processing() do
     # Needed if you are going to test external webhook processing
     Application.ensure_all_started(:hackney)
-    Application.put_env(:orchestrator, :api_token, System.get_env("CANARY_API_TOKEN", "fake-token"))
+    Application.put_env(:orchestrator, :api_token, System.get_env("METRIST_API_TOKEN", "fake-token"))
   end
 end
