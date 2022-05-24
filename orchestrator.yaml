@@ -37,10 +37,7 @@ Resources:
             # TODO: For the transition from prod-mon- style env tags to just prod
             # Remove and this and switch anything using it back to just `ENVIRONMENT_TAG` once everything is using new style
             - Name: NEW_ENVIRONMENT_TAG
-              Value: !If
-                - !Ref IsDev
-                - "dev1"
-                - "prod"
+              Value: !If [IsDev, "dev1", "prod"]
             - Name: SECRETS_NAMESPACE
               Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_INVOCATION_STYLE
