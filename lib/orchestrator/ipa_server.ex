@@ -11,8 +11,6 @@ defmodule Orchestrator.IPAServer do
   @any ~r/.*/
   # The default config forwards some internal data
   # You can choose whether to include this in your config or not.
-  # For now we support both our old and new domains, we need to make sure that
-  # we have properly cleaned up old config before removing the rules here.
   @default_config %{
     {"metrist", "GetRunConfig"} => %{
       "method" => ~r(GET),
