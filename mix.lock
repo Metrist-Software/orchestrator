@@ -1,6 +1,7 @@
 %{
   "bakeware": {:hex, :bakeware, "0.2.3", "d8124d46af0450633844c997af15edb8b97ac5a8349650a31b41e96803027838", [:make, :mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "df060a008ca4af6f0913ca85891b26caac4afdfa900f886ade6fa8e3ebaf7d7e"},
   "certifi": {:hex, :certifi, "2.9.0", "6f2a475689dd47f19fb74334859d460a2dc4e3252a3324bd2111b8f0429e7e21", [:rebar3], [], "hexpm", "266da46bdb06d6c6d35fde799bcb28d36d985d424ad7c08b5bb48f5b5cdd4641"},
+  "configparser_ex": {:hex, :configparser_ex, "4.0.0", "17e2b831cfa33a08c56effc610339b2986f0d82a9caa0ed18880a07658292ab6", [:mix], [], "hexpm", "02e6d1a559361a063cba7b75bc3eb2d6ad7e62730c551cc4703541fd11e65e5b"},
   "crypto_rand": {:hex, :crypto_rand, "1.0.3", "8773799e3ed124ce8a81feb935fffbeb3b6621ea2b841c2bbaff4fd09752fd66", [:mix], [], "hexpm", "701a76fea71119fe60aea02f50191bf82a60cb687046931e4d6de6acb8da1685"},
   "dialyxir": {:hex, :dialyxir, "1.1.0", "c5aab0d6e71e5522e77beff7ba9e08f8e02bad90dfbeffae60eaf0cb47e29488", [:mix], [{:erlex, ">= 0.2.6", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm", "07ea8e49c45f15264ebe6d5b93799d4dd56a44036cf42d0ad9c960bc266c0b9a"},
   "elixir_make": {:hex, :elixir_make, "0.6.3", "bc07d53221216838d79e03a8019d0839786703129599e9619f4ab74c8c096eac", [:mix], [], "hexpm", "f5cbd651c5678bcaabdbb7857658ee106b12509cd976c2c2fca99688e1daf716"},
