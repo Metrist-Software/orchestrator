@@ -57,9 +57,6 @@ Resources:
               Value: !Ref PersistentInstanceId
             - Name: AMI_ID
               Value: !Ref AmiId
-            # Specifically for Kinesis monitor
-            - Name: KINESIS_STREAM_NAME
-              Value: !Ref KinesisMonitorStream
             # Specifically for SES monitor
             - Name: SES_FROM_EMAIL
               Value: !Ref SESFromEmail
@@ -282,15 +279,6 @@ Resources:
                     - IsDev
                     - !Ref AWS::NoValue # Don't need anything for dev since the above covers it
                     - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/prod/*
-        # Specifically for the Kinesis monitor
-        - PolicyName: AccessKinesisMonitorStream
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - kinesis:*
-                Resource: !GetAtt KinesisMonitorStream.Arn
         # Specifically for the EC2 monitor
         - PolicyName: EC2FullAccess
           PolicyDocument:
@@ -456,12 +444,6 @@ Resources:
   # above. This will make it easier to peel things apart if we decide that this template becomes too
   # bloated.
 
-  # Kinesis monitor. Also the Task role "AccessKinesisMonitorStream" policy and the service's KINESIS_STREAM_NAME env
-  KinesisMonitorStream:
-    Type: AWS::Kinesis::Stream
-    Properties:
-      Name: !Sub ${AWS::StackName}-KinesisMonitorStream
-      ShardCount: 1
   # SQS monitor
   SQSTestQueue:
     Type: AWS::SQS::Queue
