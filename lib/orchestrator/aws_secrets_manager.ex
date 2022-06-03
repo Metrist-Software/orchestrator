@@ -43,7 +43,7 @@ defmodule Orchestrator.AWSSecretsManager do
   end
 
   defp do_aws_request(request) do
-    region = System.get_env("AWS_REGION") || "us-east-1"
+    region = System.get_env("AWS_SECRETS_MANAGER_REGION") || System.get_env("AWS_REGION", "us-east-1")
     ExAws.request(request, region: region)
   end
 end
