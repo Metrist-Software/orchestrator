@@ -62,9 +62,6 @@ Resources:
               Value: !Ref SESFromEmail
             - Name: SES_TO_EMAIL
               Value: !Ref SESToEmail
-            # Specifically for SQS monitor
-            - Name: QUEUE_URL
-              Value: !Ref SQSTestQueue
             # Specifically for Lambda monitor
             - Name: LAMBDA_TEST_FUNCTION_ARN
               Value:
@@ -297,15 +294,6 @@ Resources:
                 Action:
                   - s3:*
                 Resource: '*'
-        # Specifically for the SQS monitor
-        - PolicyName: SQSReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource: !GetAtt SQSTestQueue.Arn
         # Specifically for the ses monitor
         - PolicyName: SESSendEmail
           PolicyDocument:
@@ -443,12 +431,6 @@ Resources:
   # Please collect all monitor-specific things here where possible and document in-line dependencies
   # above. This will make it easier to peel things apart if we decide that this template becomes too
   # bloated.
-
-  # SQS monitor
-  SQSTestQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      KmsMasterKeyId: alias/aws/sqs
 Conditions:
   DeployAllResources: !Not
     - !Equals
