@@ -62,15 +62,6 @@ Resources:
               Value: !Ref SESFromEmail
             - Name: SES_TO_EMAIL
               Value: !Ref SESToEmail
-            # Specifically for Lambda monitor
-            - Name: LAMBDA_TEST_FUNCTION_ARN
-              Value:
-                Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-TestFunction"
-            - Name: LAMBDA_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueUrl"
             # Specifically for Heroku monitor
             - Name: HEROKU_QUEUE_URL
               Value:
@@ -303,23 +294,6 @@ Resources:
                 Action:
                   - ses:SendEmail
                 Resource: '*'
-        # Specifically for the lambda monitor
-        - PolicyName: LambdaMonitorTrigger
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - lambda:InvokeFunction
-                Resource:
-                  - Fn::ImportValue:
-                      !Sub "test-function-${EnvironmentTagName}-TestFunction"
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  - Fn::ImportValue:
-                      !Sub "test-function-${EnvironmentTagName}-LambdaMonitorQueueArn"
         # Specifically for the Heroku monitor
         - PolicyName: HerokuReadWriteQueue
           PolicyDocument:
