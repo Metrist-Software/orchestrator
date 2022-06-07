@@ -285,15 +285,6 @@ Resources:
                 Action:
                   - ec2:*
                 Resource: '*'
-        # Specifically for the S3 monitor
-        - PolicyName: S3FullAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:*
-                Resource: '*'
         # Specifically for the ses monitor
         - PolicyName: SESSendEmail
           PolicyDocument:
