@@ -268,15 +268,6 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for awsecs monitor
-        - PolicyName: EC2FullAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ec2:*
-                Resource: '*'                    
         # Specifically for the Github monitor
         - PolicyName: GithubReadWriteQueue
           PolicyDocument:
@@ -326,26 +317,6 @@ Resources:
                   - s3:PutObject
                   - s3:GetObject
                 Resource: arn:aws:s3:::cmtf-infra/terraform/*
-        # Needed for AWSECS monitor
-        - PolicyName: MonitorAWSECS
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ecs:CreateService
-                  - ecs:DeleteService
-                  - ecs:UpdateService
-                Resource:
-                  !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
-              - Effect: Allow
-                Action:
-                  - ecs:Describe*
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - elasticloadbalancing:Describe*
-                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
