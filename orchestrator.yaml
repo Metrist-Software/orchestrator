@@ -57,11 +57,6 @@ Resources:
               Value: !Ref PersistentInstanceId
             - Name: AMI_ID
               Value: !Ref AmiId
-            # Specifically for SES monitor
-            - Name: SES_FROM_EMAIL
-              Value: !Ref SESFromEmail
-            - Name: SES_TO_EMAIL
-              Value: !Ref SESToEmail
             # Specifically for Heroku monitor
             - Name: HEROKU_QUEUE_URL
               Value:
@@ -276,15 +271,6 @@ Resources:
                 Action:
                   - ec2:*
                 Resource: '*'
-        # Specifically for the ses monitor
-        - PolicyName: SESSendEmail
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ses:SendEmail
-                Resource: '*'
         # Specifically for the Heroku monitor
         - PolicyName: HerokuReadWriteQueue
           PolicyDocument:
@@ -439,13 +425,6 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
-   # For SES monitor
-  SESFromEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/defaultFromEmail
-  SESToEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sesToEmail
   # For Heroku monitor
   HerokuStackName:
     Type: AWS::SSM::Parameter::Value<String>
