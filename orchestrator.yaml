@@ -268,6 +268,15 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
+        # Specifically for awsecs monitor
+        - PolicyName: EC2FullAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                Resource: '*'                    
         # Specifically for the Github monitor
         - PolicyName: GithubReadWriteQueue
           PolicyDocument:
