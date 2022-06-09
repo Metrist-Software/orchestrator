@@ -268,7 +268,7 @@ Resources:
                 Resource:
                   Fn::ImportValue:
                     !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically neded for awsecs monitor
+        # Specifically for awsecs monitor
         - PolicyName: EC2FullAccess
           PolicyDocument:
             Version: '2012-10-17'
