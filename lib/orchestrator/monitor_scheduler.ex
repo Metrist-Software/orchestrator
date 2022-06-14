@@ -75,24 +75,25 @@ defmodule Orchestrator.MonitorScheduler do
     Logger.info("Task timeout. Running cleanup")
     # Run monitor cleanup if a encountered a timeout by passing an empty list of steps
     task = do_run(%{state.config | steps: []})
-    {:noreply, %State{state | task: task}}
+    {:noreply, %State{state | task: task, monitor_pid: nil}}
   end
 
   @impl true
   def handle_info({_task_ref, {:error, error}}, state) do
     Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
-    {:noreply, state}
+    {:noreply, %State{state | monitor_pid: nil}}
   end
 
   @impl true
   def handle_info({_task_ref, result}, state) do
     Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
-    {:noreply, state}
+    {:noreply, %State{state | monitor_pid: nil}}
   end
 
   @impl true
   def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal} = msg, state) do
     Logger.debug("Task down message received: #{inspect msg}")
+    state = %State{state | monitor_pid: nil}
     {:noreply, %State{state | task: nil, overtime: false}}
   end
 
