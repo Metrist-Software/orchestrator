@@ -93,9 +93,9 @@ defmodule Orchestrator.MonitorScheduler do
     {:noreply, %State{state | task: nil, overtime: false}}
   end
 
-  def handle_info({:EXIT, _pid, :normal}, msg, state) do
-    Logger.debug("Task exit message received: #{inspect msg}")
-    {:noreply, state}  # Task down will handle things.
+  def handle_info(msg, state) do
+    Logger.info("Unknown message received: #{inspect msg}")
+    {:noreply, state}
   end
 
   @impl true
