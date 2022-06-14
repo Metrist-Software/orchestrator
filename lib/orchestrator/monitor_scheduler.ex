@@ -68,7 +68,6 @@ defmodule Orchestrator.MonitorScheduler do
   # the first one as purely informal - if the task process crashes, we want to know as well so
   # we only change state on the :DOWN message which we will always get.
 
-  @impl true
   def handle_info({task_ref, {:error, :timeout}}, state) do
     # We don't care about the DOWN message now, so let's demonitor and flush it
     Process.demonitor(task_ref, [:flush])
@@ -78,23 +77,25 @@ defmodule Orchestrator.MonitorScheduler do
     {:noreply, %State{state | task: task, monitor_pid: nil}}
   end
 
-  @impl true
   def handle_info({_task_ref, {:error, error}}, state) do
     Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
     {:noreply, %State{state | monitor_pid: nil}}
   end
 
-  @impl true
   def handle_info({_task_ref, result}, state) do
     Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
     {:noreply, %State{state | monitor_pid: nil}}
   end
 
-  @impl true
   def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal} = msg, state) do
     Logger.debug("Task down message received: #{inspect msg}")
     state = %State{state | monitor_pid: nil}
     {:noreply, %State{state | task: nil, overtime: false}}
+  end
+
+  def handle_info({:EXIT, _pid, :normal}, msg, state) do
+    Logger.debug("Task exit message received: #{inspect msg}")
+    {:noreply, state}  # Task down will handle things.
   end
 
   @impl true
