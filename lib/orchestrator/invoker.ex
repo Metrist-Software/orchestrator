@@ -19,6 +19,9 @@ defmodule Orchestrator.Invoker do
   def run_monitor(config, opts, port_fn) do
     tmpdir = Path.join(Orchestrator.Application.temp_dir(), "orchtmp-#{TmpName.generate()}")
     File.mkdir_p!(tmpdir)
+
+    parent = self()
+
     Task.async(fn ->
       Orchestrator.Application.set_monitor_metadata(config)
 
@@ -32,6 +35,8 @@ defmodule Orchestrator.Invoker do
         port_fn.()
       end)
       pid = Keyword.get(Port.info(port), :os_pid)
+      GenServer.cast(parent, {:monitor_pid, pid})
+
       Logger.info("Started monitor with OS pid #{pid}")
       Logger.metadata(os_pid: pid)
 

@@ -7,7 +7,7 @@ defmodule Orchestrator.MonitorScheduler do
   require Logger
 
   defmodule State do
-    defstruct [:config, :task, :overtime]
+    defstruct [:config, :task, :overtime, :monitor_pid]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -27,6 +27,9 @@ defmodule Orchestrator.MonitorScheduler do
   def init(config) do
     Orchestrator.Application.set_monitor_metadata(config)
     Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
+
+    Process.flag(:trap_exit, true)
+
     schedule_initially(config)
     {:ok, %State{config: config}}
   end
@@ -36,6 +39,10 @@ defmodule Orchestrator.MonitorScheduler do
     # We simply adopt the new config; the next run will then use the new data for scheduling.
     Logger.info("Setting new config of #{inspect new_config}")
     {:noreply, %State{state | config: new_config}}
+  end
+
+  def handle_cast({:monitor_pid, pid}, state) do
+    {:noreply, %State{state | monitor_pid: pid}}
   end
 
   @impl true
@@ -87,6 +94,16 @@ defmodule Orchestrator.MonitorScheduler do
   def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal} = msg, state) do
     Logger.debug("Task down message received: #{inspect msg}")
     {:noreply, %State{state | task: nil, overtime: false}}
+  end
+
+  @impl true
+  def terminate(_reason, %State{monitor_pid: pid}) when pid != nil do
+    Logger.info("Monitor Scheduler terminate callback killing os pid #{pid}")
+    System.cmd("kill", ["#{pid}"])
+  end
+
+  def terminate(_reason, _state) do
+    # No running task so nothing to clean up
   end
 
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
