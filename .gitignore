@@ -30,3 +30,4 @@ orchestrator-*.tar
 priv/build.txt
 priv/plts
 priv/runner
+.vscode/
