@@ -23,13 +23,13 @@ if [ -z "$GITHUB_REF" ]; then
   GITHUB_REF=local
 fi
 
-if [ ! -v STACKERY_ENVIRONMENT ]; then
+if [ ! -v DEPLOY_ENVIRONMENT ]; then
   case $GITHUB_REF in
   refs/heads/main)
-    STACKERY_ENVIRONMENT=prod
+    DEPLOY_ENVIRONMENT=prod
     ;;
   refs/heads/develop | local)
-    STACKERY_ENVIRONMENT=dev1
+    DEPLOY_ENVIRONMENT=dev1
     ;;
   *)
     echo "Unknown branch $GITHUB_REF, not deploying"
@@ -47,7 +47,7 @@ for env in "${!env_tag_aws_region[@]}"; do
 done
 
 # Deploy
-case $STACKERY_ENVIRONMENT in
+case $DEPLOY_ENVIRONMENT in
 dev1)
   aws cloudformation deploy \
     --template-file "${out_basepath}/orchestrator-dev1.yaml" \
