@@ -22,10 +22,13 @@ defmodule Orchestrator.ConfigurationTest do
       ]
     }
 
-    deltas = diff_config(new, old)
+    deltas = diff_and_store_config(new, old)
     assert length(deltas.add) == 1
     assert length(deltas.delete) == 0
     assert length(deltas.change) == 0
+
+    # Check ETS updates
+    assert get_config("id-1") == hd(deltas.add)
   end
 
   test "Deleting a monitor returns :delete delta" do
@@ -47,10 +50,12 @@ defmodule Orchestrator.ConfigurationTest do
       ]
     }
 
-    deltas = diff_config(new, old)
+    deltas = diff_and_store_config(new, old)
     assert length(deltas.add) == 0
     assert length(deltas.delete) == 1
     assert length(deltas.change) == 0
+
+    assert get_config("id-2") == nil
   end
 
   test "Changing something returns a :change delta" do
@@ -59,7 +64,9 @@ defmodule Orchestrator.ConfigurationTest do
         %{
           id: "id-3",
           monitor_logical_name: "foodog",
-          interval_secs: 120
+          interval_secs: 120,
+          extra_config: %{},
+          run_spec: %{}
         }
       ]
     }
@@ -69,12 +76,14 @@ defmodule Orchestrator.ConfigurationTest do
         %{
           id: "id-3",
           monitor_logical_name: "foodog",
-          interval_secs: 60
+          interval_secs: 60,
+          extra_config: %{},
+          run_spec: %{}
         }
       ]
     }
 
-    deltas = diff_config(new, old)
+    deltas = diff_and_store_config(new, old)
     assert length(deltas.add) == 0
     assert length(deltas.delete) == 0
     assert length(deltas.change) == 1
@@ -84,6 +93,45 @@ defmodule Orchestrator.ConfigurationTest do
     [change_config | _] = deltas.change
     [new_config | _] = Map.get(new, :monitors)
     assert change_config === new_config
+
+    assert get_config("id-3") == new_config
+  end
+
+  test "Changing extra_config returns a :change delta" do
+    # We had an instance where this did not seem to work. Make sure we're covered
+    # by a test.
+    new = %{
+      monitors: [
+        %{
+          id: "id-3",
+          monitor_logical_name: "foodog",
+          extra_config: %{
+            "foo" => "bar"
+          },
+          run_spec: %{}
+        }
+      ]
+    }
+
+    old = %{
+      monitors: [
+        %{
+          id: "id-3",
+          monitor_logical_name: "foodog",
+          extra_config: %{
+            "foo" => "baz"
+          },
+          run_spec: %{}
+        }
+      ]
+    }
+
+    deltas = diff_and_store_config(new, old)
+    assert length(deltas.add) == 0
+    assert length(deltas.delete) == 0
+    assert length(deltas.change) == 1
+
+    assert get_config("id-3") == hd(new.monitors)
   end
 
   test "Changing the last run time does not produce a delta" do
@@ -111,9 +159,13 @@ defmodule Orchestrator.ConfigurationTest do
       ]
     }
 
-    deltas = diff_config(new, old)
+    deltas = diff_and_store_config(new, old)
     assert length(deltas.add) == 0
     assert length(deltas.delete) == 0
     assert length(deltas.change) == 0
+
+    # Nil, because we never stored the old version in the first place, so this
+    # asserts no updates were done.
+    assert get_config("id-4") == nil
   end
 end

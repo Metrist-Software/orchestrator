@@ -60,6 +60,7 @@ defmodule Orchestrator.MonitorSupervisor do
     Enum.map(monitor_configs, fn monitor_config ->
       name = child_name(supervisor_name, Orchestrator.Configuration.unique_key(monitor_config))
       monitor_config = Orchestrator.Configuration.translate_config(monitor_config)
+      Logger.info("Sending config change signal to child for #{inspect monitor_config}")
       GenServer.cast(name, {:config_change, monitor_config})
     end)
   end

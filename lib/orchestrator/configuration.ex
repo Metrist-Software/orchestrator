@@ -49,7 +49,8 @@ defmodule Orchestrator.Configuration do
   end
 
   @doc """
-  Retrieve a config by its unique id
+  Retrieve a config by its unique id. The config is retrieved from the ETS table that
+  contains all monitor configurations we know about.
   """
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
@@ -70,8 +71,12 @@ defmodule Orchestrator.Configuration do
   @doc """
   Given a new and old config, pick out the relevant changes and return a list of deltas. Deltas are basically
   commands to delete, add, or update monitors.
+
+  On calculating the deltas, the ETS table that holds the configuration (and is used by `get_config/`)
+  is also updated to reflect the changes. The returned deltas are therefore purely informational,
+  no further processing is needed.
   """
-  def diff_config(new_config, old_config) do
+  def diff_and_store_config(new_config, old_config) do
     %{
       add: find_added(new_config, old_config),
       delete: find_deleted(new_config, old_config),
@@ -126,13 +131,14 @@ defmodule Orchestrator.Configuration do
     monitor_config
     |> Map.put(
       :extra_config,
-      (monitor_config.extra_config || %{})
+      monitor_config
+      |> Map.get(:extra_config, %{})
       |> Enum.map(fn {k, v} -> {k, translate_value(v)} end)
       |> Map.new()
     )
     |> Map.put(
       :run_spec,
-      maybe_override_run_spec(monitor_config.run_spec)
+      maybe_override_run_spec(Map.get(monitor_config, :run_spec, %{}))
     )
   end
 

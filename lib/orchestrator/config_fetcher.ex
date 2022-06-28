@@ -44,7 +44,7 @@ defmodule Orchestrator.ConfigFetcher do
   defp run_fetch(state) do
     try do
       new_config = state.config_fetch_fun.()
-      deltas = Orchestrator.Configuration.diff_config(new_config, state.current_config)
+      deltas = Orchestrator.Configuration.diff_and_store_config(new_config, state.current_config)
       Logger.info("- deltas: add=#{length(deltas.add)} delete=#{length(deltas.delete)} change=#{length(deltas.change)}")
       Orchestrator.MonitorSupervisor.process_deltas(state.monitor_supervisor_pid, deltas)
       %State{state | current_config: new_config}
