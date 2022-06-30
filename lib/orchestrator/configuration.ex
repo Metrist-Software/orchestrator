@@ -132,7 +132,7 @@ defmodule Orchestrator.Configuration do
     |> Map.put(
       :extra_config,
       monitor_config
-      |> Map.get(:extra_config, %{})
+      |> Map.get(:extra_config, %{}) || %{}
       |> Enum.map(fn {k, v} -> {k, translate_value(v)} end)
       |> Map.new()
     )

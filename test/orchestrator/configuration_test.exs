@@ -168,4 +168,11 @@ defmodule Orchestrator.ConfigurationTest do
     # asserts no updates were done.
     assert get_config("id-4") == nil
   end
+
+  # Nil extra configs was throwing protocol Enumerable not implemented for nil of type Atom
+  # and we don have monitors with nil configs
+  test "nil extra config doens't error" do
+    config = Orchestrator.Configuration.translate_config(%{extra_config: nil})
+    assert config == %{extra_config: %{}, run_spec: %{}}
+  end
 end
