@@ -170,7 +170,7 @@ defmodule Orchestrator.ConfigurationTest do
   end
 
   # Nil extra configs was throwing protocol Enumerable not implemented for nil of type Atom
-  # and we don have monitors with nil configs
+  # and we do have monitors with nil configs
   test "nil extra config doens't error" do
     config = Orchestrator.Configuration.translate_config(%{extra_config: nil})
     assert config == %{extra_config: %{}, run_spec: %{}}
