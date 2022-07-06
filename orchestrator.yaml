@@ -49,11 +49,6 @@ Resources:
               Value: !Sub "@secret@:/${EnvironmentTagName}/slack/api-token#token"
             - Name: WEBHOOKS_API_ENDPOINT
               Value: !Sub ${WebhooksAPIEndpoint}
-            # Specifically for SendGrid monitor
-            - Name: SENDGRID_FROM_EMAIL
-              Value: !Ref SendGridFromEmail
-            - Name: SENDGRID_TO_EMAIL
-              Value: !Ref SendGridToEmail
             - !If
               - "IsDev"
               - Name: CANARY_PREVIEW_MODE
@@ -281,13 +276,6 @@ Parameters:
   OpsChannel:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/internal/opsChannel
-  # For Sendgrid monitor
-  SendGridFromEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sendgridFromEmail
-  SendGridToEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sendgridToEmail
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
