@@ -34,9 +34,6 @@ Resources:
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
-            # TODO REMOVEME
-            - Name: SECRETS_NAMESPACE
-              Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
             - Name: CANARY_RUN_GROUPS
