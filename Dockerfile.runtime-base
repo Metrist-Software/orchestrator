@@ -5,7 +5,7 @@ FROM debian:bullseye AS app
 
 #RUN apk add --no-cache openssl ncurses-libs libgc++ gcompat
 RUN apt-get update && \
-    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 fonts-freefont-ttf git && \
+    apt-get install -y openssl ca-certificates curl libnss3 libnspr4 libexpat1 fonts-freefont-ttf git procps && \
     rm -rf /var/cache/apt /var/lib/apt
 
 WORKDIR /app
