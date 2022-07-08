@@ -34,12 +34,6 @@ Resources:
               Value: !Ref EnvConfigapiEndpointstelemetryAPIAsString
             - Name: ENVIRONMENT_TAG
               Value: !Sub ${EnvironmentTagName}
-            # TODO: For the transition from prod-mon- style env tags to just prod
-            # Remove and this and switch anything using it back to just `ENVIRONMENT_TAG` once everything is using new style
-            - Name: NEW_ENVIRONMENT_TAG
-              Value: !If [IsDev, "dev1", "prod"]
-            - Name: SECRETS_NAMESPACE
-              Value: !Sub /${EnvironmentTagName}/
             - Name: CANARY_INVOCATION_STYLE
               Value: rundll
             - Name: CANARY_RUN_GROUPS
@@ -52,33 +46,6 @@ Resources:
               Value: !Sub "@secret@:/${EnvironmentTagName}/slack/api-token#token"
             - Name: WEBHOOKS_API_ENDPOINT
               Value: !Sub ${WebhooksAPIEndpoint}
-            # Specifically for Heroku monitor
-            - Name: HEROKU_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            # Specifically for Github monitor
-            - Name: GITHUB_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            # Specifically for Pagerduty monitor
-            - Name: PAGERDUTY_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            - Name: PAGERDUTY_SERVICE_ID
-              Value: !Ref PagerdutyServiceId
-            # Specifically for Sentry monitor
-            - Name: SENTRY_QUEUE_URL
-              Value:
-                Fn::ImportValue:
-                  !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueUrl"
-            # Specifically for SendGrid monitor
-            - Name: SENDGRID_FROM_EMAIL
-              Value: !Ref SendGridFromEmail
-            - Name: SENDGRID_TO_EMAIL
-              Value: !Ref SendGridToEmail
             - !If
               - "IsDev"
               - Name: CANARY_PREVIEW_MODE
@@ -257,95 +224,6 @@ Resources:
                     - IsDev
                     - !Ref AWS::NoValue # Don't need anything for dev since the above covers it
                     - !Sub arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/prod/*
-        # Specifically for the Heroku monitor
-        - PolicyName: HerokuReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${HerokuStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for awsecs monitor
-        - PolicyName: EC2FullAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ec2:*
-                Resource: '*'                    
-        # Specifically for the Github monitor
-        - PolicyName: GithubReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${GithubStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for the Pagerduty monitor
-        - PolicyName: PagerdutyReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${PagerdutyStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Specifically for the Sentry monitor
-        - PolicyName: SentryReadWriteQueue
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:*
-                Resource:
-                  Fn::ImportValue:
-                    !Sub "${SentryStackName}-${EnvironmentTagName}-WebhooksQueueArn"
-        # Needed for Terraform things
-        - PolicyName: TerraformStatsAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                Resource: arn:aws:dynamodb:us-west-2:147803588724:table/cmtf-infra
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                Resource: arn:aws:s3:::cmtf-infra/terraform/*
-        # Needed for AWSECS monitor
-        - PolicyName: MonitorAWSECS
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ecs:CreateService
-                  - ecs:DeleteService
-                  - ecs:UpdateService
-                Resource:
-                  !Sub arn:aws:ecs:*:${AWS::AccountId}:service/*
-              - Effect: Allow
-                Action:
-                  - ecs:Describe*
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - elasticloadbalancing:Describe*
-                Resource: '*'
   PrivateCMATaskLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -395,35 +273,6 @@ Parameters:
   OpsChannel:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/internal/opsChannel
-  StackTagName:
-    Type: String
-    Description: Stack Name (injected by Stackery at deployment time)
-  # For Heroku monitor
-  HerokuStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/herokuStackName
-  # For Github monitor
-  GithubStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/githubStackName
-  # For Pagerduty monitor
-  PagerdutyStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/pagerDutyStackName
-  PagerdutyServiceId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/monitors/pagerduty/serviceId
-  # For Sentry monitor
-  SentryStackName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/stacks/sentryStackName
-  # For Sendgrid monitor
-  SendGridFromEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sendgridFromEmail
-  SendGridToEmail:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/email/sendgridToEmail
   WebhooksAPIEndpoint:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/apiEndpoints/webhooksAPI
