@@ -30,7 +30,10 @@ cp _build/prod/rel/orchestrator/bin/orchestrator $dest/usr/bin
 # Copy anything else we want to include over
 (cd $rel/inc; cp -rv . $dest/)
 
+# Build the package. Distribution-method specific arguments MUST
+# be in the `fpm.cmd` file in the rel directory. At a minimum, this
+# should contain something like "-t deb"
 cd $dest
-fpm -s dir -t deb -n metrist-agent-$dist -v $ver-$tag .
+fpm -s dir $(cat $rel/fpm.cmd) -n metrist-agent-$dist -v $ver-$tag .
 
 cp $dest/*.deb $base
