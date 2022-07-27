@@ -11,12 +11,12 @@ base=$(cd $1; /bin/pwd)
 dist=$2
 ver=$3
 rel=$base/dist/$dist/$ver
-tag=$(git rev-parse --short HEAD)
 
 mix local.hex --force
 mix local.rebar --force
 
 cd $base
+tag=$(git rev-parse --short HEAD)
 mix do deps.get, compile, release
 
 dest=/tmp/pkg
@@ -33,4 +33,4 @@ cp _build/prod/rel/orchestrator/bin/orchestrator $dest/usr/bin
 cd $dest
 fpm -s dir -t deb -n metrist-agent-$dist -v $ver-$tag .
 
-# TODO upload to wherever.
+cp $dest/*.deb $base
