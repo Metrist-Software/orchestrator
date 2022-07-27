@@ -1,0 +1,9 @@
+[Unit]
+Description=Metrist.io Agent
+
+[Service]
+ExecStart=/usr/bin/metrist-agent
+EnvironmentFile=-/etc/default/metrist-agent
+
+[Install]
+WantedBy=multi-user.target
