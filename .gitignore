@@ -32,3 +32,4 @@ priv/plts
 priv/runner
 .vscode/
 *.deb
+pkg/

@@ -12,3 +12,7 @@ cd $base/..
 rm -rf _build dep
 
 docker run -v $PWD:$PWD --user $UID $image $base/do-build.sh $PWD $dist $ver
+
+gpg --sign -a pkg/*.{deb,rpm}
+
+aws s3 cp pkg/* s3://dist.metrist.io/orchestrator/$dist/

@@ -19,13 +19,19 @@ cd $base
 tag=$(git rev-parse --short HEAD)
 mix do deps.get, compile, release
 
-dest=/tmp/pkg
+dest=/tmp/pkgbuild
 [ -e $dest ] && rm -rf $dest
 mkdir -p $dest
 
+pkg_dest=/tmp/pkgout
+[ -e $pkg_dest ] && rm -rf $pkg_dest
+mkdir -p $pkg_dest
+
+
+
 # Copy the binary over
 mkdir -p $dest/usr/bin
-cp _build/prod/rel/orchestrator/bin/orchestrator $dest/usr/bin
+cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin
 
 # Copy anything else we want to include over
 (cd $rel/inc; cp -rv . $dest/)
@@ -34,6 +40,17 @@ cp _build/prod/rel/orchestrator/bin/orchestrator $dest/usr/bin
 # be in the `fpm.cmd` file in the rel directory. At a minimum, this
 # should contain something like "-t deb"
 cd $dest
-fpm -s dir $(cat $rel/fpm.cmd) -n metrist-agent-$dist -v $ver-$tag .
+fpm --verbose -s dir \
+    $(cat $rel/fpm.cmd) \
+    --license "APSLv2" \
+    --vendor "Metrist Software, Inc." \
+    --provides metrist-orchestrator \
+    -m "Metrist Software, Inc. <support@metrist.io>" \
+    -n metrist-orchestrator-$dist \
+    -v $ver-$tag \
+    -a native \
+    -p $pkg_dest \
+    .
 
-cp $dest/*.deb $base
+mkdir -p $base/pkg
+cp $pkg_dest/* $base/pkg
