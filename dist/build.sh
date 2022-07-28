@@ -2,6 +2,9 @@
 #
 #  Run a build through docker. The actual build steps are in do-build.sh
 
+set -e
+
+set -vx
 
 dist=$1
 ver=$2
@@ -13,6 +16,9 @@ rm -rf _build dep
 
 docker run -v $PWD:$PWD --user $UID $image $base/do-build.sh $PWD $dist $ver
 
-gpg --sign -a pkg/*.{deb,rpm}
+pkg=$(cat pkg/packagename)
 
-aws s3 cp pkg/* s3://dist.metrist.io/orchestrator/$dist/
+gpg --sign -a pkg/$pkg
+
+aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
+aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/

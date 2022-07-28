@@ -19,6 +19,8 @@ cd $base
 tag=$(git rev-parse --short HEAD)
 mix do deps.get, compile, release
 
+orch_ver=$(cat _build/prod/rel/orchestrator/releases/start_erl.data |awk '{print $2}')
+
 dest=/tmp/pkgbuild
 [ -e $dest ] && rm -rf $dest
 mkdir -p $dest
@@ -33,6 +35,7 @@ mkdir -p $pkg_dest
 mkdir -p $dest/usr/bin
 cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin
 
+
 # Copy anything else we want to include over
 (cd $rel/inc; cp -rv . $dest/)
 
@@ -46,11 +49,14 @@ fpm --verbose -s dir \
     --vendor "Metrist Software, Inc." \
     --provides metrist-orchestrator \
     -m "Metrist Software, Inc. <support@metrist.io>" \
-    -n metrist-orchestrator-$dist \
-    -v $ver-$tag \
+    -n metrist-orchestrator \
+    -v $orch_ver-$dist-$ver-$tag \
     -a native \
     -p $pkg_dest \
     .
 
+pkg=$(cd $pkg_dest; ls)
+
 mkdir -p $base/pkg
-cp $pkg_dest/* $base/pkg
+cp $pkg_dest/$pkg $base/pkg
+echo $pkg >$base/pkg/packagename
