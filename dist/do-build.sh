@@ -59,4 +59,4 @@ pkg=$(cd $pkg_dest; ls)
 
 mkdir -p $base/pkg
 cp $pkg_dest/$pkg $base/pkg
-echo $pkg >$base/pkg/packagename
+echo $pkg >$base/pkg/$dist-$ver

@@ -4,4 +4,8 @@
 # override/change these is to edit with `systemctl edit metrist-agent`
 #
 
+# We want a UTF-8 based locale. The "C" locale is always
+# available.
+LC_LANG=C.UTF-8
+
 # TODO: add actual variables to be set.

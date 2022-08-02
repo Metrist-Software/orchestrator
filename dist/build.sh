@@ -16,10 +16,11 @@ rm -rf _build dep
 
 docker run -v $PWD:$PWD --user $UID $image $base/do-build.sh $PWD $dist $ver
 
-pkg=$(cat pkg/packagename)
+pkg=$(cat pkg/$dist-$ver)
 
-gpg --sign -a pkg/$pkg
+gpg --sign --armor --detach-sign pkg/$pkg
 
 aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
 aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/
+aws s3 rm s3://dist.metrist.io/orchestrator/$dist/$dist-$ver.latest.txt
 echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$dist-$ver.latest.txt
