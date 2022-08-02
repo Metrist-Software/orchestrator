@@ -33,11 +33,12 @@ mkdir -p $pkg_dest
 
 # Copy the binary over
 mkdir -p $dest/usr/bin
-cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin
+cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin/metrist-orchestrator
 
 
-# Copy anything else we want to include over
-(cd $rel/inc; cp -rv . $dest/)
+# Copy anything else we want to include over. We remove `.gitkeep` files
+# because that is cleaner
+(cd $rel/inc; cp -rv . $dest/; find $dest/ -name .gitkeep |xargs rm)
 
 # Build the package. Distribution-method specific arguments MUST
 # be in the `fpm.cmd` file in the rel directory. At a minimum, this
