@@ -4,6 +4,29 @@ The contents of this directory and its subdirectories are to create distribution
 Canonical versions of these packages are built by us and available at http://dist.metrist.io but you may want to
 build your own or add new distribution targets.
 
+## Versioning
+
+Distribution packages are tagged with three version elements:
+
+* The Mix version, taken from Orchestrator's [`mix.exs`](../mix.exs);
+* The target (distribution and distribution version, for example `ubuntu-20.04`);
+* The Git short rev of this repository.
+
+The latter element is just informational, updates to Orchestrator packages will be indicated through mix version bumps.
+
+The latest version is indicated by a file `&lt;dist>-&lt;ver>.latest.txt`. A complete example:
+
+In `http://dist.metrist.io/orchestrator/ubuntu`, you can find>
+
+* `metrist-orchestrator_0.1.0-ubuntu-22.04-611a16f_amd64.deb`, the 0.1.0 version package for Ubuntu 22.04
+* `metrist-orchestrator_0.1.0-ubuntu-22.04-611a16f_amd64.deb.asc`, its signature
+* `ubuntu-22.04.latest.txt`, containing the full filename of the debian package above.
+
+## Signing
+
+Packages are signed with GnuPG and the signatures are uploaded as usual, with `.asc` files. See [SIGNING.md](SIGNING.md)
+for details.
+
 ## Basic Flow
 
 We use a Docker container per target to build an Orchestrator release. The release is then wrapped in a

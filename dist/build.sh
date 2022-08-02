@@ -22,3 +22,4 @@ gpg --sign -a pkg/$pkg
 
 aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
 aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/
+echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$dist-$ver.latest.txt

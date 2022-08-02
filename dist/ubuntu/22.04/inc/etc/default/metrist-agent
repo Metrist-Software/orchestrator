@@ -1,0 +1,7 @@
+# Environment variables for Metrist agent.
+#
+# This file serves as documentation only, the official way to
+# override/change these is to edit with `systemctl edit metrist-agent`
+#
+
+# TODO: add actual variables to be set.
