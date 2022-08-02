@@ -10,6 +10,7 @@ We have Ubuntu packages for the latest two LTS releases. Here is how you install
 The following steps will download and verify the debian package
 
     sudo apt install wget gnupg
+    cd /tmp
     wget http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
     wget http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt)
     wget http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt).asc
@@ -27,7 +28,6 @@ package needs.
 
 Orchestrator runs as a Systemd-controlled service. The canonical way to edit a systemd unit is to
 use the following command:
-
 
 ### Running Orchestrator
 
