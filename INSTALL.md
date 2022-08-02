@@ -29,6 +29,8 @@ package needs.
 Orchestrator runs as a Systemd-controlled service. The canonical way to edit a systemd unit is to
 use the following command:
 
+    systemctl edit metrist-orchestrator
+
 ### Running Orchestrator
 
 When all is well, you can enable and start Orchestrator as a regular systemd service:

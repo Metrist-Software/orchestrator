@@ -1,5 +1,5 @@
 [Unit]
-Description=Metrist.io Agent
+Description=Metrist.io Orchestrator service
 
 [Service]
 ExecStart=/usr/bin/metrist-orchestrator
