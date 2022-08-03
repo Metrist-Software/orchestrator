@@ -7,15 +7,31 @@ We have Ubuntu packages for the latest two LTS releases. Here is how you install
 
 ### Downloading and verifying the Debian package
 
+#### Bash shell download and verification instructions
+
 The following steps will download and verify the debian package
 
+```
     sudo apt install wget gnupg
     cd /tmp
-    wget http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
-    wget http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt)
-    wget http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt).asc
-    wget https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt)
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt).asc
+    wget -nc https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
     gpg --keyring ./trustedkeys.gpg --verify $(cat ubuntu-20.04.latest.txt).asc
+```
+
+#### Fish shell downloand and verification instructions
+
+```
+    sudo apt install wget gnupg
+    cd /tmp
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/(cat ubuntu-20.04.latest.txt)
+    wget -nc http://dist.metrist.io/orchestrator/ubuntu/(cat ubuntu-20.04.latest.txt).asc
+    wget -nc https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
+    gpg --keyring ./trustedkeys.gpg --verify (cat ubuntu-20.04.latest.txt).asc
+```
 
 ### Installing the Debian package
 
@@ -35,7 +51,7 @@ use the following command:
 
 When all is well, you can enable and start Orchestrator as a regular systemd service:
 
-	systemd enable metrist-orchestrator
+	  systemd enable metrist-orchestrator
     systemd start metrist-orchestrator
 
 and use `journalctl` to see whether things are starting as expected.
