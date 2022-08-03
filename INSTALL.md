@@ -51,7 +51,7 @@ use the following command:
 
 When all is well, you can enable and start Orchestrator as a regular systemd service:
 
-	  systemd enable metrist-orchestrator
-    systemd start metrist-orchestrator
+	  systemctl enable metrist-orchestrator
+    systemctl start metrist-orchestrator
 
 and use `journalctl` to see whether things are starting as expected.
