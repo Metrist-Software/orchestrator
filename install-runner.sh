@@ -29,4 +29,4 @@ latest=$(curl $dist/runner-latest$qualifier.txt)
 echo "Installing runner version $latest"
 curl $dist/runner-${latest}-linux-x64.zip >/tmp/runner.zip
 cd priv/runner
-unzip /tmp/runner.zip
+unzip -o /tmp/runner.zip

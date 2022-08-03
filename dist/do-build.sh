@@ -15,15 +15,9 @@ rel=$base/dist/$dist/$ver
 mix local.hex --force
 mix local.rebar --force
 
-# install runner
-runnerdist=https://monitor-distributions.canarymonitor.com
-latest=$(curl $runnerdist/runner-latest.txt)
-echo "Installing runner version $latest"
-curl $runnerdist/runner-${latest}-linux-x64.zip >/tmp/runner.zip
-unzip -o /tmp/runner.zip -d $base/priv/runner
-
 cd $base
 tag=$(git rev-parse --short HEAD)
+./install-runner.sh
 mix do deps.get, compile, release
 
 orch_ver=$(cat _build/prod/rel/orchestrator/releases/start_erl.data |awk '{print $2}')
