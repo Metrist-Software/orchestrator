@@ -1,0 +1,14 @@
+# Environment variables for Metrist Orchestrator.
+#
+# This file serves as documentation only, the official way to
+# override/change these is to edit with `systemctl edit metrist-orchestrator`
+#
+
+# Either HOME or this variable needs to be set
+BAKEWARE_CACHE=/var/run/metrist-orchestrator/bwcache
+
+# We want a UTF-8 based locale. The "C" locale is always
+# available.
+LC_LANG=C.UTF-8
+
+# TODO: add actual variables to be set.

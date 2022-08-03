@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+# Make our fpm install a bit more reproducible
+# through Gemfile.lock
+gem 'fpm'
