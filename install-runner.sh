@@ -28,5 +28,7 @@ dist=https://monitor-distributions.canarymonitor.com
 latest=$(curl $dist/runner-latest$qualifier.txt)
 echo "Installing runner version $latest"
 curl $dist/runner-${latest}-linux-x64.zip >/tmp/runner.zip
+rm -rf priv/runner
+mkdir priv/runner
 cd priv/runner
-unzip -o /tmp/runner.zip
+unzip /tmp/runner.zip
