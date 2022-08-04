@@ -9,6 +9,7 @@ This document is the only document that contains a list of valid keys. All keys 
 OpenPGP key server (keys.openpgp.org).
 
 * [C165F320536F922A23CF8E8FDC4C7142A47C86BC](https://keys.openpgp.org/vks/v1/by-fingerprint/C165F320536F922A23CF8E8FDC4C7142A47C86BC)
+* [35BE7BF674B27EC1791809D6DC1322606170AD04](https://keys.openpgp.org/vks/v1/by-fingerprint/35BE7BF674B27EC1791809D6DC1322606170AD04)
 
 For your convenience, these keys are all collected in (a keyring)[trustedkeys.gpg].
 
