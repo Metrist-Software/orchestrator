@@ -7,6 +7,10 @@ This repository contains the Metrist orchestrator, which includes two main funct
 
 The orchestrator is written in Elixir and distributed both as a standalone executable and a container.
 
+## Installation
+
+See our [installation documentation](INSTALL.md) for instructions.
+
 ## Orchestration
 
 Based on monitor configurations maintained on the Metrist backend, the orchestrator will schedule runs
@@ -62,3 +66,8 @@ The orchestrator is configured through environment variables:
 * `CANARY_IPA_LOOPBACK_ONLY` - whether to open the UDP socket for in-process data only on the loopback/localhost address. This can be
   used to restrict this sort of traffic to only the local machine. Off by default which means that the "wildcard" address is bound,
   making the UDP socket accessible to all machines that can route to the instance.
+
+## License
+
+This software is licensed to the public under the [Apache License, Version 2.0](LICENSE.txt) - details are
+in that file.
