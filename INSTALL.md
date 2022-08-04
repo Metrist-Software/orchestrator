@@ -19,22 +19,12 @@ The following steps will download and verify the debian package
     wget -nc https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
     gpg --keyring ./trustedkeys.gpg --verify $(cat ubuntu-20.04.latest.txt).asc
 
-#### Fish shell download and verification instructions
-
-    sudo apt install wget gnupg
-    cd /tmp
-    wget -nc http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
-    wget -nc http://dist.metrist.io/orchestrator/ubuntu/(cat ubuntu-20.04.latest.txt)
-    wget -nc http://dist.metrist.io/orchestrator/ubuntu/(cat ubuntu-20.04.latest.txt).asc
-    wget -nc https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
-    gpg --keyring ./trustedkeys.gpg --verify (cat ubuntu-20.04.latest.txt).asc
-
 ### Installing the Debian package
 
 Note that it is important to use `apt` and not `dpkg` here - Apt will download dependencies that the
 package needs.
 
-   sudo apt install `./$(cat ubuntu-20.04.latest.txt)`
+    sudo apt install ./$(cat ubuntu-20.04.latest.txt)
 
 ### Configuring Orchestrator
 
