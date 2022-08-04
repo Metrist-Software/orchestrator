@@ -34,7 +34,7 @@ The following steps will download and verify the debian package
 Note that it is important to use `apt` and not `dpkg` here - Apt will download dependencies that the
 package needs.
 
-   sudo apt install ./$(cat ubuntu-20.04.latest.txt)
+   sudo apt install `./$(cat ubuntu-20.04.latest.txt)`
 
 ### Configuring Orchestrator
 
