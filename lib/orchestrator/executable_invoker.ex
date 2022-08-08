@@ -6,7 +6,7 @@ defmodule Orchestrator.ExecutableInvoker do
   """
   require Logger
 
-  @monitor_distributions_url "https://monitor-distributions.canarymonitor.com/"
+  @monitor_distributions_url "https://monitor-distributions.metrist.io/"
 
   @behaviour Orchestrator.Invoker
 
