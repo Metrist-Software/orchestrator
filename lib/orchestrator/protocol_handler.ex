@@ -97,7 +97,7 @@ defmodule Orchestrator.ProtocolHandler do
     case Integer.parse(message) do
       {len, rest} ->
         message_body = String.slice(rest, 1, len)
-        if (len > String.length(message_body)) do
+        if (len > byte_size(message_body)) do
           # Incomplete message
           # Send message back if we can't process it
           # so that future data can be appended
@@ -108,7 +108,7 @@ defmodule Orchestrator.ProtocolHandler do
           handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
         end
       :error ->
-        if String.length(message) > 0 do
+        if byte_size(message) > 0 do
           {:error, message}
         else
           # This is actually the catch all. Odd but this
@@ -330,7 +330,7 @@ defmodule Orchestrator.ProtocolHandler do
 
   defp do_log(level, message, state) do
     message = String.trim(message)
-    if String.length(message) > 0 do
+    if byte_size(message) > 0 do
       Logger.log(level, "Received log: #{message}")
     end
     {:noreply, state}
@@ -359,7 +359,7 @@ defmodule Orchestrator.ProtocolHandler do
             # This should not happen, but if it does, we can always make a more complex read function. For now, good enough.
             # Note that technically, we can have other stuff interfering here, or multiple messages in one go, but at this
             # part in the protocol (we only get called from the handshake) we should not be too worried about that.
-            if len + 1 != String.length(rest), do: raise "Unexpected message, expected #{len} bytes, got \"#{rest}\""
+            if len + 1 != byte_size(rest), do: raise "Unexpected message, expected #{len} bytes, got \"#{rest}\""
             String.trim_leading(rest)
           :error ->
             Logger.info("Ignoring monitor output: #{data}")
@@ -374,7 +374,7 @@ defmodule Orchestrator.ProtocolHandler do
   def write(port, msg) do
     len =
       msg
-      |> String.length()
+      |> byte_size()
       |> Integer.to_string()
       |> String.pad_leading(5, "0")
     msg = len <> " " <> msg
