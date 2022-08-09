@@ -96,16 +96,16 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_message(pid, monitor_logical_name, message) do
     case Integer.parse(message) do
       {len, rest} ->
-        message_body = String.slice(rest, 1, len)
-        if (len > byte_size(message_body)) do
-          # Incomplete message
-          # Send message back if we can't process it
-          # so that future data can be appended
-          {:incomplete, message}
-        else
-          GenServer.cast(pid, {:message, message_body})
-          # If there's more, try to process more (but it may be incomplete)
-          handle_message(pid, monitor_logical_name, String.slice(rest, 1 + len, 100_000))
+        case rest do
+          <<32, message_body::binary-size(len), new_rest::binary>> ->
+            GenServer.cast(pid, {:message, message_body})
+            # If there's more, try to process more (but it may be incomplete)
+            handle_message(pid, monitor_logical_name, new_rest)
+        _ ->
+            # Incomplete message
+            # Send message back if we can't process it
+            # so that future data can be appended
+            {:incomplete, message}
         end
       :error ->
         if byte_size(message) > 0 do
