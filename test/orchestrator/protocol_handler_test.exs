@@ -22,6 +22,20 @@ defmodule Orchestrator.ProtocolHandlerTest do
     assert message == :nil
   end
 
+  test "Message with CRLF will succeed with {:ok, nil}" do
+    log = "00214 Log Debug statusCode: 500, gotIp: <html>\r\n<head><title>500 Internal Server Error</title></head>\r\n<body>\r\n<center><h1>500 Internal Server Error</h1></center>\r\n</body>\r\n</html>\r\n, theIp: ip-10-0-101-123, not done yet"
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", log)
+    assert result == :ok
+    assert message == :nil
+  end
+
+  test "Message is complete when the number of bytes is correct" do
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00007 héllo")
+    assert message == :nil
+    assert result == :ok
+  end
+
+
   test "Empty log message works" do
     result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
     assert {:ok, :nil} == result
