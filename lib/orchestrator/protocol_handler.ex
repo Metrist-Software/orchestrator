@@ -97,7 +97,7 @@ defmodule Orchestrator.ProtocolHandler do
     case Integer.parse(message) do
       {len, rest} ->
         case rest do
-          <<32, message_body::binary-size(len), new_rest::binary>> ->
+          <<" ", message_body::binary-size(len), new_rest::binary>> ->
             GenServer.cast(pid, {:message, message_body})
             # If there's more, try to process more (but it may be incomplete)
             handle_message(pid, monitor_logical_name, new_rest)
