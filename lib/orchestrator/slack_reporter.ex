@@ -4,7 +4,7 @@ defmodule Orchestrator.SlackReporter do
   @slack_url "https://slack.com/api/chat.postMessage"
 
   def send_monitor_error(monitor_logical_name, check_logical_name, message) do
-    channel = Application.get_env(:slack, :reporting_channel)
+    channel = Application.get_env(:orchestrator, :slack_reporting_channel)
 
     if is_nil(channel) do
       Logger.warn("Slack Reporter channel not configured. Unable to send message")
@@ -47,7 +47,7 @@ defmodule Orchestrator.SlackReporter do
   end
 
   def is_configured?() do
-    !(is_nil(Application.get_env(:slack, :api_token)) ||
-      is_nil(Application.get_env(:slack, :reporting_channel)))
+    !(is_nil(Application.get_env(:orchestrator, :slack_api_token)) ||
+      is_nil(Application.get_env(:orchestrator, :slack_reporting_channel)))
   end
 end
