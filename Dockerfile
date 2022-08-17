@@ -1,7 +1,7 @@
 FROM canarymonitor/agent:build-base-2022.19 AS build
 
 COPY mix.exs mix.lock install-runner.sh ./
-#COPY config config
+COPY config config
 COPY priv priv
 ARG GITHUB_REF=""
 RUN ./install-runner.sh $GITHUB_REF
