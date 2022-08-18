@@ -3,6 +3,7 @@ name: Weekly Base Container Refresh
 on:
   schedule:
     - cron: '0 1 * * 1' # every Monday at 1am UTC
+  push:
 
 jobs:
   build:
@@ -15,9 +16,10 @@ jobs:
           token: ${{ secrets.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
       - name: Create new base image
         env:
-          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: %{{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          docker login --username canarymonitoring --password $DOCKER_HUB_TOKEN
+          dist/login.sh
           git config --global user.email "nobodye@canarymonitor.com"
           git config --global user.name "Github Action Bot"
           ./refresh-base.sh

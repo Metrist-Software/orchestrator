@@ -18,7 +18,7 @@ version=$(git rev-parse --short HEAD)
 image_tag=public.ecr.aws/metrist/orchestrator:$version
 
 make release
-docker tag agent:$version $image_tag
+docker tag orchestrator:$version $image_tag
 docker push $image_tag
 
 # `latest` is what the Helm chart uses by default.

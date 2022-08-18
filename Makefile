@@ -20,7 +20,7 @@ release:
 	echo Revision: `git rev-parse --short HEAD` >priv/build.txt
 	echo Date: `date` >>priv/build.txt
 	echo Build-Host: `hostname` >>priv/build.txt
-	docker build -t agent:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
+	docker build -t orchestrator:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
 
 local_release:
 	MIX_ENV=prod mix do compile, release --overwrite
