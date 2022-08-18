@@ -22,4 +22,4 @@ image_tag=public.ecr.aws/metrist/orchestrator:$version
 
 tag_file=orchestrator-latest$qualifier.txt
 echo $image_tag >/tmp/$tag_file
-aws s3 cp --region=us-west-2 /tmp/$tag_file s3://metrist-private/version-stamps/$tag_file
+aws s3 cp --region=us-west-2 /tmp/$tag_file s3://dist.metrist.io/orchestrator/docker/$tag_file
