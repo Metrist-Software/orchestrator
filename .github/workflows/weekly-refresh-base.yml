@@ -1,7 +1,8 @@
 name: Weekly Base Container Refresh
 
 on:
-  push:
+  schedule:
+    - cron: '0 1 * * 1' # every Monday at 1am UTC
 
 jobs:
   build:
@@ -14,10 +15,10 @@ jobs:
           token: ${{ secrets.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
       - name: Create new base image
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.ORCHESTRATOR_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.ORCHESTRATOR_AWS_SECRET_ACCESS_KEY }}
         run: |
           dist/login.sh
-          git config --global user.email "nobodye@canarymonitor.com"
+          git config --global user.email "nobody@metrist.io"
           git config --global user.name "Github Action Bot"
           ./refresh-base.sh
