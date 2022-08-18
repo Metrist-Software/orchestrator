@@ -7,7 +7,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-        - Image: !Sub metristmonitor/agent:${ContainerVersion}
+        - Image: !Sub public.ecr.aws/metrist/orchestrator:${ContainerVersion}
           LogConfiguration:
             LogDriver: awslogs
             Options:

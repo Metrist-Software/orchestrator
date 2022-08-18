@@ -85,7 +85,7 @@ case "${GITHUB_REF:-}" in
 esac
 
 version=$(git rev-parse --short HEAD)
-image_tag=metristmonitor/agent:$version
+image_tag=public.ecr.aws/metrist/orchestrator:$version
 
 tag_file=orchestrator-latest$qualifier.txt
 echo $image_tag >/tmp/$tag_file
