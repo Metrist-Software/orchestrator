@@ -11,7 +11,7 @@ defmodule Orchestrator.ProtocolHandler do
   @max_monitor_runtime 15 * 60 * 1_000
   @exit_timeout 5 * 60 * 1_000
 
-  # Tag to represent a step error from one of CANARY's monitors for log filtering
+  # Tag to represent a step error from one of METRIST's monitors for log filtering
   @monitor_error_tag "METRIST_MONITOR_ERROR"
 
 

@@ -7,23 +7,23 @@
 The new Orchestrator can be controlled by a number of settings. The basic (always-needed) ones
 are:
 
-* `CANARY_API_HOST` decides where monitor configuration is downloaded and telemetry/error information is uploaded. For porting,
-  set it to `app-dev1.canarymonitor.com`.
-* `CANARY_API_TOKEN` decides "who we are". There are two possible values:
-  1. `@secret@:/dev1/canary-shared/api-token#token` - this is a reference to the token for SHARED and to be used to port
+* `METRIST_API_HOST` decides where monitor configuration is downloaded and telemetry/error information is uploaded. For porting,
+  set it to `app-dev1.metristmonitor.com`.
+* `METRIST_API_TOKEN` decides "who we are". There are two possible values:
+  1. `@secret@:/dev1/metrist-shared/api-token#token` - this is a reference to the token for SHARED and to be used to port
      all monitors in that account;
-  2. `@secret@:/dev1/private-cma/canary-api-token#token` - this is a reference to the token for the "private CMA" account,
+  2. `@secret@:/dev1/private-cma/metrist-api-token#token` - this is a reference to the token for the "private CMA" account,
      353-C in development;
-* `CANARY_CLEANUP_ENABLED` should be set to 1.
-* `CANARY_INVOCATION_STYLE` can be `awslambda` or `rundll`, during porting you want the latter.
-* `CANARY_RUNDLL_LOCAL_PATH` is a pointer to the local copy of the monitor code. When set, downloads from S3 won't be attempted
+* `METRIST_CLEANUP_ENABLED` should be set to 1.
+* `METRIST_INVOCATION_STYLE` can be `awslambda` or `rundll`, during porting you want the latter.
+* `METRIST_RUNDLL_LOCAL_PATH` is a pointer to the local copy of the monitor code. When set, downloads from S3 won't be attempted
   so it is very convenient to set it. For me, it is set to `../aws-serverless/shared`.
 
 This is on top of things like AWS environment vars to actually read secrets, etcetera. One more thing is that you want a local
 DLL runner copy, to do this, go into your Orchestrator dev dir and do:
 
     cd priv/runner
-    ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* .
+    ln -s ../../aws-serverless/shared/Metrist.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* .
 
 This will keep your DLL runner up-to-date in case you need to fix/recompile it (needless to say, but do this _after_ you have
 done at least one `dotnet build` in there).
@@ -33,7 +33,7 @@ done at least one `dotnet build` in there).
 Together with the API token, which selects the account, there is one env var for the selection of monitor configurations that
 the instance receives:
 
-* `CANARY_RUN_GROUPS` - this is your own unique run group, set it to `<your name>-development` or something like that.
+* `METRIST_RUN_GROUPS` - this is your own unique run group, set it to `<your name>-development` or something like that.
 
 ## How development (dev1) is setup.
 
@@ -55,13 +55,13 @@ Therefore, the process is simple: just move every monitor from the old to the ne
    that is for now mandatory. Tweak where needed.
 1. Check that `Backend.Projections.Dbpa.MonitorConfig` will return the correct value for the `checks` function for the monitor. Should
    be all there but typos can and will happen.
-1. Check that `Mix.Tasks.Canary.SecretsToConfig` is correct for your monitor. There is plenty of sample code there, and we want to not
+1. Check that `Mix.Tasks.Metrist.SecretsToConfig` is correct for your monitor. There is plenty of sample code there, and we want to not
    only copy actual secrets but also make sure that `extra_config` values in the monitor config have everything the monitor needs.
-1. Run the `canary.secrets_to_config` mix task and verify in pgAdmin that all is well. Note that the mix task is supposed to
+1. Run the `metrist.secrets_to_config` mix task and verify in pgAdmin that all is well. Note that the mix task is supposed to
    also run on production, so do not
    manually tweak the projection db - it will be overwritten anyway when someone else runs the mix task.
 1. Your monitor can now run as DLL. Move it from the "AWS Lambda" run group to whatever you set for the local run group using the
-   backend mix task `mix canary.set_run_group`. If you start Orchestrator (or have it running) using `iex -S mix` then when the next
+   backend mix task `mix metrist.set_run_group`. If you start Orchestrator (or have it running) using `iex -S mix` then when the next
    run is due, your local orchestrator should pick it up and the "AWS Lambda" orchestrator will stop running it (you can keep the
    Orchestrator run). Check that all is fine, telemetry is reported, etcetera.
 1. If this works, then you should be done. Make sure that any monitor changes are:
@@ -79,7 +79,7 @@ Therefore, the process is simple: just move every monitor from the old to the ne
 ### Cleanups
 
 Monitors can define two methods, "TearDown" and "Cleanup". The first gets invoked when it exists, the second only when the
-environment variable `CANARY_CLEANUP_ENABLED` is set to a truthy value. Normally, this will ensure that things "just work"
+environment variable `METRIST_CLEANUP_ENABLED` is set to a truthy value. Normally, this will ensure that things "just work"
 by setting that value from the parameter store, but where Cleanup exists, it requires validation.
 
 ### Expensive monitors

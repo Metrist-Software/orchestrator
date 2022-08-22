@@ -10,7 +10,7 @@ defmodule Orchestrator.Application do
   def start(_type, _config) do
     print_header()
 
-    ll_config = System.get_env("CANARY_LOGGING_LEVEL", "Info")
+    ll_config = System.get_env("METRIST_LOGGING_LEVEL", "Info")
     set_logging(String.downcase(ll_config))
     #  Monitors can have very long logging outputs and truncating them throws awa
     #  potentially important information.
@@ -19,7 +19,7 @@ defmodule Orchestrator.Application do
 
     configure_configs()
 
-    rg_string = System.get_env("CANARY_RUN_GROUPS", "")
+    rg_string = System.get_env("METRIST_RUN_GROUPS", "")
     run_groups = parse_run_groups(rg_string)
 
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance(), run_groups) end
@@ -41,19 +41,19 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def instance, do: System.get_env("CANARY_INSTANCE_ID", "fake-dev-instance")
+  def instance, do: System.get_env("METRIST_INSTANCE_ID", "fake-dev-instance")
 
-  def do_cleanup?, do: System.get_env("CANARY_CLEANUP_ENABLED") != nil
+  def do_cleanup?, do: System.get_env("METRIST_CLEANUP_ENABLED") != nil
 
   # TODO set default invocation style back to rundll
-  def invocation_style, do: System.get_env("CANARY_INVOCATION_STYLE", "aws_lambda")
+  def invocation_style, do: System.get_env("METRIST_INVOCATION_STYLE", "aws_lambda")
 
-  def cma_config, do: System.get_env("CANARY_CMA_CONFIG")
+  def cma_config, do: System.get_env("METRIST_CMA_CONFIG")
 
-  def preview_mode?, do: System.get_env("CANARY_PREVIEW_MODE") != nil
+  def preview_mode?, do: System.get_env("METRIST_PREVIEW_MODE") != nil
 
   def secrets_source do
-    env = System.get_env("CANARY_SECRETS_SOURCE")
+    env = System.get_env("METRIST_SECRETS_SOURCE")
     Map.get(@known_secrets_managers, env, Orchestrator.AWSSecretsManager)
   end
 
@@ -116,7 +116,7 @@ end
       "(unknown build)"
     end
     IO.puts """
-    Canary Monitoring Orchestrator starting.
+    Metrist Monitoring Orchestrator starting.
 
     Build info:
     ===

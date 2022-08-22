@@ -1,6 +1,6 @@
-defmodule Mix.Tasks.Canary.RunMonitor do
+defmodule Mix.Tasks.Metrist.RunMonitor do
   use Mix.Task
-  alias Mix.Tasks.Canary.Helpers
+  alias Mix.Tasks.Metrist.Helpers
 
   require Logger
   @moduledoc """
@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   Rundll requires that ./priv/runner be linked to the runner output dir * via
 
       cd priv/runner
-      ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
+      ln -s ../../aws-serverless/shared/Metrist.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
 
   Note, you should use the dotnet publish dirs for the location.
   If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir.
@@ -26,16 +26,16 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   * dotnet dll invoker run with 3 steps and 2 extra config values (in this case the extra_config values aren't used)
     For run dll the -m value should be the published directory
 
-      mix canary.run_monitor -t rundll -l ../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
+      mix metrist.run_monitor -t rundll -l ../aws-serverless/shared/Metrist.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
 
   * exe invoker with 1 step and no extra_config.
     For exe invokers the -m value should be an executable file
 
-      mix canary.run_monitor -t exe -l ../aws-serverless/shared/zoomclient/zoomclient -s JoinCall
+      mix metrist.run_monitor -t exe -l ../aws-serverless/shared/zoomclient/zoomclient -s JoinCall
 
   * cmd invoker with 1 step invoking the zoom client monitor.any()
 
-      mix canary.run_monitor -t cmd -l 'cd ../aws-serverless/shared/zoomclient; node index.js' -s JoinCall
+      mix metrist.run_monitor -t cmd -l 'cd ../aws-serverless/shared/zoomclient; node index.js' -s JoinCall
   """
   @shortdoc "Run a monitor locally from any location via exe invoker or runner invoker utilizing the full protocol"
 
@@ -121,6 +121,6 @@ defmodule Mix.Tasks.Canary.RunMonitor do
   defp setup_hackney_for_external_webhook_processing() do
     # Needed if you are going to test external webhook processing
     Application.ensure_all_started(:hackney)
-    Application.put_env(:orchestrator, :api_token, System.get_env("CANARY_API_TOKEN", "fake-token"))
+    Application.put_env(:orchestrator, :api_token, System.get_env("METRIST_API_TOKEN", "fake-token"))
   end
 end
