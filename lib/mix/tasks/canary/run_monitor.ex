@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Metrist.RunMonitor do
   Rundll requires that ./priv/runner be linked to the runner output dir * via
 
       cd priv/runner
-      ln -s ../../aws-serverless/shared/Metrist.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
+      ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
 
   Note, you should use the dotnet publish dirs for the location.
   If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir.
@@ -26,7 +26,7 @@ defmodule Mix.Tasks.Metrist.RunMonitor do
   * dotnet dll invoker run with 3 steps and 2 extra config values (in this case the extra_config values aren't used)
     For run dll the -m value should be the published directory
 
-      mix metrist.run_monitor -t rundll -l ../aws-serverless/shared/Metrist.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
+      mix metrist.run_monitor -t rundll -l ../aws-serverless/shared/Canary.Shared.Monitors.TestSignal/bin/Release/netcoreapp3.1/linux-x64/publish -s Zero -s Normal -s Poisson -e test1=1 -e test2=2
 
   * exe invoker with 1 step and no extra_config.
     For exe invokers the -m value should be an executable file
