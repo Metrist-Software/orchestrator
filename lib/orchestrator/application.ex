@@ -24,18 +24,18 @@ defmodule Orchestrator.Application do
 
     config_fetch_fun = fn -> Orchestrator.APIClient.get_config(instance(), run_groups) end
 
-    configure_api_token()
-    configure_slack_reporter()
-
     configure_temp_dir()
 
     children = [
-      Orchestrator.HostTelemetry,
+      if Application.get_env(:orchestrator, :enable_host_telemetry?) do
+        Orchestrator.HostTelemetry
+      end,
       MetristIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
     ]
+    |> Enum.reject(&is_nil/1)
     |> filter_children()
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
     Supervisor.start_link(children, opts)
@@ -61,7 +61,7 @@ defmodule Orchestrator.Application do
 
   def api_token, do: Application.get_env(:orchestrator, :api_token)
 
-  def slack_api_token, do: Application.get_env(:slack, :api_token)
+  def slack_api_token, do: Application.get_env(:orchestrator, :slack_api_token)
 
   def ipa_loopback_only?, do: Application.get_env(:orchestrator, :ipa_loopback_only)
 
@@ -104,31 +104,8 @@ defmodule Orchestrator.Application do
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
-  defp configure_api_token, do: :ok
-  defp configure_slack_reporter, do: :ok
 else
   defp filter_children(children), do: children
-  defp configure_api_token do
-    token =
-      case System.get_env("CANARY_API_TOKEN") do
-        nil ->
-          "fake-token-for-dev"
-
-        token ->
-          Orchestrator.Configuration.translate_value(token)
-      end
-
-    Application.put_env(:orchestrator, :api_token, token)
-  end
-  defp configure_slack_reporter do
-    token = System.get_env("SLACK_API_TOKEN")
-    |> Orchestrator.Configuration.translate_value()
-    Application.put_env(:slack, :api_token, token)
-
-    channel = System.get_env("SLACK_ALERTING_CHANNEL")
-    |> Orchestrator.Configuration.translate_value()
-    Application.put_env(:slack, :reporting_channel, channel)
-  end
 end
 
   defp print_header() do
@@ -146,5 +123,15 @@ end
     #{build}
     ===
     """
+  end
+
+  def translate_config_from_env(env, default \\ nil) do
+    case System.get_env(env) do
+      nil ->
+        default
+
+      token ->
+        Orchestrator.Configuration.translate_value(token)
+    end
   end
 end
