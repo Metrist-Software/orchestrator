@@ -27,12 +27,15 @@ defmodule Orchestrator.Application do
     configure_temp_dir()
 
     children = [
-      Orchestrator.HostTelemetry,
+      if Application.get_env(:orchestrator, :enable_host_telemetry?) do
+        Orchestrator.HostTelemetry
+      end,
       MetristIPA.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
     ]
+    |> Enum.reject(&is_nil/1)
     |> filter_children()
     opts = [strategy: :one_for_one, name: Orchestrator.Supervisor, max_restarts: 5]
     Supervisor.start_link(children, opts)
@@ -102,13 +105,7 @@ if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
 else
-  defp filter_children(children) do
-    if Application.get_env(:orchestrator, :enable_host_telemetry?) do
-      children
-    else
-      Enum.reject(children, fn module -> module == Orchestrator.HostTelemetry end)
-    end
-  end
+  defp filter_children(children), do: children
 end
 
   defp print_header() do
