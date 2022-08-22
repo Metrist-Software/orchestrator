@@ -1,4 +1,4 @@
-FROM canarymonitor/agent:build-base-2022.19 AS build
+FROM public.ecr.aws/metrist/orchestrator:build-base-2022.33 AS build
 
 COPY mix.exs mix.lock install-runner.sh ./
 COPY config config
@@ -11,7 +11,7 @@ COPY lib lib
 
 RUN mix do compile, release
 
-FROM canarymonitor/agent:runtime-base-2022.19 AS app
+FROM public.ecr.aws/metrist/orchestrator:runtime-base-2022.33 AS app
 
 COPY --from=build --chown=nobody:nogroup /app/_build/prod/rel/bakeware/ ./
 USER nobody:nogroup

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 tag=base-$(date +%Y.%W)
-image=canarymonitor/agent
+image=public.ecr.aws/metrist/orchestrator
 
 for i in build runtime
 do

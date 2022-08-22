@@ -116,7 +116,7 @@ it should be signalled as follows:
 
 In the latter case, it is up to the orchestrator to decide whether to run any more steps.
 
-Note that on Exit, the monitor may elect to do some cleanup. An environment variable `CANARY_CLEANUP_ENABLED` is passed as a `1` or
+Note that on Exit, the monitor may elect to do some cleanup. An environment variable `METRIST_CLEANUP_ENABLED` is passed as a `1` or
 `0` value to the `Exit` command (the variable can contain "true", "false", "1" or "0", case-insensitive, but the flag passed to the
 Exit command will always be a number). By default, we set this to false because cleanups often involve expensive/long running operations. A
 lot of the standard monitors have a `Cleanup` function that gets invoked when `<do_cleanup>` is set to 1. When the monitor is ready
@@ -163,7 +163,7 @@ Will be interpreted as metadata with the following keys and values:
 A monitor can ask that the orchestrator resolve a webhook for the monitor by sending `Wait For Webhook <uid>` where uid is a unique
 element that will show up in the webhook response.
 
-The orchestrator will query the API at `CANARY_WEBHOOK_HOST` at `CANARY_WEBHOOK_HOST/webhook/<monitor_logical_name>/<instance_name>/<uid>`
+The orchestrator will query the API at `METRIST_WEBHOOK_HOST` at `METRIST_WEBHOOK_HOST/webhook/<monitor_logical_name>/<instance_name>/<uid>`
 for the data and will return the data in the following form when found.
 
 ```

@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Canary.Helpers do
+defmodule Mix.Tasks.Metrist.Helpers do
   def do_parse_args(args, definitions, aliases, required) do
     {opts, []} =
       OptionParser.parse!(

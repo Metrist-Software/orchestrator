@@ -125,13 +125,13 @@ defmodule Orchestrator.ExecutableInvoker do
 
   defp dir_and_exe_of(name, version), do: {cache_location(name, version), name}
 
-  defp cache_disabled?, do: System.get_env("CANARY_EXE_DISABLE_CACHE") != nil
+  defp cache_disabled?, do: System.get_env("METRIST_EXE_DISABLE_CACHE") != nil
 
   defp local_mode?, do: local_path() != nil
 
-  defp local_path, do: System.get_env("CANARY_EXE_LOCAL_PATH")
+  defp local_path, do: System.get_env("METRIST_EXE_LOCAL_PATH")
 
-  defp cache_path, do: System.get_env("CANARY_CACHE_DIR") || default_cache_path()
+  defp cache_path, do: System.get_env("METRIST_CACHE_DIR") || default_cache_path()
 
-  defp default_cache_path, do: Path.join([System.user_home(), ".cache/canary/monitors"])
+  defp default_cache_path, do: Path.join([System.user_home(), ".cache/metrist/monitors"])
 end

@@ -4,7 +4,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   runner to this end - this lets us get away with just one copy of the whole .NET runtime so monitor downloads are
   fast.
 
-  Binary ZIP files containing the monitors are distributed from the well-known location s3://canary-public-assets/dist/monitors/
+  Binary ZIP files containing the monitors are distributed from the well-known location s3://metrist-public-assets/dist/monitors/
   which is a location hard-coded in the runner. The runner is expected to live in the `:orchestrator` application's `priv`
   directory and therefore should be bundled there when a distribution package is built.
   """
