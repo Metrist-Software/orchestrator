@@ -8,11 +8,11 @@ run:
 	iex -S mix
 
 run_against_local:
-	CANARY_API_HOST=localhost:4443 \
-	CANARY_DISABLE_TLS_VERIFICATION=1  \
-	CANARY_INSTANCE_ID=`hostname` \
-	CANARY_API_TOKEN=fake-api-token-for-dev \
-	CANARY_RUN_GROUPS=local-development \
+	METRIST_API_HOST=localhost:4443 \
+	METRIST_DISABLE_TLS_VERIFICATION=1  \
+	METRIST_INSTANCE_ID=`hostname` \
+	METRIST_API_TOKEN=fake-api-token-for-dev \
+	METRIST_RUN_GROUPS=local-development \
 	  iex -S mix
 
 release:
@@ -20,7 +20,7 @@ release:
 	echo Revision: `git rev-parse --short HEAD` >priv/build.txt
 	echo Date: `date` >>priv/build.txt
 	echo Build-Host: `hostname` >>priv/build.txt
-	docker build -t agent:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
+	docker build -t orchestrator:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
 
 local_release:
 	MIX_ENV=prod mix do compile, release --overwrite

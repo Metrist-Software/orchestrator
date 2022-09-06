@@ -143,20 +143,20 @@ defmodule Orchestrator.APIClient do
   defp request_options do
     # This is mainly so we can run against the "fake" CA that a local backend will use. Another option
     # is to actually install the CA system-wide but that comes with its own set of risks.
-    case System.get_env("CANARY_DISABLE_TLS_VERIFICATION") do
+    case System.get_env("METRIST_DISABLE_TLS_VERIFICATION") do
       nil -> []
       _ -> [ssl: [verify: :verify_none]]
     end
   end
 
   defp base_url_and_headers do
-    System.get_env("CANARY_API_HOST", "app.metrist.io")
+    System.get_env("METRIST_API_HOST", "app.metrist.io")
     |> do_get_base_url_and_headers("api/agent")
   end
 
   defp base_webhooks_url_and_headers do
-    case System.get_env("CANARY_WEBHOOK_HOST", nil) do
-      nil -> raise "Attempted to access Webhooks API but CANARY_WEBHOOK_HOST was not set!"
+    case System.get_env("METRIST_WEBHOOK_HOST", nil) do
+      nil -> raise "Attempted to access Webhooks API but METRIST_WEBHOOK_HOST was not set!"
       host ->
         host
         |> do_get_base_url_and_headers("api/webhook")

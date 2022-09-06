@@ -1,13 +1,13 @@
 defmodule Orchestrator.LambdaInvoker do
   @moduledoc """
-  Invocation method for our shared monitoring functions in AWS Lambda. This is currently very Canary specific, if others
+  Invocation method for our shared monitoring functions in AWS Lambda. This is currently very Metrist specific, if others
   want to reuse it we probably want to add an explicit Lambda function name to the config.
   """
   require Logger
 
   @behaviour Orchestrator.Invoker
 
-  # TODO this is very Canary specific, especially the naming. Remove completely after
+  # TODO this is very Metrist specific, especially the naming. Remove completely after
   # we're off Lambda? Would anyone else want this over the simpler exe/dll options?
 
   @impl true
