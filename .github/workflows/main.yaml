@@ -52,23 +52,38 @@ jobs:
 
   build-push:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
+          aws-region: us-west-2
+      - name: Fetch Secret into Env
+        run: .github/secret-to-env.sh
       - name: Build and Push Orchestrator container
-        env:
-          DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
         run: |
           docker login --username canarymonitoring --password $DOCKER_HUB_TOKEN
           ./build-and-push.sh
 
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: [test, build-push]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
+          aws-region: us-west-2
+      - name: Fetch Secret into Env
+        run: .github/secret-to-env.sh
       - name: Deploy Orchestrator container
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: ./deploy.sh
