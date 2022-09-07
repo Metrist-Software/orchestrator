@@ -7,16 +7,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
+          aws-region: us-west-2
+      - name: Fetch Secret into Env
+        run: .github/secret-to-env.sh
       - uses: actions/checkout@v2
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
+          token: ${{ env.RESET_PAT }} #PAT needed as per https://github.com/ad-m/github-push-action/issues/32 & https://stackoverflow.com/questions/57921401/push-to-origin-from-github-action
       - name: Create new base image
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.ORCHESTRATOR_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.ORCHESTRATOR_AWS_SECRET_ACCESS_KEY }}
         run: |
           dist/login.sh
           git config --global user.email "nobody@metrist.io"
