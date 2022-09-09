@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Metrist.RunMonitor do
   Rundll requires that ./priv/runner be linked to the runner output dir * via
 
       cd priv/runner
-      ln -s ../../aws-serverless/shared/Canary.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
+      ln -s ../../aws-serverless/shared/Metrist.Shared.Monitoring.Runner/bin/Debug/netcoreapp3.1/* . (paths may be different)
 
   Note, you should use the dotnet publish dirs for the location.
   If the monitor has any nuget dependencies they will not be in your Debug/Release dirs but will be in the publish dir.
