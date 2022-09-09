@@ -17,7 +17,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
     # Pretty much everything is handled by the runner for now, so all we need to do
     # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
-    runner = Path.join(runner_dir, "Canary.Shared.Monitoring.Runner")
+    runner = Path.join(runner_dir, "Metrist.Shared.Monitoring.Runner")
 
     executable_folder = Keyword.get(opts, :executable_folder, nil)
     args = [config.monitor_logical_name]
