@@ -63,7 +63,7 @@ defmodule Orchestrator.IPAServer do
           parse_config_file(file)
       end
 
-    Logger.info("IPA: Started listening on port #{@port} for messages")
+    Logger.info("IPA: Started listening on port #{port} for messages")
 
     {:ok, config}
   end
