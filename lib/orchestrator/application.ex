@@ -65,6 +65,8 @@ defmodule Orchestrator.Application do
 
   def ipa_loopback_only?, do: Application.get_env(:orchestrator, :ipa_loopback_only)
 
+  def ipa_server_port, do: System.get_env("METRIST_IPA_SERVER_PORT", "51712") |> String.to_integer()
+
   defp configure_configs(), do: Orchestrator.Configuration.init()
 
   defp parse_run_groups(""), do: []
