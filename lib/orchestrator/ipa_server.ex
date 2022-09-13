@@ -7,7 +7,6 @@ defmodule Orchestrator.IPAServer do
   use GenServer
   require Logger
 
-  @port 51712
   @any ~r/.*/
   # The default config forwards some internal data
   # You can choose whether to include this in your config or not.
@@ -48,9 +47,10 @@ defmodule Orchestrator.IPAServer do
 
   def init(_args) do
     ip = if Orchestrator.Application.ipa_loopback_only?, do: :loopback, else: :any
-    {:ok, _sock} = :gen_udp.open(@port, [{:active, true}, :inet, {:ip, ip}])
+    port = Orchestrator.Application.ipa_server_port()
+    {:ok, _sock} = :gen_udp.open(port, [{:active, true}, :inet, {:ip, ip}])
     # IPv6 is optional for now, so we ignore what is returned on purpose.
-    :gen_udp.open(@port, [{:active, true}, :inet6, {:ip, ip}])
+    :gen_udp.open(port, [{:active, true}, :inet6, {:ip, ip}])
 
     # This is currently IPA specific, but at one point can grow more generic agent stuff at which
     # point it should move elsewhere.
@@ -63,7 +63,7 @@ defmodule Orchestrator.IPAServer do
           parse_config_file(file)
       end
 
-    Logger.info("IPA: Started listening on port #{@port} for messages")
+    Logger.info("IPA: Started listening on port #{port} for messages")
 
     {:ok, config}
   end
