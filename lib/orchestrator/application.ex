@@ -30,7 +30,7 @@ defmodule Orchestrator.Application do
       if Application.get_env(:orchestrator, :enable_host_telemetry?) do
         Orchestrator.HostTelemetry
       end,
-      MetristIPA.Agent,
+      Metrist.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
