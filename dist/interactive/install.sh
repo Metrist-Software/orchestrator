@@ -18,7 +18,6 @@ set -eu
 
 TTY=""
 SetTty() {
-    tty
     case `tty` in
         /dev/*)
             TTY="tty"
