@@ -39,7 +39,7 @@ cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin/metrist-orchestrator
 
 # Copy anything else we want to include over. We remove `.gitkeep` files
 # because that is cleaner
-(cd $rel/inc; cp -rv . $dest/; find $dest/ -name .gitkeep |xargs rm)
+(cd $rel/inc; cp -rv . $dest/; find $dest/ -name .gitkeep |xargs rm -f)
 
 # Build the package. Distribution-method specific arguments MUST
 # be in the `fpm.cmd` file in the rel directory. At a minimum, this
@@ -62,3 +62,7 @@ pkg=$(cd $pkg_dest; ls)
 mkdir -p $base/pkg
 cp $pkg_dest/$pkg $base/pkg
 echo $pkg >$base/pkg/$dist-$ver
+
+# Normally this matches the calling host's architecture, but
+# this is cleaner
+echo $(uname -m) >$base/pkg/$dist-$ver.arch
