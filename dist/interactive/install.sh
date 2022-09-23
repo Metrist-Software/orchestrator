@@ -65,7 +65,8 @@ DetectOS() {
         ExitWithUnsupportedOS
     fi
     . /etc/os-release
-    # Some bits here got lifted 1:1 from the Tailscale script.
+    # Some bits here got lifted 1:1 from the Tailscale script. Most unused but keeping it here
+    # as an inventory of sorts. Or a To-Do list.
     case "$ID" in
             ubuntu|pop|neon|zorin)
                 OS="ubuntu"
@@ -246,7 +247,7 @@ InstallApt() {
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
     $SUDO apt-get install -y ./$latest
-    cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator
+    cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
 
 # Added by installation script.
 METRIST_API_TOKEN=$API_KEY

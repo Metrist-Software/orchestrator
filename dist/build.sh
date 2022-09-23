@@ -23,4 +23,4 @@ gpg --sign --armor --detach-sign pkg/$pkg
 aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
 aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/
 echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$ver.$arch.latest.txt
-aws cloudfront create-invalidation --distribution-id E1FRDOED06X2I8 --paths '/orchestrator/$dist/*'
+aws cloudfront create-invalidation --distribution-id E1FRDOED06X2I8 --paths "/orchestrator/$dist/*"
