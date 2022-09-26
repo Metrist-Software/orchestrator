@@ -5,16 +5,8 @@ available on dist.metrist.io as a detached, ASCII-armoured signature (`.asc` fil
 
 ## Valid keys
 
-This document is the only document that contains a list of valid keys. All keys can be found on the
-OpenPGP key server (keys.openpgp.org).
-
-* [C165F320536F922A23CF8E8FDC4C7142A47C86BC](https://keys.openpgp.org/vks/v1/by-fingerprint/C165F320536F922A23CF8E8FDC4C7142A47C86BC)
-* [35BE7BF674B27EC1791809D6DC1322606170AD04](https://keys.openpgp.org/vks/v1/by-fingerprint/35BE7BF674B27EC1791809D6DC1322606170AD04)
-* [D2214EB0C81E47C58516C565719D04A8A9BDC6DA](https://keys.openpgp.org/vks/v1/by-fingerprint/D2214EB0C81E47C58516C565719D04A8A9BDC6DA)
-* [D9E15C9F6ABD85E92BD83B4A9F42A287A4BFCD05](https://keys.openpgp.org/vks/v1/by-fingerprint/D9E15C9F6ABD85E92BD83B4A9F42A287A4BFCD05)
-* [F7384FBA981F3FA9DE09470E2619F5187DDEEA3B](https://keys.openpgp.org/vks/v1/by-fingerprint/F7384FBA981F3FA9DE09470E2619F5187DDEEA3B)
-
-For your convenience, these keys are all collected in (a keyring)[trustedkeys.gpg].
+The keys that are allowed to sign distribution packages are listed in (the distribution keyring)[trustedkeys.gpg]. You can download
+this keyring and point GnuPG at it using the `--keyring` option for verification purposes.
 
 ## Commit signing
 
