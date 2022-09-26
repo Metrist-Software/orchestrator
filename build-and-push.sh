@@ -26,6 +26,9 @@ latest_tag=public.ecr.aws/metrist/orchestrator:latest$qualifier
 docker tag $image_tag $latest_tag
 docker push $latest_tag
 
+# Also build and push all packages
+dist/for-all.sh "$PWD/dist/build.sh"
+
 cat <<EOF
 
 Build data:
