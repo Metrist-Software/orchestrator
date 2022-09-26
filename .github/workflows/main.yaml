@@ -64,6 +64,8 @@ jobs:
           aws-region: us-west-2
       - name: Fetch Secret into Env
         run: .github/secret-to-env.sh
+      - name: Import signing key
+        run: echo "$SIGNING_KEY" | gpg --import
       - name: Build and Push Orchestrator container
         run: |
           dist/login.sh
