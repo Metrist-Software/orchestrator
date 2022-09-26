@@ -25,6 +25,6 @@ sed -Ei "s/-base-[0-9]{4}\.[0-9]+/-${tag}/" Dockerfile
 git commit -m "Bump base tag to ${tag}" Dockerfile
 
 # Refresh base containers for building OS releases
-dist/for-all.sh dist/build-base.sh
+dist/for-all.sh "$PWD/dist/build-base.sh"
 
 git push
