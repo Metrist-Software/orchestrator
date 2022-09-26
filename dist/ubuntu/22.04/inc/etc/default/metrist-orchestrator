@@ -5,7 +5,7 @@
 #
 
 # Either HOME or this variable needs to be set
-BAKEWARE_CACHE=/run/metrist-orchestrator/bwcache
+BAKEWARE_CACHE=/tmp/.metrist-bwcache
 
 # We want a UTF-8 based locale. The "C" locale is always
 # available.
