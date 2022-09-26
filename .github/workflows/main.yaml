@@ -65,7 +65,7 @@ jobs:
       - name: Fetch Secret into Env
         run: .github/secret-to-env.sh
       - name: Import signing key
-        run: echo "$SIGNING_KEY" | gpg --import
+        run: aws secretsmanager get-secret-value --secret-id /prod/gh-actions/signing-key --region us-west-2 | jq -r '.SecretString' | gpg --import
       - name: Build and Push Orchestrator container
         run: |
           dist/login.sh
