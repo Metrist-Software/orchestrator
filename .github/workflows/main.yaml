@@ -78,12 +78,7 @@ jobs:
     needs: [test]
     strategy:
       matrix:
-        os: [ubuntu]
-        include:
-          - os: ubuntu
-            version: 20.04
-          - os: ubuntu
-            version: 22.04
+        os: ['ubuntu-20.04', 'ubuntu-22.04']
     permissions:
       id-token: write
       contents: read
@@ -101,7 +96,9 @@ jobs:
       - name: Build and push distribution packages
         run: |
           dist/login.sh
-          dist/build.sh ${{ matrix.os }} ${{ matrix.version }}
+          dist=$(echo ${{ matrix.os }} | awk -F- '{print $1}')
+          ver=$(echo ${{ matrix.os }} | awk -F- '{print $2}')
+          dist/build.sh $dist $ver
 
   deploy:
     runs-on: ubuntu-latest
