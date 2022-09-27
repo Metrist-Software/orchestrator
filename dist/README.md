@@ -14,13 +14,13 @@ Distribution packages are tagged with three version elements:
 
 The latter element is just informational, updates to Orchestrator packages will be indicated through mix version bumps.
 
-The latest version is indicated by a file `&lt;dist>-&lt;ver>.latest.txt`. A complete example:
+The latest version is indicated by a file `&lt;dist>-&lt;ver>.&lt;arch>latest.txt`. A complete example:
 
-In `http://dist.metrist.io/orchestrator/ubuntu`, you can find>
+In `https://dist.metrist.io/orchestrator/ubuntu`, you can find>
 
 * `metrist-orchestrator_0.1.0-ubuntu-22.04-611a16f_amd64.deb`, the 0.1.0 version package for Ubuntu 22.04
 * `metrist-orchestrator_0.1.0-ubuntu-22.04-611a16f_amd64.deb.asc`, its signature
-* `ubuntu-22.04.latest.txt`, containing the full filename of the debian package above.
+* `ubuntu-22.04.x86_64.latest.txt`, containing the full filename of the debian package above.
 
 ## Signing
 

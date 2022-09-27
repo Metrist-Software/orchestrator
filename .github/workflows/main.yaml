@@ -50,8 +50,10 @@ jobs:
     - name: Run Dialyzer
       run: MIX_ENV=test mix dialyzer --no-check
 
-  build-push:
+
+  build-push-container:
     runs-on: ubuntu-latest
+    needs: [test]
     permissions:
       id-token: write
       contents: read
@@ -66,17 +68,47 @@ jobs:
         run: .github/secret-to-env.sh
       - name: Import signing key
         run: aws secretsmanager get-secret-value --secret-id /prod/gh-actions/signing-key --region us-west-2 | jq -r '.SecretString' | gpg --import
-      - name: Build and push redistributables
+      - name: Build and push container
         run: |
           dist/login.sh
           ./build-and-push.sh
+
+  build-push-dist:
+    runs-on: ubuntu-latest
+    needs: [test]
+    strategy:
+      matrix:
+        os: [ubuntu]
+        include:
+          - os: ubuntu
+            version: 20.04
+          - os: ubuntu
+            version: 22.04
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
+          aws-region: us-west-2
+      - name: Fetch Secret into Env
+        run: .github/secret-to-env.sh
+      - name: Import signing key
+        run: aws secretsmanager get-secret-value --secret-id /prod/gh-actions/signing-key --region us-west-2 | jq -r '.SecretString' | gpg --import
+      - name: Build and push distribution packages
+        run: |
+          dist/login.sh
+          dist/build.sh ${{ matrix.os }} ${{ matrix.version }}
 
   deploy:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-    needs: [test, build-push]
+    needs: [build-push]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v2
