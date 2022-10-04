@@ -16,7 +16,7 @@ The following steps will download and verify the debian package
     wget -nc http://dist.metrist.io/orchestrator/ubuntu/ubuntu-20.04.latest.txt
     wget -nc http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt)
     wget -nc http://dist.metrist.io/orchestrator/ubuntu/$(cat ubuntu-20.04.latest.txt).asc
-    wget -nc https://github.com/Metrist-Software/orchestrator/main/dist/trustedkeys.gpg
+    wget -nc https://github.com/Metrist-Software/orchestrator/blob/main/dist/trustedkeys.gpg
     gpg --keyring ./trustedkeys.gpg --verify $(cat ubuntu-20.04.latest.txt).asc
 
 ### Installing the Debian package
