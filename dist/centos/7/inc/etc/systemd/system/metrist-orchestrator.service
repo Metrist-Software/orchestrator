@@ -1,0 +1,10 @@
+[Unit]
+Description=Metrist.io Orchestrator service
+
+[Service]
+ExecStartPre=mkdir -p /run/metrist-orchestrator
+ExecStart=/usr/bin/metrist-orchestrator
+EnvironmentFile=-/etc/default/metrist-orchestrator
+
+[Install]
+WantedBy=multi-user.target
