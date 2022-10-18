@@ -12,5 +12,5 @@ cd "$base/$dist/$ver"
 
 docker build -t $image:$tag .
 docker tag $image:$tag $image:$ver-latest
-docker push $image:$tag
-docker push $image:$ver-latest
+# docker push $image:$tag
+# docker push $image:$ver-latest
