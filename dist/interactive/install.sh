@@ -189,6 +189,11 @@ DetectOS() {
                 ExitWithUnsupportedOS
             fi
             ;;
+        amazon-linux)
+            if [ "$VERSION" != "2" ]; then
+                ExitWithUnsupportedOS
+            fi
+            ;;
         *)
             ExitWithUnsupportedOS
     esac
@@ -256,6 +261,30 @@ EOF
     $SUDO systemctl start metrist-orchestrator
 }
 
+
+InstallYum() {
+    set -x
+    if ! type gpg >/dev/null; then
+        $SUDO yum update
+        $SUDO yum install -y gnupg
+    fi
+
+    $SUDO mkdir -p --mode=0755 /usr/share/keyrings
+    $CURL "https://github.com/Metrist-Software/orchestrator/blob/main/dist/trustedkeys.gpg?raw=true" | $SUDO tee /usr/share/keyrings/metrist-keyring.gpg >/dev/null
+    cd /tmp
+    latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
+    $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
+    $SUDO yum localinstall ./$latest
+    cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
+
+# Added by installation script.
+METRIST_API_TOKEN=$API_KEY
+EOF
+    $SUDO systemctl enable --now metrist-orchestrator
+    $SUDO systemctl start metrist-orchestrator
+    set +x
+}
+
 Main() {
     SetTty
     DetectOS
@@ -266,6 +295,9 @@ Main() {
     case "$PACKAGETYPE" in
         apt)
             InstallApt
+            ;;
+        yum)
+            InstallYum
             ;;
         *)
             ExitWith "Unknown package type '$PACKAGETYPE', this should not happen."
