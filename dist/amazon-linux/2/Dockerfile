@@ -11,11 +11,9 @@ ENV ELIXIR_VERSION 1.14.1
 ENV ASDF_DATA_DIR /opt/asdf
 ENV ASDF_DIR /opt/asdf
 
-RUN yum install -y ruby-devel git openssl-devel ncurses-devel libxslt fop wxGTK wxGTK-devel wget && \
-    yum groupinstall -y  "Development tools"
-RUN amazon-linux-extras install ruby2.6
-RUN gem install fpm
-
+RUN yum install -y ruby-devel git openssl-devel ncurses-devel wget && \
+    yum groupinstall -y  "Development tools" --setopt=group_package_types=mandatory && \
+    amazon-linux-extras install ruby2.6 && gem install fpm && yum clean -y all && rm -rf /var/cache/yum
 
 RUN cd /tmp && \
   wget "https://github.com/erlang/otp/releases/download/OTP-$ERLANG_VERSION/otp_src_$ERLANG_VERSION.tar.gz" -O otp.tar.gz && \
