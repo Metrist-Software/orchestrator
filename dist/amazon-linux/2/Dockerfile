@@ -8,8 +8,6 @@ ENV MIX_ENV=prod
 # Set the right versions
 ENV ERLANG_VERSION 25.1.1
 ENV ELIXIR_VERSION 1.14.1
-ENV ASDF_DATA_DIR /opt/asdf
-ENV ASDF_DIR /opt/asdf
 
 RUN yum install -y ruby-devel git openssl-devel ncurses-devel wget && \
     yum groupinstall -y  "Development tools" --setopt=group_package_types=mandatory && \
@@ -20,14 +18,14 @@ RUN cd /tmp && \
   mkdir otp && \
   tar -xzf otp.tar.gz -C otp --strip-components=1 && \
   cd otp && \
-  ./configure && make && make install && rm -rf /tmp/otp
+  ./configure && make && make install && rm -rf /tmp/otp*
 
 RUN cd /tmp && \
   wget "https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VERSION.tar.gz" -O elixir.tar.gz && \
   mkdir elixir && \
   tar -xzf elixir.tar.gz -C elixir --strip-components=1 && \
   cd elixir && \
-  make && make install && rm -rf /tmp/elixir
+  make && make install && rm -rf /tmp/elixir*
 
 
 WORKDIR /app
@@ -36,4 +34,3 @@ WORKDIR /app
 # our tooling can write to where we need.
 RUN mkdir /.mix && chmod 777 /.mix
 RUN mkdir /.hex && chmod 777 /.hex
-
