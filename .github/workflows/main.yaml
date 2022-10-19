@@ -100,7 +100,7 @@ jobs:
       - name: Build and push distribution packages
         run: |
           dist/login.sh
-          dist=$(echo ${{ matrix.os }} | awk -F- '{print $1}' sed 's/_/-/')
+          dist=$(echo ${{ matrix.os }} | awk -F- '{print $1}' | sed 's/_/-/')
           ver=$(echo ${{ matrix.os }} | awk -F- '{print $2}')
           dist/build.sh $dist $ver
 
