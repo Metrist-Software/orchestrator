@@ -82,7 +82,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'ubuntu-22.04']
+        os: ['ubuntu-20.04', 'ubuntu-22.04', 'amazon_linux-2']
     permissions:
       id-token: write
       contents: read
@@ -100,7 +100,7 @@ jobs:
       - name: Build and push distribution packages
         run: |
           dist/login.sh
-          dist=$(echo ${{ matrix.os }} | awk -F- '{print $1}')
+          dist=$(echo ${{ matrix.os }} | awk -F- '{print $1}' sed 's/_/-/')
           ver=$(echo ${{ matrix.os }} | awk -F- '{print $2}')
           dist/build.sh $dist $ver
 
