@@ -12,6 +12,7 @@ defmodule Orchestrator.ExecutableInvoker do
   def invoke(config, opts \\ []) do
     Logger.debug("Invoking #{inspect(config)}")
 
+    # :executable is set for a manual monitor run
     executable = Keyword.get(opts, :executable, nil)
     executable = unless executable, do: get_executable(config), else: executable
 
@@ -31,11 +32,12 @@ defmodule Orchestrator.ExecutableInvoker do
   end
 
   defp get_executable(config) do
-    {dir, executable} =
-      {Orchestrator.Invoker.maybe_download(config.run_spec.name), config.run_spec.name}
+    name = config.run_spec.name
+    dir = Orchestrator.Invoker.maybe_download(name)
 
     # executable is relative to dir, make it absolute
-    executable = Path.join(dir, executable)
-    Path.expand(executable)
+    dir
+    |> Path.join(name)
+    |> Path.expand()
   end
 end
