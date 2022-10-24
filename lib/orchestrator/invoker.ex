@@ -52,6 +52,24 @@ defmodule Orchestrator.Invoker do
 
   @monitor_distributions_url "https://monitor-distributions.metrist.io/"
 
+  @doc """
+  Download the archive for the monitor with name `name` and unpack it. Unless disabled
+  through a `METRIST_EXE_DISABLE_CACHE` this will check whether the most recent version
+  is already available and just return a cache location instead.
+
+  Full list of environment variables that influence the behaviour of this function:
+
+  * `METRIST_EXE_DISABLE_CACHE` - disable cache lookup, will always download the archive.
+  * `METRIST_EXE_LOCAL_PATH` - override download, use the indicated local path instead. Will not
+    talk to external servers.
+  * `METRIST_CACHE_DIR` - where to store downloaded archives. By default `~/.cache/metrist/monitors`
+
+  Unless disabled by setting the local path, it will always fetch the most recent version for the
+  monitor from `@monitor_distributions_url`.
+
+  Returns the path to the unpacked archive.
+  """
+  @spec maybe_download(name :: String.t()) :: String.t()
   def maybe_download(name) do
     if local_mode?() do
       Logger.warn("Using local mode, not downloading")
