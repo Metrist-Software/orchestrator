@@ -35,7 +35,7 @@ defmodule Orchestrator.MixProject do
       {:httpoison, "~> 1.8"},
       {:jason, "~> 1.2"},
       {:observer_cli, "~> 1.7"},
-      {:puid, "~> 1.1"},
+      {:puid, "~> 2.0"},
       {:yaml_elixir, "~> 2.8"},
       {:configparser_ex, "~> 4.0"},
       {:metrist_agent, "~> 0.1.0"}
