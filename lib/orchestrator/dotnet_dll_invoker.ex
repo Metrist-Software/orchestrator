@@ -14,22 +14,28 @@ defmodule Orchestrator.DotNetDLLInvoker do
 
   @impl true
   def invoke(config, opts \\ []) do
-    # Pretty much everything is handled by the runner for now, so all we need to do
-    # is call it.
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
     runner = Path.join(runner_dir, "Metrist.Shared.Monitoring.Runner")
 
+    # :executable is set for a manual monitor run
     executable_folder = Keyword.get(opts, :executable_folder, nil)
-    args = [config.monitor_logical_name]
-    args = if executable_folder, do: [executable_folder | args] |> Enum.reverse(), else: args
-    Logger.debug("#{inspect args}")
+
+    executable_folder =
+      unless executable_folder, do: get_executable_folder(config), else: executable_folder
+
+    args = [config.monitor_logical_name, executable_folder]
+    Logger.debug("#{inspect(args)}")
 
     Orchestrator.Invoker.run_monitor(config, opts, fn ->
-        Port.open({:spawn_executable, runner}, [
-                    :binary,
-                    :stderr_to_stdout,
-                    args: args
-                  ])
+      Port.open({:spawn_executable, runner}, [
+        :binary,
+        :stderr_to_stdout,
+        args: args
+      ])
     end)
+  end
+
+  def get_executable_folder(config) do
+    Orchestrator.Invoker.maybe_download(config.run_spec.name)
   end
 end
