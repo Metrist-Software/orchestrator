@@ -4,8 +4,6 @@ defmodule Orchestrator.Invoker do
   """
   require Logger
 
-  defmodule(TmpName, do: use(Puid, charset: :safe64, bits: 64))
-
   @doc """
   Invoke the monitor. `config` is the monitor configuration as stored server-side, and `region` is the
   region (or instance, host, ...) we are running in. Must return a task, `Orchestrator.MonitorScheduler`
@@ -17,7 +15,8 @@ defmodule Orchestrator.Invoker do
   Starts a monitor on a port and runs the protocol.
   """
   def run_monitor(config, opts, port_fn) do
-    tmpdir = Path.join(Orchestrator.Application.temp_dir(), "orchtmp-#{TmpName.generate()}")
+    tmpname = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
+    tmpdir = Path.join(Orchestrator.Application.temp_dir(), "orchtmp-#{tmpname}")
     File.mkdir_p!(tmpdir)
 
     parent = self()
