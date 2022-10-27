@@ -36,6 +36,8 @@ defmodule Orchestrator.AWSSecretsManager do
             |> Jason.decode!()
             |> Map.get(selector)
         end
+        # For now, we only want to deal with string values because that's what the protocol expects
+        |> to_string()
       {:error, message} ->
         Logger.info("Secret #{name} not found, returning nil. Got message #{inspect(message)}")
         nil
