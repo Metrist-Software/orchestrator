@@ -39,6 +39,9 @@ defmodule Orchestrator.MetristAPI do
 
   @impl true
   def process_response_body(body) do
-    Jason.decode!(body, keys: :atoms)
+    case Jason.decode(body, keys: :atoms) do
+      {:ok, decoded} -> decoded
+      {:error, _} -> body
+    end
   end
 end
