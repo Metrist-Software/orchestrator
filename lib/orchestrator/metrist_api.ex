@@ -36,12 +36,4 @@ defmodule Orchestrator.MetristAPI do
       [{"Authorization", "Bearer #{api_token}"} | headers]
     end
   end
-
-  @impl true
-  def process_response_body(body) do
-    case Jason.decode(body, keys: :atoms) do
-      {:ok, decoded} -> decoded
-      {:error, _} -> body
-    end
-  end
 end

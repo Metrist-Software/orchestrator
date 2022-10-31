@@ -22,8 +22,9 @@ defmodule Orchestrator.APIClient do
           "?" <> gs
       end
 
-    {:ok, %HTTPoison.Response{body: config}} = MetristAPI.get("agent/run-config/#{instance}/#{qs}")
+    {:ok, %HTTPoison.Response{body: body}} = MetristAPI.get("agent/run-config/#{instance}/#{qs}")
 
+    {:ok, config} = Jason.decode(body, keys: :atoms)
     config
   end
 
@@ -68,8 +69,11 @@ defmodule Orchestrator.APIClient do
     {:ok, %HTTPoison.Response{status_code: status_code, body: body}} = MetristAPI.get("webhook/#{monitor_logical_name}/#{instance_name}/#{uid}")
 
     case status_code do
-      200 -> body
-      _ -> nil
+      200 ->
+        {:ok, webhook} = Jason.decode(body, keys: :atoms)
+        webhook
+      _ ->
+        nil
     end
   end
 
