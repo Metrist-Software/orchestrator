@@ -1,12 +1,12 @@
 defmodule Orchestrator.APIClient do
   require Logger
+  alias Orchestrator.MetristAPI
 
   @type metadata_value :: String.t() | number()
   @type metadata :: %{String.t() => metadata_value()}
 
   def get_config(instance, run_groups) do
     Logger.info("Fetching config for instance #{instance} and run groups #{inspect run_groups}")
-    {url, headers} = base_url_and_headers()
 
     qs =
       case run_groups do
@@ -22,17 +22,14 @@ defmodule Orchestrator.APIClient do
           "?" <> gs
       end
 
-    {:ok, %HTTPoison.Response{body: body}} =
-      HTTPoison.get("#{url}/run-config/#{instance}#{qs}", headers, request_options())
-
-    {:ok, config} = Jason.decode(body, keys: :atoms)
+    {:ok, %HTTPoison.Response{body: config}} = MetristAPI.get("agent/run-config/#{instance}/#{qs}")
 
     config
   end
 
   @spec write_telemetry(String.t(), String.t(), float(), [metadata: metadata()])  :: {:ok, pid}
   def write_telemetry(monitor_logical_name, check_logical_name, value, opts \\ []) do
-    post_with_retries("telemetry", %{
+    post_with_retries("agent/telemetry", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
@@ -44,7 +41,7 @@ defmodule Orchestrator.APIClient do
   @type write_error_opts :: [metadata: metadata(), blocked_steps: [binary()]]
   @spec write_error(String.t(), String.t(), String.t(), write_error_opts()) :: {:ok, pid}
   def write_error(monitor_logical_name, check_logical_name, message, opts \\ []) do
-    post_with_retries("error", %{
+    post_with_retries("agent/error", %{
       monitor_logical_name: monitor_logical_name,
       instance_name: Orchestrator.Application.instance(),
       check_logical_name: check_logical_name,
@@ -57,40 +54,33 @@ defmodule Orchestrator.APIClient do
 
   def write_host_telemetry(telemetry) do
     # No retries, error handling, etc - just one-shot and hope for the best.
-    {url, headers} = base_url_and_headers()
-    url = "#{url}/host_telemetry"
-    headers = [{"Content-Type", "application/json"} | headers]
+    headers = [{"Content-Type", "application/json"}]
     msg = Jason.encode!(telemetry)
-    HTTPoison.post(url, msg, headers, request_options())
+
+    MetristAPI.post("agent/host_telemetry", msg, headers)
     :ok
   end
 
   def get_webhook(uid, monitor_logical_name) do
     instance_name = Orchestrator.Application.instance()
     Logger.info("Checking for webhoook with uid #{uid} for monitor #{monitor_logical_name} with instance #{instance_name}")
-    {url, headers} = base_webhooks_url_and_headers()
 
-    {:ok, %HTTPoison.Response{status_code: status_code, body: body}} =
-      HTTPoison.get("#{url}/#{monitor_logical_name}/#{instance_name}/#{uid}", headers, request_options())
+    {:ok, %HTTPoison.Response{status_code: status_code, body: body}} = MetristAPI.get("webhook/#{monitor_logical_name}/#{instance_name}/#{uid}")
 
     case status_code do
-      200 ->
-        {:ok, webhook} = Jason.decode(body, keys: :atoms)
-        webhook
-      _ ->
-        nil
+      200 -> body
+      _ -> nil
     end
   end
 
   @backoff [5000, 2500, 500, 100]
 
   defp post_with_retries(path, msg) do
-    {url, headers} = base_url_and_headers()
-    headers = [{"Content-Type", "application/json"} | headers]
+    headers = [{"Content-Type", "application/json"}]
     msg = Jason.encode!(msg)
 
     Task.start_link(fn ->
-      do_post_with_retries("#{url}/#{path}", headers, msg, length(@backoff))
+      do_post_with_retries(path, headers, msg, length(@backoff))
     end)
   end
 
@@ -98,7 +88,7 @@ defmodule Orchestrator.APIClient do
     # TODO This is quite primitive for now. We probably should queue this up to a genserver, blablabla. Genserver
     # can then also start batching messages.
 
-    case HTTPoison.post(url, msg, headers, request_options()) do
+    case MetristAPI.post(url, msg, headers) do
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         case div(status_code, 100) do
           2 ->
@@ -138,35 +128,5 @@ defmodule Orchestrator.APIClient do
           :error
         end
     end
-  end
-
-  defp request_options do
-    # This is mainly so we can run against the "fake" CA that a local backend will use. Another option
-    # is to actually install the CA system-wide but that comes with its own set of risks.
-    case System.get_env("METRIST_DISABLE_TLS_VERIFICATION") do
-      nil -> []
-      _ -> [ssl: [verify: :verify_none]]
-    end
-  end
-
-  defp base_url_and_headers do
-    System.get_env("METRIST_API_HOST", "app.metrist.io")
-    |> do_get_base_url_and_headers("api/agent")
-  end
-
-  defp base_webhooks_url_and_headers do
-    case System.get_env("METRIST_WEBHOOK_HOST", nil) do
-      nil -> raise "Attempted to access Webhooks API but METRIST_WEBHOOK_HOST was not set!"
-      host ->
-        host
-        |> do_get_base_url_and_headers("api/webhook")
-    end
-  end
-
-  defp do_get_base_url_and_headers(nil, _), do: raise "Attempted to get base url and headers, but host was nil"
-  defp do_get_base_url_and_headers(host, url) do
-    api_token = Orchestrator.Application.api_token()
-
-    {"https://#{host}/#{url}", [{"Authorization", "Bearer #{api_token}"}]}
   end
 end
