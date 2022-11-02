@@ -16,18 +16,8 @@ defmodule Orchestrator.IPAServer do
       "host" => ~r(app.*\.metrist\.io),
       "url" => ~r(api/agent/run-config)
     },
-    {"metrist", "GetRunConfig"} => %{
-      "method" => ~r(GET),
-      "host" => ~r(app.*\.metrist\.io),
-      "url" => ~r(api/agent/run-config)
-    },
     # Note that this has special support in the IPA agent to
     # exclude the sending of our own telemetry
-    {"metrist", "SendTelemetry"} => %{
-      "method" => ~r(POST),
-      "host" => ~r(app.*\.metrist\.io),
-      "url" => ~r(api/agent/telemetry)
-    },
     {"metrist", "SendTelemetry"} => %{
       "method" => ~r(POST),
       "host" => ~r(app.*\.metrist\.io),
@@ -113,7 +103,7 @@ defmodule Orchestrator.IPAServer do
       {{m, c}, v} ->
         {value, _} = Float.parse(value)
         Logger.info("IPA: We are sending (m=#{method} h=#{host} p=#{path} δt=#{value}) as (mon=#{m} chk=#{c}) because #{inspect(v)} matches")
-        Orchestrator.APIClient.write_telemetry(m, c, value, [])
+        Orchestrator.APIClient.write_telemetry(m, c, value, [metadata: %{"metrist.source" => "in-process"}])
       _ ->
         Logger.info("IPA: #{method}/#{host}/#{path} does not match anything in our configuration")
     end
