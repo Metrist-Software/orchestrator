@@ -178,7 +178,7 @@ defmodule Orchestrator.ProtocolHandler do
             {time, metadata}
         end
 
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time, metadata: metadata)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time, metadata: with_source(metadata))
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -188,7 +188,7 @@ defmodule Orchestrator.ProtocolHandler do
       state = cancel_timer(state)
       time_taken = :erlang.monotonic_time(:millisecond) - state.step_start_time
       metadata = parse_metadata(rest)
-      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1, metadata: metadata)
+      state.telemetry_report_fun.(state.monitor_logical_name, state.current_step.check_logical_name, time_taken / 1, metadata: with_source(metadata))
       start_step()
       {:noreply, %State{state | current_step: nil, step_start_time: nil}}
     end)
@@ -215,7 +215,7 @@ defmodule Orchestrator.ProtocolHandler do
         state.monitor_logical_name,
         state.current_step.check_logical_name,
         error_msg,
-        metadata: metadata,
+        metadata: with_source(metadata),
         blocked_steps: get_blocked_steps(state.steps)
       )
       # When a step errors, we are going to assume that subsequent steps will error as well.
@@ -288,6 +288,7 @@ defmodule Orchestrator.ProtocolHandler do
         "Timeout: check did not complete within #{state.current_step.timeout_secs} seconds - #{
           @monitor_error_tag
         }",
+        metadata: with_source(%{}),
         blocked_steps: get_blocked_steps(state.steps)
       )
       send_exit(state)
@@ -452,4 +453,8 @@ defmodule Orchestrator.ProtocolHandler do
   end
   defp get_blocked_steps(_steps), do: []
 
+  defp with_source(metadata) do
+    metadata
+    |> Map.put("metrist.source", "monitor")
+  end
 end
