@@ -93,6 +93,11 @@ defmodule Orchestrator.MonitorScheduler do
     {:noreply, %State{state | task: nil, overtime: false}}
   end
 
+  def handle_info({:EXIT, pid, :normal}, state) do
+    Logger.debug("Monitor with pid #{inspect pid} exited normally")
+    {:noreply, state}
+  end
+
   def handle_info(msg, state) do
     Logger.info("Unknown message received: #{inspect msg}")
     {:noreply, state}
