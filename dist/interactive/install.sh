@@ -42,7 +42,7 @@ Error() {
 ExitWithUnsupportedOS() {
     Error
     Error "The OS or Linux distribution you are running on is not supported by this installation script. Please"
-    Error "proceed manually using the instructions at https://docs.metrist.io/en/latest/orchestrator-installation."
+    Error "proceed manually using the instructions at https://docs.metrist.io/en/latest/orchestrator-install."
     Error
     exit 1
 }
