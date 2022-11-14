@@ -13,7 +13,7 @@ defmodule Orchestrator.AWSSecretsManager do
   @impl true
   def fetch(name) do
     Logger.debug("get_secret(#{name})")
-    Logger.info("Getting secret #{name} from region #{System.get_env("AWS_REGION")}")
+    Logger.info("Getting secret #{name} from region #{aws_secrets_region()}")
 
     # We may be called in various stages of the life cycle, including really
     # early, so make sure that what ExAws needs is up and running.
@@ -45,7 +45,10 @@ defmodule Orchestrator.AWSSecretsManager do
   end
 
   defp do_aws_request(request) do
-    region = System.get_env("AWS_SECRETS_MANAGER_REGION") || System.get_env("AWS_REGION", "us-east-1")
-    ExAws.request(request, region: region)
+    ExAws.request(request, region: aws_secrets_region())
+  end
+
+  defp aws_secrets_region() do
+    System.get_env("AWS_SECRETS_MANAGER_REGION") || System.get_env("AWS_REGION", "us-east-1")
   end
 end
