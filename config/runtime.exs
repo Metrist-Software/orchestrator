@@ -7,4 +7,7 @@ if config_env() == :prod do
     api_token: Orchestrator.Application.translate_config_from_env("METRIST_API_TOKEN"),
     slack_api_token: Orchestrator.Application.translate_config_from_env("SLACK_API_TOKEN"),
     slack_reporting_channel: Orchestrator.Application.translate_config_from_env("SLACK_ALERTING_CHANNEL")
+
+  config :ex_aws,
+    region: System.get_env("AWS_BACKEND_REGION", "us-east-1")
 end
