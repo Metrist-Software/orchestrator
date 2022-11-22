@@ -9,5 +9,5 @@ if config_env() == :prod do
     slack_reporting_channel: Orchestrator.Application.translate_config_from_env("SLACK_ALERTING_CHANNEL")
 
   config :ex_aws,
-    region: System.get_env("AWS_BACKEND_REGION", "us-east-1")
+    region: System.fetch_env!("AWS_BACKEND_REGION")
 end
