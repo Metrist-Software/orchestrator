@@ -47,8 +47,11 @@ defmodule Orchestrator.ProtocolHandler do
                                         error_report_fun,
                                         os_pid})
     result = wait_for_complete(port, ref, config.monitor_logical_name, pid)
+
     # Don't trust anything to exit voluntarily
     kill_or_close(port)
+    if Process.alive?(pid), do: GenServer.stop(pid)
+
     Logger.info("Monitor is complete")
     result
   end
