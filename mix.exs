@@ -34,6 +34,8 @@ defmodule Orchestrator.MixProject do
       {:ex_aws_lambda, "~> 2.0"},
       {:httpoison, "~> 1.8"},
       {:jason, "~> 1.2"},
+      {:hackney, "~> 1.8"},
+      {:sentry, "~> 8.0"},
       {:observer_cli, "~> 1.7"},
       {:yaml_elixir, "~> 2.8"},
       {:configparser_ex, "~> 4.0"},

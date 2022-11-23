@@ -8,6 +8,8 @@ defmodule Orchestrator.Application do
 
   @impl true
   def start(_type, _config) do
+    maybe_start_sentry()
+
     print_header()
 
     ll_config = System.get_env("METRIST_LOGGING_LEVEL", "Info")
@@ -125,6 +127,12 @@ end
     #{build}
     ===
     """
+  end
+
+  defp maybe_start_sentry() do
+    if System.get_env("SENTRY_DSN") do
+      Logger.add_backend(Sentry.LoggerBackend)
+    end
   end
 
   def translate_config_from_env(env, default \\ nil) do
