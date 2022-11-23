@@ -95,7 +95,7 @@ defmodule Orchestrator.IPAServer do
   end
 
   def handle_message(other, _config) do
-    Logger.error("IPA: Unknown message <<#{inspect(other)}>>, skipping")
+    Logger.warn("IPA: Unknown message <<#{inspect(other)}>>, skipping")
   end
 
   def maybe_send(method, host, path, value, config) do

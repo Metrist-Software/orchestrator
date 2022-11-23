@@ -83,7 +83,7 @@ defmodule Orchestrator.ProtocolHandler do
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
 
       :force_exit ->
-        Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
+        Logger.info("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
         {:error, :timeout}
 
       msg ->
@@ -91,7 +91,7 @@ defmodule Orchestrator.ProtocolHandler do
         wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
     after
       @max_monitor_runtime ->
-        Logger.error("Monitor did not complete in time, killing it")
+        Logger.info("Monitor did not complete in time, killing it")
         {:error, :timeout}
     end
   end
@@ -199,7 +199,7 @@ defmodule Orchestrator.ProtocolHandler do
   def handle_cast({:message, msg = <<"Step Error", rest::binary>>}, state) do
     when_current_step(msg, state, fn ->
       state = cancel_timer(state)
-      Logger.error("#{state.monitor_logical_name}: step error #{state.current_step.check_logical_name}: #{rest} - #{@monitor_error_tag}")
+      Logger.info("#{state.monitor_logical_name}: step error #{state.current_step.check_logical_name}: #{rest} - #{@monitor_error_tag}")
       rest = String.trim(rest)
       {error_msg, metadata} =
         case String.split(rest, " ", parts: 2) do
@@ -236,7 +236,7 @@ defmodule Orchestrator.ProtocolHandler do
     {:noreply, %State{state | webhook_waiting_for: String.trim(rest)}}
   end
   def handle_cast({:message, other}, state) do
-    Logger.error("Unexpected message: [#{inspect other}] received, exiting")
+    Logger.warn("Unexpected message: [#{inspect other}] received, exiting")
     send_exit(state)
     {:stop, :normal, state}
   end
@@ -284,7 +284,7 @@ defmodule Orchestrator.ProtocolHandler do
     if is_nil(state.current_step) do
       {:noreply, state}
     else
-      Logger.error("Timeout on step #{inspect state.current_step}, exiting")
+      Logger.info("Timeout on step #{inspect state.current_step}, exiting")
       state.error_report_fun.(
         state.monitor_logical_name,
         state.current_step.check_logical_name,
