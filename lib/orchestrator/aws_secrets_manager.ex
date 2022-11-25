@@ -12,8 +12,8 @@ defmodule Orchestrator.AWSSecretsManager do
 
   @impl true
   def fetch(name) do
-    Logger.debug("get_secret(#{name})")
-    Logger.info("Getting secret #{name} from region #{System.get_env("AWS_REGION")}")
+    Logger.debug("get_secret(#{name})") 
+    Logger.info("Getting secret #{name} from region #{Application.get_env(:ex_aws, :region)}")
 
     # We may be called in various stages of the life cycle, including really
     # early, so make sure that what ExAws needs is up and running.
@@ -25,7 +25,8 @@ defmodule Orchestrator.AWSSecretsManager do
     result =
       secret_name
       |> ExAws.SecretsManager.get_secret_value()
-      |> do_aws_request()
+      |> ExAws.request()
+
     case result do
       {:ok, %{"SecretString" => secret}} ->
         case parts do
@@ -42,10 +43,5 @@ defmodule Orchestrator.AWSSecretsManager do
         Logger.info("Secret #{name} not found, returning nil. Got message #{inspect(message)}")
         nil
     end
-  end
-
-  defp do_aws_request(request) do
-    region = System.get_env("AWS_SECRETS_MANAGER_REGION") || System.get_env("AWS_REGION", "us-east-1")
-    ExAws.request(request, region: region)
   end
 end

@@ -12,12 +12,11 @@ defmodule Orchestrator.LambdaInvoker do
 
   @impl true
   def invoke(config, _opts \\ []) do
-    region = Orchestrator.Application.aws_region()
     name = lambda_function_name(config)
     req = ExAws.Lambda.invoke(name, %{}, %{}, invocation_type: :request_response)
     Logger.debug("About to spawn request #{inspect req}")
     # We spawn this as a task, so that we can keep receiving messages and do things like handle timeouts eventually.
-    Task.async(fn -> ExAws.request(req, region: region, http_opts: [recv_timeout: 1_800_000], retries: [max_attempts: 1]) end)
+    Task.async(fn -> ExAws.request(req, http_opts: [recv_timeout: 1_800_000], retries: [max_attempts: 1]) end)
   end
 
   defp lambda_function_name(%{run_spec: %{name: name}}), do: lambda_function_name(name)
