@@ -22,6 +22,13 @@ release:
 	echo Build-Host: `hostname` >>priv/build.txt
 	docker build -t orchestrator:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
 
+# These tests exercise (or rather demonstrate) how Erlexec works. Given
+# that these tests are full with external dependencies and timeouts,
+# only run these if you suspect something fishy or if you want to
+# (re)confirm that this bit is indeed still as advertised.
+integration_test:
+	mix test --include external
+
 local_release:
 	MIX_ENV=prod mix do compile, release --overwrite
 

@@ -106,7 +106,7 @@ defmodule Orchestrator.MonitorScheduler do
   @impl true
   def terminate(_reason, %State{monitor_pid: pid}) when pid != nil do
     Logger.info("Monitor Scheduler terminate callback killing os pid #{pid}")
-    System.cmd("kill", ["#{pid}"])
+    :exec.kill(pid, 9)
   end
 
   def terminate(_reason, _state) do

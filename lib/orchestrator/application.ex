@@ -106,9 +106,9 @@ defmodule Orchestrator.Application do
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
+  defp print_header(), do: :ok
 else
   defp filter_children(children), do: children
-end
 
   defp print_header() do
     build_txt = Path.join(Application.app_dir(:orchestrator, "priv"), "build.txt")
@@ -126,6 +126,7 @@ end
     ===
     """
   end
+end
 
   def translate_config_from_env(env, default \\ nil) do
     case System.get_env(env) do

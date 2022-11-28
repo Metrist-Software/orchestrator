@@ -12,6 +12,15 @@ steps.TestLogging = async function() {
   proto.sendTime(2.0)
 }
 
+steps.Error = async function() {
+  throw 'Error!'
+}
+
+steps.PrintStderr = async function() {
+  console.error('On stderr')
+  proto.sendOK()
+}
+
 const main = async function() {
   await proto.handshake(async (_config) => {})
   let cleanupHandler = async () => {}
@@ -19,11 +28,9 @@ const main = async function() {
 
   let step = null
   while ((step = await proto.getStep(cleanupHandler, teardownHandler)) != null) {
-    proto.logDebug('Starting step ${step}')
     await steps[step]()
       .catch(e => proto.sendError(e))
   }
-  proto.logInfo('Orchestrator asked to exit, all done')
   process.exit(0)
 }
 

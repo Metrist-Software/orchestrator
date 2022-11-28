@@ -11,7 +11,8 @@ defmodule Orchestrator.CommandInvoker do
 
   require Logger
 
-  @behaviour Orchestrator.Invoker
+  alias Orchestrator.Invoker
+  @behaviour Invoker
 
   @impl true
   def invoke(config, opts \\ []) do
@@ -20,11 +21,8 @@ defmodule Orchestrator.CommandInvoker do
 
     Logger.debug("Running #{command_line}")
 
-    Orchestrator.Invoker.run_monitor(config, opts, fn ->
-        Port.open({:spawn, command_line}, [
-          :binary,
-          :stderr_to_stdout
-        ])
+    Invoker.run_monitor(config, opts, fn tmp_dir ->
+      Invoker.start_monitor(command_line, [], tmp_dir)
     end)
   end
 end
