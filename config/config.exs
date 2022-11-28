@@ -5,5 +5,4 @@ config :ex_aws,
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, {:awscli, :system, 30}, :instance_role],
   region: {:system, "AWS_BACKEND_REGION"}
 
-
 import_config "#{config_env()}.exs"
