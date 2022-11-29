@@ -83,7 +83,7 @@ defmodule Orchestrator.ProtocolHandler do
           {:ok, _} ->
             # call wait_for_complete normally
             wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
-          {:error, message} ->
+          {:error, _message} ->
             # call wait_for_complete normally but skip the bad message
             wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
         end
