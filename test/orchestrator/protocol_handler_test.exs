@@ -5,6 +5,10 @@ defmodule Orchestrator.ProtocolHandlerTest do
 
   alias Orchestrator.ProtocolHandler
 
+  # We have some tests that work with message passing between processes,
+  # make sure we don't wait too long if they happen to be broken.
+  @moduletag timeout: 1_000
+
   describe "Message handling" do
     test "Incomplete single message returns {:incomplete, message}" do
       {result, _message} =
@@ -63,7 +67,6 @@ defmodule Orchestrator.ProtocolHandlerTest do
   end
 
   describe "Completion handling" do
-    @describetag timout: 1_000
     defp send_exit, do: send(self(), {:EXIT, nil, {:exit_status, 0}})
 
     test "Partial messages get collected and sent to genserver" do
@@ -87,12 +90,10 @@ defmodule Orchestrator.ProtocolHandlerTest do
   end
 
   describe "Handshake" do
-    @describetag timeout: 1_000
-
     test "Basic handshake works" do
       fake_os_pid = self()
 
-      writer = fn os_pid, msg -> send self(), {:write, os_pid, msg} end
+      writer = fn os_pid, msg -> send(self(), {:write, os_pid, msg}) end
 
       # We don't strictly need to interleave all the messages, so we fill the
       # queue with what the handshake expects, run the handshake, then test
@@ -101,13 +102,63 @@ defmodule Orchestrator.ProtocolHandlerTest do
       send(self(), {:stdout, fake_os_pid, "00011 Started 1.1"})
       send(self(), {:stdout, fake_os_pid, "00005 Ready"})
 
-      ProtocolHandler.handle_handshake(fake_os_pid, %{
-        monitor_logical_name: "testmonitor",
-        extra_config: %{test: "value", more: 42}
-      }, writer)
+      ProtocolHandler.handle_handshake(
+        fake_os_pid,
+        %{
+          monitor_logical_name: "testmonitor",
+          extra_config: %{test: "value", more: 42}
+        },
+        writer
+      )
 
       assert_received {:write, ^fake_os_pid, "Version 1.1"}
       assert_received {:write, ^fake_os_pid, ~s(Config {"more":42,"test":"value"})}
+    end
+  end
+
+  describe "Stepping" do
+    test "If no more steps are available, monitor is asked to exit" do
+      state = %ProtocolHandler.State{steps: [], owner: self()}
+      {:noreply, new_state} = ProtocolHandler.handle_info(:start_step, state)
+      assert state == new_state
+      assert_received {:write, "Exit 0"}
+    end
+
+    test "If a step is available, monitor is asked to run step" do
+      state = %ProtocolHandler.State{
+        steps: [
+          %{check_logical_name: "StepOne", timeout_secs: 60},
+          %{check_logical_name: "StepTwo", timeout_secs: 60}
+        ],
+        owner: self()
+      }
+
+      {:noreply, new_state} = ProtocolHandler.handle_info(:start_step, state)
+
+      assert new_state.steps == [%{check_logical_name: "StepTwo", timeout_secs: 60}]
+      assert new_state.current_step == %{check_logical_name: "StepOne", timeout_secs: 60}
+      refute is_nil(new_state.step_timeout_timer)
+      assert_received {:write, "Run Step StepOne"}
+    end
+
+    test "Step timeout results in error and monitor exit" do
+      state = %ProtocolHandler.State{
+        monitor_logical_name: "testmonitor",
+        steps: [
+          %{check_logical_name: "StepTwo", timeout_secs: 60}
+        ],
+        current_step: %{check_logical_name: "StepOne", timeout_secs: 60},
+        owner: self(),
+        error_report_fun: fn m, c, msg, opts -> send(self(), {:error, m, c, msg, opts}) end
+      }
+
+      {:stop, :normal, _new_state} = ProtocolHandler.handle_info(:step_timeout, state)
+
+      assert_received {:write, "Exit 0"}
+
+      assert_received {:error, "testmonitor", "StepOne",
+                       "Timeout: check did not complete within 60 seconds - METRIST_MONITOR_ERROR",
+                       metadata: %{"metrist.source" => "monitor"}, blocked_steps: ["StepTwo"]}
     end
   end
 

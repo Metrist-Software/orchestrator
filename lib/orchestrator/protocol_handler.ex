@@ -153,7 +153,7 @@ defmodule Orchestrator.ProtocolHandler do
 
   @impl true
   def init({monitor_logical_name, steps, owner, telemetry_report_fun, error_report_fun, os_pid}) do
-    Orchestrator.Application.set_monitor_metadata(monitor_logical_name, steps)
+    Orchestrator.Application.set_monitor_logging_metadata(monitor_logical_name, steps)
     Logger.metadata(os_pid: os_pid)
     {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, owner: owner, telemetry_report_fun: telemetry_report_fun, error_report_fun: error_report_fun}}
   end

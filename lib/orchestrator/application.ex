@@ -74,7 +74,7 @@ defmodule Orchestrator.Application do
     String.split(string, ",")
   end
 
-  def set_monitor_metadata(monitor_config) do
+  def set_monitor_logging_metadata(monitor_config) do
     step_names =
       monitor_config.steps
       |> Enum.map(&(&1.check_logical_name))
@@ -82,8 +82,8 @@ defmodule Orchestrator.Application do
     meta = "#{monitor_config.monitor_logical_name}(#{step_names})"
     Logger.metadata(monitor: meta)
   end
-  def set_monitor_metadata(monitor_logical_name, steps) do
-    set_monitor_metadata(%{monitor_logical_name: monitor_logical_name, steps: steps})
+  def set_monitor_logging_metadata(monitor_logical_name, steps) do
+    set_monitor_logging_metadata(%{monitor_logical_name: monitor_logical_name, steps: steps})
   end
 
   defp set_logging("all"), do: Logger.configure(level: :debug)
