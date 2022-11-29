@@ -12,13 +12,22 @@ defmodule Integration.MonitorInvocationTest do
   alias Orchestrator.Invoker
 
   test "Correctly opens and closes monitoring processes" do
-    ospid = start_monitor()
-    assert_receive {:stdout, ^ospid, "00011 Started 1.1"}, @sleep
+    os_pid = start_monitor()
+    assert_receive {:stdout, ^os_pid, "00011 Started 1.1"}, @sleep
 
     # Check that we get notified on exit (IOW, that we have linked processes).
-    Process.flag(:trap_exit, true)
-    :exec.kill(ospid, :sigterm)
+    :exec.kill(os_pid, :sigterm)
     assert_receive {:EXIT, _pid, {:exit_status, 15}}, @sleep
+  end
+
+  test "Protocol handler write wraps correct function" do
+    os_pid = start_and_configure_monitor()
+    pid = :exec.pid(os_pid)
+    # Also tests the exit handling
+    Orchestrator.ProtocolHandler.write(os_pid, "Exit 0")
+    Process.sleep @sleep
+    assert_received {:EXIT, ^pid, :normal}
+    refute os_pid in :exec.which_children()
   end
 
   test "Exits when caller exits" do
@@ -26,14 +35,14 @@ defmodule Integration.MonitorInvocationTest do
       start_monitor()
     end)
 
-    ospid = Agent.get(agent, & &1)
+    os_pid = Agent.get(agent, & &1)
+    assert os_pid in :exec.which_children()
 
-    # We kill the agent, then the children list of Erlexec should not have
-    # ospid anymore.
-
+    # We stop the agent, then the children list of Erlexec should not have
+    # os_pid anymore.
     Agent.stop(agent)
     Process.sleep(@sleep)
-    refute ospid in :exec.which_children()
+    refute os_pid in :exec.which_children()
   end
 
   test "Can exchange protocol messages" do
@@ -41,25 +50,25 @@ defmodule Integration.MonitorInvocationTest do
   end
 
   test "Logging works correctly" do
-    ospid = start_and_configure_monitor()
-    :exec.send(ospid, "00020 Run Step TestLogging")
-    assert_receive {:stdout, ^ospid, "00029 Log Debug Test Logging: DEBUG"}, @sleep
-    assert_receive {:stdout, ^ospid, "00027 Log Info Test Logging: INFO"}, @sleep
-    assert_receive {:stdout, ^ospid, "00029 Log Error Test Logging: ERROR"}, @sleep
-    assert_receive {:stdout, ^ospid, "00011 Step Time 2"}, @sleep
+    os_pid = start_and_configure_monitor()
+    :exec.send(os_pid, "00020 Run Step TestLogging")
+    assert_receive {:stdout, ^os_pid, "00029 Log Debug Test Logging: DEBUG"}, @sleep
+    assert_receive {:stdout, ^os_pid, "00027 Log Info Test Logging: INFO"}, @sleep
+    assert_receive {:stdout, ^os_pid, "00029 Log Error Test Logging: ERROR"}, @sleep
+    assert_receive {:stdout, ^os_pid, "00011 Step Time 2"}, @sleep
   end
 
   test "Error handling" do
-    ospid = start_and_configure_monitor()
-    :exec.send(ospid, "00014 Run Step Error")
-    assert_receive {:stdout, ^ospid, "00017 Step Error Error!"}, @sleep
+    os_pid = start_and_configure_monitor()
+    :exec.send(os_pid, "00014 Run Step Error")
+    assert_receive {:stdout, ^os_pid, "00017 Step Error Error!"}, @sleep
   end
 
   test "Printing to stderr" do
-    ospid = start_and_configure_monitor()
-    :exec.send(ospid, "00020 Run Step PrintStderr")
-    assert_receive {:stderr, ^ospid, "On stderr\n"}, @sleep
-    assert_receive {:stdout, ^ospid, "00007 Step OK"}, @sleep
+    os_pid = start_and_configure_monitor()
+    :exec.send(os_pid, "00020 Run Step PrintStderr")
+    assert_receive {:stderr, ^os_pid, "On stderr\n"}, @sleep
+    assert_receive {:stdout, ^os_pid, "00007 Step OK"}, @sleep
   end
 
   defp start_monitor do
@@ -67,13 +76,13 @@ defmodule Integration.MonitorInvocationTest do
   end
 
   defp start_and_configure_monitor do
-    ospid = start_monitor()
-    assert_receive {:stdout, ^ospid, "00011 Started 1.1"}, @sleep
+    os_pid = start_monitor()
+    assert_receive {:stdout, ^os_pid, "00011 Started 1.1"}, @sleep
 
-    :exec.send(ospid, "00011 Version 1.1")
-    assert_receive {:stdout, ^ospid, "00005 Ready"}, @sleep
-    :exec.send(ospid, "00009 Config {}")
-    assert_receive {:stdout, ^ospid, "00010 Configured"}, @sleep
-    ospid
+    :exec.send(os_pid, "00011 Version 1.1")
+    assert_receive {:stdout, ^os_pid, "00005 Ready"}, @sleep
+    :exec.send(os_pid, "00009 Config {}")
+    assert_receive {:stdout, ^os_pid, "00010 Configured"}, @sleep
+    os_pid
   end
 end

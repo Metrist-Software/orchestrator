@@ -46,13 +46,15 @@ defmodule Orchestrator.Invoker do
     # Yes, all three variations have been seen in the wild.
     opts =
       Keyword.put(extra_opts, :env, [
-            {"TMPDIR", tmp_dir},
-            {"TEMP", tmp_dir},
-            {"TMP", tmp_dir}
-          ])
+        {"TMPDIR", tmp_dir},
+        {"TEMP", tmp_dir},
+        {"TMP", tmp_dir}
+      ])
 
     opts = opts ++ [:stdin, :stdout, :stderr, :monitor]
 
+    # Quite important that we always get notified.
+    Process.flag(:trap_exit, true)
     {:ok, _pid, os_pid} = :exec.run_link(cmd_line, opts)
     os_pid
   end

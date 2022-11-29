@@ -5,40 +5,110 @@ defmodule Orchestrator.ProtocolHandlerTest do
 
   alias Orchestrator.ProtocolHandler
 
-  test "Incomplete single message returns {:incomplete, message}" do
-    {result, _message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cd")
-    assert result == :incomplete
+  describe "Message handling" do
+    test "Incomplete single message returns {:incomplete, message}" do
+      {result, _message} =
+        ProtocolHandler.handle_message(
+          self(),
+          "testmonitor",
+          "00041 Log Info Created card 6102e3cd"
+        )
+
+      assert result == :incomplete
+    end
+
+    test "Multiple messages where last is incomplete returns last message and :incomplete message returns {:incomplete, message}" do
+      {result, message} =
+        ProtocolHandler.handle_message(
+          self(),
+          "testmonitor",
+          "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Second Created"
+        )
+
+      assert result == :incomplete
+      assert message == "00041 Log Second Created"
+    end
+
+    test "Multiple complete messages will succeed with {:ok, nil}" do
+      {result, message} =
+        ProtocolHandler.handle_message(
+          self(),
+          "testmonitor",
+          "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Info Create card 6102e3cde5a2f61a4478"
+        )
+
+      assert result == :ok
+      assert message == nil
+    end
+
+    test "Message with CRLF will succeed with {:ok, nil}" do
+      log =
+        "00214 Log Debug statusCode: 500, gotIp: <html>\r\n<head><title>500 Internal Server Error</title></head>\r\n<body>\r\n<center><h1>500 Internal Server Error</h1></center>\r\n</body>\r\n</html>\r\n, theIp: ip-11-1-111-111, not done yet"
+
+      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", log)
+      assert result == :ok
+      assert message == nil
+    end
+
+    test "Message is complete when the number of bytes is correct" do
+      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00007 héllo")
+      assert message == nil
+      assert result == :ok
+    end
+
+    test "Empty log message works" do
+      result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
+      assert {:ok, nil} == result
+    end
   end
 
-  test "Multiple messages where last is incomplete returns last message and :incomplete message returns {:incomplete, message}" do
-    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Second Created")
-    assert result == :incomplete
-    assert message == "00041 Log Second Created"
+  describe "Completion handling" do
+    @describetag timout: 1_000
+    defp send_exit, do: send(self(), {:EXIT, nil, {:exit_status, 0}})
+
+    test "Partial messages get collected and sent to genserver" do
+      os_pid = 42
+      send(self(), {:stdout, os_pid, "00014 "})
+      send(self(), {:stdout, os_pid, "Log Info "})
+      send(self(), {:stdout, os_pid, "Hello"})
+      send_exit()
+      ProtocolHandler.wait_for_complete(os_pid, "testmonitor", self())
+      assert_received {:"$gen_cast", {:message, "Log Info Hello"}}
+    end
+
+    test "Mixed messages get split and sent to genserver" do
+      os_pid = 42
+      send(self(), {:stdout, os_pid, "00014 Log Info Hello00015 Log Error Error"})
+      send_exit()
+      ProtocolHandler.wait_for_complete(os_pid, "testmonitor", self())
+      assert_received {:"$gen_cast", {:message, "Log Info Hello"}}
+      assert_received {:"$gen_cast", {:message, "Log Error Error"}}
+    end
   end
 
-  test "Multiple complete messages will succeed with {:ok, nil}" do
-    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Info Create card 6102e3cde5a2f61a4478")
-    assert result == :ok
-    assert message == :nil
-  end
+  describe "Handshake" do
+    @describetag timeout: 1_000
 
-  test "Message with CRLF will succeed with {:ok, nil}" do
-    log = "00214 Log Debug statusCode: 500, gotIp: <html>\r\n<head><title>500 Internal Server Error</title></head>\r\n<body>\r\n<center><h1>500 Internal Server Error</h1></center>\r\n</body>\r\n</html>\r\n, theIp: ip-11-1-111-111, not done yet"
-    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", log)
-    assert result == :ok
-    assert message == :nil
-  end
+    test "Basic handshake works" do
+      fake_os_pid = self()
 
-  test "Message is complete when the number of bytes is correct" do
-    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00007 héllo")
-    assert message == :nil
-    assert result == :ok
-  end
+      writer = fn os_pid, msg -> send self(), {:write, os_pid, msg} end
 
+      # We don't strictly need to interleave all the messages, so we fill the
+      # queue with what the handshake expects, run the handshake, then test
+      # whether the output is correct.
 
-  test "Empty log message works" do
-    result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
-    assert {:ok, :nil} == result
+      send(self(), {:stdout, fake_os_pid, "00011 Started 1.1"})
+      send(self(), {:stdout, fake_os_pid, "00005 Ready"})
+
+      ProtocolHandler.handle_handshake(fake_os_pid, %{
+        monitor_logical_name: "testmonitor",
+        extra_config: %{test: "value", more: 42}
+      }, writer)
+
+      assert_received {:write, ^fake_os_pid, "Version 1.1"}
+      assert_received {:write, ^fake_os_pid, ~s(Config {"more":42,"test":"value"})}
+    end
   end
 
   describe "Metadata handling in monitor results" do
@@ -47,12 +117,12 @@ defmodule Orchestrator.ProtocolHandlerTest do
         step_start_time: 0,
         monitor_logical_name: "mon",
         current_step: %{
-          check_logical_name: "check",
+          check_logical_name: "check"
         },
         step_timeout_timer: nil,
-        telemetry_report_fun: fn m, c, t, meta -> send self(), {:telemetry, m, c, t, meta} end,
-        error_report_fun: fn m, c, e, meta -> send self(), {:error, m, c, e, meta} end,
-        io_handler: self()
+        telemetry_report_fun: fn m, c, t, meta -> send(self(), {:telemetry, m, c, t, meta}) end,
+        error_report_fun: fn m, c, e, meta -> send(self(), {:error, m, c, e, meta}) end,
+        owner: self()
       }
     end
 
@@ -73,21 +143,35 @@ defmodule Orchestrator.ProtocolHandlerTest do
       assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{}]}
 
       ProtocolHandler.handle_cast({:message, "Step Time key1=value1,key2=3432 12.34"}, state)
-      assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{"key1" => "value1", "key2" => 42.0}]}
+
+      assert_received {:telemetry, "mon", "check", 12.34,
+                       [metadata: %{"key1" => "value1", "key2" => 42.0}]}
     end
 
     test "Metadata is handled correctly for errored steps" do
       state = mkstate()
+
       capture_log(fn ->
-
         ProtocolHandler.handle_cast({:message, "Step Error The cake is a lie"}, state)
-        assert_received {:error, "mon", "check", "The cake is a lie", [metadata: %{}, blocked_steps: _]}
 
-        ProtocolHandler.handle_cast({:message, "Step Error key=value The cake really is a lie"}, state)
-        assert_received {:error, "mon", "check", "The cake really is a lie", [metadata: %{"key" => "value"}, blocked_steps: _]}
+        assert_received {:error, "mon", "check", "The cake is a lie",
+                         [metadata: %{}, blocked_steps: _]}
 
-        ProtocolHandler.handle_cast({:message, "Step Error key=value,candle The cake still is a lie"}, state)
-        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie", [metadata: %{}, blocked_steps: _]}
+        ProtocolHandler.handle_cast(
+          {:message, "Step Error key=value The cake really is a lie"},
+          state
+        )
+
+        assert_received {:error, "mon", "check", "The cake really is a lie",
+                         [metadata: %{"key" => "value"}, blocked_steps: _]}
+
+        ProtocolHandler.handle_cast(
+          {:message, "Step Error key=value,candle The cake still is a lie"},
+          state
+        )
+
+        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie",
+                         [metadata: %{}, blocked_steps: _]}
       end)
     end
   end
@@ -102,16 +186,21 @@ defmodule Orchestrator.ProtocolHandlerTest do
     end
 
     test "Garbage is ignored but logs a warning" do
-      log = capture_log(fn ->
-        assert %{} = parse_metadata("garbage")
-      end)
+      log =
+        capture_log(fn ->
+          assert %{} = parse_metadata("garbage")
+        end)
+
       assert String.contains?(log, "Could not parse as metadata: 'garbage', ignoring")
-      assert String.contains?(log, "[warn") # It can be "warn" or "warning", so be lenient.
+      # It can be "warn" or "warning", so be lenient.
+      assert String.contains?(log, "[warn")
     end
 
     test "Basic single value works" do
       assert %{"key" => "value"} == parse_metadata("key=value")
-      assert %{"key1" => "value1", "key2" => "value2"} == parse_metadata("key1=value1,key2=value2")
+
+      assert %{"key1" => "value1", "key2" => "value2"} ==
+               parse_metadata("key1=value1,key2=value2")
     end
 
     test "Base16 decode works" do
@@ -131,5 +220,4 @@ defmodule Orchestrator.ProtocolHandlerTest do
       assert %{"key" => 1.0} == parse_metadata("key=1")
     end
   end
-
 end
