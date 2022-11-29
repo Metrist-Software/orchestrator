@@ -46,7 +46,7 @@ defmodule Orchestrator.ProtocolHandler do
   timeouts, etcetera, but it does complicate things a little bit.
   """
   def run_protocol(config, os_pid, opts \\ []) do
-    Orchestrator.Application.set_monitor_metadata(config)
+    Orchestrator.Application.set_monitor_logging_metadata(config)
     error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/4)
     telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/4)
 

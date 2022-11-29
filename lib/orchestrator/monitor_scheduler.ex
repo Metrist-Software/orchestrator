@@ -25,7 +25,7 @@ defmodule Orchestrator.MonitorScheduler do
 
   @impl true
   def init(config) do
-    Orchestrator.Application.set_monitor_metadata(config)
+    Orchestrator.Application.set_monitor_logging_metadata(config)
     Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
 
     Process.flag(:trap_exit, true)

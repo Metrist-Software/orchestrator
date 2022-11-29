@@ -22,7 +22,7 @@ defmodule Orchestrator.Invoker do
     parent = self()
 
     Task.async(fn ->
-      Orchestrator.Application.set_monitor_metadata(config)
+      Orchestrator.Application.set_monitor_logging_metadata(config)
 
       os_pid = port_fn.(tmpdir)
       GenServer.cast(parent, {:monitor_pid, os_pid})
