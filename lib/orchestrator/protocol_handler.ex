@@ -398,34 +398,6 @@ defmodule Orchestrator.ProtocolHandler do
     Logger.debug("Sent message: #{inspect msg}")
   end
 
-  # Monitors should not have to do any shutdown activities by the time
-  # we really want to force quit them, so if a port has an associated
-  # OS process, we just send it a KILL signal to guarantee success. Otherwise,
-  # we close the port and hope for the best.
-  defp kill_or_close(port) do
-    maybe_info = Port.info(port)
-    maybe_pid = Keyword.get((maybe_info || []), :os_pid)
-    case {maybe_info, maybe_pid} do
-      {nil, _} ->
-        Logger.info("Port already closed")
-      {_, nil} ->
-        Logger.info("No OS process id associated with port, just closing it")
-        Port.close(port)
-      {_, pid} ->
-        Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
-        # Wrapped System.cmd/2 call with try catch since it raises an ` Erlang error: :enoent` occasionally
-        try do
-          # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
-          kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
-          kill.(15)
-          Process.sleep(1_000)
-          kill.(9)
-        rescue
-          e -> Logger.error("Got error killing process #{inspect(pid)}: #{Exception.format(:error, e, __STACKTRACE__)}")
-        end
-    end
-  end
-
   # Public for testing
   def parse_metadata(nil), do: %{}
   def parse_metadata(s) do
