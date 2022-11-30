@@ -58,6 +58,8 @@ defmodule Orchestrator.ProtocolHandler do
                                         telemetry_report_fun,
                                         error_report_fun,
                                         os_pid})
+
+    Process.flag(:trap_exit, true)
     result = wait_for_complete(os_pid, config.monitor_logical_name, pid)
 
     if Process.alive?(pid), do: GenServer.stop(pid)
@@ -71,8 +73,8 @@ defmodule Orchestrator.ProtocolHandler do
   @doc false
   def wait_for_complete(os_pid, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
-      {:EXIT, _pid, {:exit_status, signal}} ->
-        Logger.info("Received process exit message due to signal #{signal}, completing invocation.")
+      {:EXIT, _pid, reason} ->
+        Logger.info("Received process exit message '#{inspect reason}', completing invocation.")
         :ok
 
       {:stdout, ^os_pid, data} ->
