@@ -27,6 +27,7 @@ release:
 # only run these if you suspect something fishy or if you want to
 # (re)confirm that this bit is indeed still as advertised.
 integration_test:
+	npm --prefix ./test/integration/test_monitor/ ci
 	mix test --include external
 
 local_release:
