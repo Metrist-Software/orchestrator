@@ -10,30 +10,32 @@ defmodule Orchestrator.DotNetDLLInvoker do
   """
   require Logger
 
-  alias Orchestrator.Invoker
-  @behaviour Invoker
+  @behaviour Orchestrator.Invoker
 
   @impl true
   def invoke(config, opts \\ []) do
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
     runner = Path.join(runner_dir, "Metrist.Shared.Monitoring.Runner")
 
-    # :executable_folder is set for a manual monitor run
+    # :executable is set for a manual monitor run
+    executable_folder = Keyword.get(opts, :executable_folder, nil)
+
     executable_folder =
-      case Keyword.get(opts, :executable_folder, nil) do
-        nil -> get_executable_folder(config)
-        executable_folder -> executable_folder
-      end
+      unless executable_folder, do: get_executable_folder(config), else: executable_folder
 
-    cmd = "#{runner} #{config.monitor_logical_name} #{executable_folder}"
-    Logger.debug("#{inspect(cmd)}")
+    args = [config.monitor_logical_name, executable_folder]
+    Logger.debug("#{inspect(args)}")
 
-    Invoker.run_monitor(config, opts, fn tmp_dir ->
-      Invoker.start_monitor(cmd, [], tmp_dir)
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
+      Port.open({:spawn_executable, runner}, [
+        :binary,
+        :stderr_to_stdout,
+        args: args
+      ])
     end)
   end
 
   def get_executable_folder(config) do
-    Invoker.maybe_download(config.run_spec.name)
+    Orchestrator.Invoker.maybe_download(config.run_spec.name)
   end
 end

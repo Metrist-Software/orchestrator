@@ -30,15 +30,14 @@ defmodule Orchestrator.MixProject do
 
       # Generic dependencies
       {:bakeware, "~> 0.2.0"},
-      {:configparser_ex, "~> 4.0"},
-      {:erlexec, "~> 2.0"},
       {:ex_aws_secretsmanager, "~> 2.0"},
       {:ex_aws_lambda, "~> 2.0"},
       {:httpoison, "~> 1.8"},
       {:jason, "~> 1.2"},
-      {:metrist_agent, "~> 0.1.0"},
       {:observer_cli, "~> 1.7"},
-      {:yaml_elixir, "~> 2.8"}
+      {:yaml_elixir, "~> 2.8"},
+      {:configparser_ex, "~> 4.0"},
+      {:metrist_agent, "~> 0.1.0"}
     ]
   end
 
