@@ -1,0 +1,7 @@
+{
+  "name": "testmonitor",
+  "bin": "main.js",
+  "dependencies": {
+    "@metrist/protocol": "^0.0.5"
+  }
+}

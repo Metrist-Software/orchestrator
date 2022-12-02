@@ -7,7 +7,7 @@ ARG GITHUB_REF=""
 RUN ./install-runner.sh $GITHUB_REF
 RUN mix do deps.get, deps.compile
 COPY lib lib
-#COPY rel rel
+COPY rel rel
 
 RUN mix do compile, release
 
@@ -15,6 +15,8 @@ FROM public.ecr.aws/metrist/orchestrator:runtime-base-2022.39 AS app
 
 COPY --from=build --chown=nobody:nogroup /app/_build/prod/rel/bakeware/ ./
 USER nobody:nogroup
+# Erlexec wants this.
+ENV USER=nobody
 # Bakeware's cache directory must exist in advance. Probably safer.
 RUN mkdir .cache
 
