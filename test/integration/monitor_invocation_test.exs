@@ -16,6 +16,7 @@ defmodule Integration.MonitorInvocationTest do
     assert_receive {:stdout, ^os_pid, "00011 Started 1.1"}, @sleep
 
     # Check that we get notified on exit (IOW, that we have linked processes).
+    Process.flag(:trap_exit, true)
     :exec.kill(os_pid, :sigterm)
     assert_receive {:EXIT, _pid, {:exit_status, 15}}, @sleep
   end
@@ -26,7 +27,6 @@ defmodule Integration.MonitorInvocationTest do
     # Also tests the exit handling
     Orchestrator.ProtocolHandler.write(os_pid, "Exit 0")
     Process.sleep @sleep
-    assert_received {:EXIT, ^pid, :normal}
     refute os_pid in :exec.which_children()
   end
 
@@ -77,12 +77,13 @@ defmodule Integration.MonitorInvocationTest do
 
   defp start_and_configure_monitor do
     os_pid = start_monitor()
-    assert_receive {:stdout, ^os_pid, "00011 Started 1.1"}, @sleep
 
+    assert_receive {:stdout, ^os_pid, "00011 Started 1.1"}, @sleep
     :exec.send(os_pid, "00011 Version 1.1")
     assert_receive {:stdout, ^os_pid, "00005 Ready"}, @sleep
     :exec.send(os_pid, "00009 Config {}")
     assert_receive {:stdout, ^os_pid, "00010 Configured"}, @sleep
+
     os_pid
   end
 end

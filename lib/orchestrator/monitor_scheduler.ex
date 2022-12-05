@@ -28,8 +28,6 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.Application.set_monitor_logging_metadata(config)
     Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
 
-    Process.flag(:trap_exit, true)
-
     schedule_initially(config)
     {:ok, %State{config: config}}
   end
@@ -63,43 +61,37 @@ defmodule Orchestrator.MonitorScheduler do
     end
   end
 
-  # As we're a GenServer, all Task completion messages arrive as info messages.
-  # We receive two messages - one for task completion, one for process completion. We treat
-  # the first one as purely informal - if the task process crashes, we want to know as well so
-  # we only change state on the :DOWN message which we will always get.
+  # Handle various messages that flow in from subprocesses given that we trap
+  # exits. Our primary concern is the task that do_run has spawned. There are four
+  # exit possibilities: a regular Task completion with timeout, error, or ok and
+  # a :DOWN message that signals an abnormal exit. In all cases, we consider the
+  # task complete.
 
-  def handle_info({task_ref, {:error, :timeout}}, state) do
-    # We don't care about the DOWN message now, so let's demonitor and flush it
-    Process.demonitor(task_ref, [:flush])
-    Logger.info("Task timeout. Running cleanup")
-    # Run monitor cleanup if a encountered a timeout by passing an empty list of steps
-    task = do_run(%{state.config | steps: []})
-    {:noreply, %State{state | task: task, monitor_pid: nil}}
-  end
-
-  def handle_info({_task_ref, {:error, error}}, state) do
+  def handle_info({task_ref, {:error, error}}, state) do
     Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
-    {:noreply, %State{state | monitor_pid: nil}}
+    Process.demonitor(task_ref, [:flush])
+    # Run monitor cleanup if we encountered an error by passing an empty list of steps
+    task = do_run(%{state.config | steps: []})
+    {:noreply, %State{state | task: task, monitor_pid: nil, overtime: false}}
   end
 
-  def handle_info({_task_ref, result}, state) do
-    Logger.info("Received task completion for #{show(state)}, result is #{inspect result}")
-    {:noreply, %State{state | monitor_pid: nil}}
-  end
-
-  def handle_info({:DOWN, _task_ref, :process, _task_pid, :normal} = msg, state) do
-    Logger.debug("Task down message received: #{inspect msg}")
+  def handle_info({task_ref, :ok}, state) do
+    Logger.info("Received task :ok completion for #{show(state)}")
+    Process.demonitor(task_ref, [:flush])
     state = %State{state | monitor_pid: nil}
-    {:noreply, %State{state | task: nil, overtime: false}}
+    {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
   end
 
-  def handle_info({:EXIT, pid, :normal}, state) do
-    Logger.debug("Monitor with pid #{inspect pid} exited normally")
-    {:noreply, state}
+  def handle_info({:DOWN, _task_ref, :process, _task_pid, reason} = msg, state) do
+    # Other completions of a task (like crashes) return this message. It's debatable whether
+    # to run a cleanup - a crash likely means something is wrong with spawning the executable.
+    Logger.info("Received task down message: #{inspect msg}, reason: #{inspect reason}")
+    {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
   end
 
+  # Catch-all message handler. Should not happen so we log this as an error.
   def handle_info(msg, state) do
-    Logger.info("Unknown message received: #{inspect msg}")
+    Logger.error("Received unknown message: #{inspect msg}")
     {:noreply, state}
   end
 

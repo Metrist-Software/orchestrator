@@ -14,17 +14,17 @@ defmodule Orchestrator.Invoker do
   @doc """
   Starts a monitor on a port and runs the protocol.
   """
-  def run_monitor(config, opts, port_fn) do
+  def run_monitor(config, opts, start_function) do
     tmpname = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
     tmpdir = Path.join(Orchestrator.Application.temp_dir(), "orchtmp-#{tmpname}")
     File.mkdir_p!(tmpdir)
 
     parent = self()
 
-    Task.async(fn ->
+    Task.Supervisor.async_nolink(Orchestrator.TaskSupervisor, fn ->
       Orchestrator.Application.set_monitor_logging_metadata(config)
 
-      os_pid = port_fn.(tmpdir)
+      os_pid = start_function.(tmpdir)
       GenServer.cast(parent, {:monitor_pid, os_pid})
 
       Logger.info("Started monitor with OS pid #{os_pid}")
@@ -53,15 +53,13 @@ defmodule Orchestrator.Invoker do
 
     opts = opts ++ [:stdin, :stdout, :stderr, :monitor]
 
-    # Quite important that we always get notified.
-    Process.flag(:trap_exit, true)
     {:ok, _pid, os_pid} = :exec.run_link(cmd_line, opts)
     os_pid
   end
 
   # Download/caching support.
 
-  @monitor_distributions_url "https://monitor-distributions.metrist.io/"
+  @monitor_distributions_url " //monitor-distributions.metrist.io/"
 
   @doc """
   Download the archive for the monitor with name `name` and unpack it. Unless disabled

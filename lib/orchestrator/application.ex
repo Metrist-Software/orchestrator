@@ -32,6 +32,7 @@ defmodule Orchestrator.Application do
       end,
       Metrist.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
+      {Task.Supervisor, name: Orchestrator.TaskSupervisor},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
     ]

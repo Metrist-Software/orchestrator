@@ -59,10 +59,13 @@ defmodule Orchestrator.ProtocolHandler do
                                         error_report_fun,
                                         os_pid})
 
-    Process.flag(:trap_exit, true)
     result = wait_for_complete(os_pid, config.monitor_logical_name, pid)
 
-    if Process.alive?(pid), do: GenServer.stop(pid)
+    # There's a race here, and GenServer.stop takes its business seriously: if we try to
+    # stop an already stopped process, it'll end up exiting us. This is one of the rare
+    # instances where we don't care about the outcome (either we stop it or the process stopped
+    # itself, we do not care), so Process.spawn/2 is like the correct solution.
+    if Process.alive?(pid), do: Process.spawn(fn -> GenServer.stop(pid) end, [])
 
     Logger.info("Monitor is complete")
     result
@@ -73,10 +76,6 @@ defmodule Orchestrator.ProtocolHandler do
   @doc false
   def wait_for_complete(os_pid, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
-      {:EXIT, _pid, reason} ->
-        Logger.info("Received process exit message '#{inspect reason}', completing invocation.")
-        :ok
-
       {:stdout, ^os_pid, data} ->
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
@@ -92,6 +91,7 @@ defmodule Orchestrator.ProtocolHandler do
 
       {:stderr, ^os_pid, data} ->
         Logger.info("monitor stderr: #{data}")
+        wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
 
       {:write, message} ->
         write(os_pid, message)
@@ -100,6 +100,10 @@ defmodule Orchestrator.ProtocolHandler do
       :force_exit ->
         Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
         {:error, :timeout}
+
+      :exit_for_test ->
+        # Unit testing only!
+        :test_exit_ok
 
       msg ->
         Logger.debug("Ignoring message #{inspect(msg)}")

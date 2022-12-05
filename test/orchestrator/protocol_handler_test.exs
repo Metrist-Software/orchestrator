@@ -67,7 +67,7 @@ defmodule Orchestrator.ProtocolHandlerTest do
   end
 
   describe "Completion handling" do
-    defp send_exit, do: send(self(), {:EXIT, nil, {:exit_status, 0}})
+    defp send_exit, do: send(self(), :exit_for_test)
 
     test "Partial messages get collected and sent to genserver" do
       os_pid = 42
