@@ -59,6 +59,7 @@ defmodule Orchestrator.ProtocolHandler do
                                         error_report_fun,
                                         os_pid})
 
+    Process.monitor(pid)
     result = wait_for_complete(os_pid, config.monitor_logical_name, pid)
 
     # There's a race here, and GenServer.stop takes its business seriously: if we try to
@@ -76,6 +77,10 @@ defmodule Orchestrator.ProtocolHandler do
   @doc false
   def wait_for_complete(os_pid, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
+      {:DOWN, _ref, :process, _object, reason} ->
+        Logger.info("Protocol process completed with reason #{inspect reason}")
+        :ok
+
       {:stdout, ^os_pid, data} ->
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
