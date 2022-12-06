@@ -67,25 +67,15 @@ defmodule Orchestrator.MonitorScheduler do
   # a :DOWN message that signals an abnormal exit. In all cases, we consider the
   # task complete.
 
-  def handle_info({task_ref, {:error, error}}, state) do
-    Logger.error("Received task error for #{show(state)}, error is: #{inspect error}")
+  def handle_info({task_ref, completion}, state) do
+    Logger.error("Received task completion for #{show(state)}, completion is #{inspect completion}")
     Process.demonitor(task_ref, [:flush])
-    # Run monitor cleanup if we encountered an error by passing an empty list of steps
-    task = do_run(%{state.config | steps: []})
-    {:noreply, %State{state | task: task, monitor_pid: nil, overtime: false}}
-  end
-
-  def handle_info({task_ref, :ok}, state) do
-    Logger.info("Received task :ok completion for #{show(state)}")
-    Process.demonitor(task_ref, [:flush])
-    state = %State{state | monitor_pid: nil}
-    {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
+    {:noreply, %State{state | task: nil, monitor_pid: nil, overtime: false}}
   end
 
   def handle_info({:DOWN, _task_ref, :process, _task_pid, reason} = msg, state) do
-    # Other completions of a task (like crashes) return this message. It's debatable whether
-    # to run a cleanup - a crash likely means something is wrong with spawning the executable.
-    Logger.info("Received task down message: #{inspect msg}, reason: #{inspect reason}")
+    # Other completions of a task (like crashes) return this message.
+    Logger.error("Received task down message: #{inspect msg}, reason: #{inspect reason}")
     {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
   end
 
