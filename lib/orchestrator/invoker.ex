@@ -59,7 +59,7 @@ defmodule Orchestrator.Invoker do
 
   # Download/caching support.
 
-  @monitor_distributions_url " //monitor-distributions.metrist.io/"
+  @monitor_distributions_url "https://monitor-distributions.metrist.io/"
 
   @doc """
   Download the archive for the monitor with name `name` and unpack it. Unless disabled
