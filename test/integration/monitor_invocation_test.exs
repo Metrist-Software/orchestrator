@@ -23,7 +23,6 @@ defmodule Integration.MonitorInvocationTest do
 
   test "Protocol handler write wraps correct function" do
     os_pid = start_and_configure_monitor()
-    pid = :exec.pid(os_pid)
     # Also tests the exit handling
     Orchestrator.ProtocolHandler.write(os_pid, "Exit 0")
     Process.sleep @sleep

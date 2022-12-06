@@ -4,7 +4,6 @@ defmodule Orchestrator.ProtocolHandlerTest do
   import ExUnit.CaptureLog
 
   alias Orchestrator.ProtocolHandler
-
   # We have some tests that work with message passing between processes,
   # make sure we don't wait too long if they happen to be broken.
   @moduletag timeout: 1_000
@@ -55,7 +54,7 @@ defmodule Orchestrator.ProtocolHandlerTest do
     end
 
     test "Message is complete when the number of bytes is correct" do
-      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00007 héllo")
+      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00006 héllo")
       assert message == nil
       assert result == :ok
     end
@@ -151,9 +150,7 @@ defmodule Orchestrator.ProtocolHandlerTest do
         owner: self(),
         error_report_fun: fn m, c, msg, opts -> send(self(), {:error, m, c, msg, opts}) end
       }
-
       {:stop, :normal, _new_state} = ProtocolHandler.handle_info(:step_timeout, state)
-
       assert_received {:write, "Exit 0"}
 
       assert_received {:error, "testmonitor", "StepOne",
@@ -168,11 +165,11 @@ defmodule Orchestrator.ProtocolHandlerTest do
         step_start_time: 0,
         monitor_logical_name: "mon",
         current_step: %{
-          check_logical_name: "check"
+          check_logical_name: "check",
         },
         step_timeout_timer: nil,
-        telemetry_report_fun: fn m, c, t, meta -> send(self(), {:telemetry, m, c, t, meta}) end,
-        error_report_fun: fn m, c, e, meta -> send(self(), {:error, m, c, e, meta}) end,
+        telemetry_report_fun: fn m, c, t, meta -> send self(), {:telemetry, m, c, t, meta} end,
+        error_report_fun: fn m, c, e, meta -> send self(), {:error, m, c, e, meta} end,
         owner: self()
       }
     end
@@ -194,35 +191,21 @@ defmodule Orchestrator.ProtocolHandlerTest do
       assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{}]}
 
       ProtocolHandler.handle_cast({:message, "Step Time key1=value1,key2=3432 12.34"}, state)
-
-      assert_received {:telemetry, "mon", "check", 12.34,
-                       [metadata: %{"key1" => "value1", "key2" => 42.0}]}
+      assert_received {:telemetry, "mon", "check", 12.34, [metadata: %{"key1" => "value1", "key2" => 42.0}]}
     end
 
     test "Metadata is handled correctly for errored steps" do
       state = mkstate()
-
       capture_log(fn ->
+
         ProtocolHandler.handle_cast({:message, "Step Error The cake is a lie"}, state)
+        assert_received {:error, "mon", "check", "The cake is a lie", [metadata: %{}, blocked_steps: _]}
 
-        assert_received {:error, "mon", "check", "The cake is a lie",
-                         [metadata: %{}, blocked_steps: _]}
+        ProtocolHandler.handle_cast({:message, "Step Error key=value The cake really is a lie"}, state)
+        assert_received {:error, "mon", "check", "The cake really is a lie", [metadata: %{"key" => "value"}, blocked_steps: _]}
 
-        ProtocolHandler.handle_cast(
-          {:message, "Step Error key=value The cake really is a lie"},
-          state
-        )
-
-        assert_received {:error, "mon", "check", "The cake really is a lie",
-                         [metadata: %{"key" => "value"}, blocked_steps: _]}
-
-        ProtocolHandler.handle_cast(
-          {:message, "Step Error key=value,candle The cake still is a lie"},
-          state
-        )
-
-        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie",
-                         [metadata: %{}, blocked_steps: _]}
+        ProtocolHandler.handle_cast({:message, "Step Error key=value,candle The cake still is a lie"}, state)
+        assert_received {:error, "mon", "check", "key=value,candle The cake still is a lie", [metadata: %{}, blocked_steps: _]}
       end)
     end
   end
@@ -237,21 +220,16 @@ defmodule Orchestrator.ProtocolHandlerTest do
     end
 
     test "Garbage is ignored but logs a warning" do
-      log =
-        capture_log(fn ->
-          assert %{} = parse_metadata("garbage")
-        end)
-
+      log = capture_log(fn ->
+        assert %{} = parse_metadata("garbage")
+      end)
       assert String.contains?(log, "Could not parse as metadata: 'garbage', ignoring")
-      # It can be "warn" or "warning", so be lenient.
-      assert String.contains?(log, "[warn")
+      assert String.contains?(log, "[warn") # It can be "warn" or "warning", so be lenient.
     end
 
     test "Basic single value works" do
       assert %{"key" => "value"} == parse_metadata("key=value")
-
-      assert %{"key1" => "value1", "key2" => "value2"} ==
-               parse_metadata("key1=value1,key2=value2")
+      assert %{"key1" => "value1", "key2" => "value2"} == parse_metadata("key1=value1,key2=value2")
     end
 
     test "Base16 decode works" do
@@ -271,4 +249,5 @@ defmodule Orchestrator.ProtocolHandlerTest do
       assert %{"key" => 1.0} == parse_metadata("key=1")
     end
   end
+
 end

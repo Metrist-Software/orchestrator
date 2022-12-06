@@ -84,7 +84,8 @@ defmodule Orchestrator.ProtocolHandler do
           {:ok, _} ->
             # call wait_for_complete normally
             wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
-          {:error, _message} ->
+          {:error, message} ->
+            Logger.warn("Skipping unparsable message: #{message}")
             # call wait_for_complete normally but skip the bad message
             wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
         end
@@ -143,6 +144,7 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
+  @doc false
   def handle_handshake(os_pid, config, writer \\ &write/2) do
     matches = expect(os_pid, ~r/Started ([0-9]+)\.([0-9]+)/)
     {major, _} = Integer.parse(Enum.at(matches, 1))
