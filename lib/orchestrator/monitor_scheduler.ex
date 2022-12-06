@@ -68,7 +68,7 @@ defmodule Orchestrator.MonitorScheduler do
   # task complete.
 
   def handle_info({task_ref, completion}, state) do
-    Logger.error("Received task completion for #{show(state)}, completion is #{inspect completion}")
+    Logger.info("Received task completion for #{show(state)}, completion is #{inspect completion}")
     Process.demonitor(task_ref, [:flush])
     {:noreply, %State{state | task: nil, monitor_pid: nil, overtime: false}}
   end
