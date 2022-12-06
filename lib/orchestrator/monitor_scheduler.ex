@@ -64,8 +64,8 @@ defmodule Orchestrator.MonitorScheduler do
   # Handle various messages that flow in from subprocesses given that we trap
   # exits. Our primary concern is the task that do_run has spawned. There are four
   # exit possibilities: a regular Task completion with timeout, error, or ok and
-  # a :DOWN message that signals an abnormal exit. In all cases, we consider the
-  # task complete.
+  # a :DOWN message that signals the process exited before our state machine
+  # completed. In all cases, we consider the task complete.
 
   def handle_info({task_ref, completion}, state) do
     Logger.info("Received task completion for #{show(state)}, completion is #{inspect completion}")
@@ -74,8 +74,7 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   def handle_info({:DOWN, _task_ref, :process, _task_pid, reason} = msg, state) do
-    # Other completions of a task (like crashes) return this message.
-    Logger.error("Received task down message: #{inspect msg}, reason: #{inspect reason}")
+    Logger.info("Received task down message: #{inspect msg}, reason: #{inspect reason}")
     {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
   end
 
