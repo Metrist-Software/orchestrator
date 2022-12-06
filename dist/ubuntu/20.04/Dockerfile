@@ -19,3 +19,4 @@ WORKDIR /app
 # our tooling can write to where we need.
 RUN mkdir /.mix && chmod 777 /.mix
 RUN mkdir /.hex && chmod 777 /.hex
+RUN mkdir /.cache && chmod 777 /.cache
