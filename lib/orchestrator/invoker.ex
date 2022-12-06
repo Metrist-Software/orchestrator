@@ -43,15 +43,20 @@ defmodule Orchestrator.Invoker do
   have the correct options.
   """
   def start_monitor(cmd_line, extra_opts, tmp_dir) do
-    # Yes, all three variations have been seen in the wild.
     opts =
       Keyword.put(extra_opts, :env, [
+        # Yes, all three variations have been seen in the wild.
         {"TMPDIR", tmp_dir},
         {"TEMP", tmp_dir},
-        {"TMP", tmp_dir}
+        {"TMP", tmp_dir},
+
       ])
 
-    opts = opts ++ [:stdin, :stdout, :stderr, :monitor]
+    # The bi-directional linking only works if the subprocess exits with an error state.
+    # On the protocol level, we don't care too much about process exit states, so the
+    # easiest work-around is to have a success exit code that will trigger the linked error
+    # exit.
+    opts = opts ++ [:stdin, :stdout, :stderr, :monitor, success_exit_code: 1]
 
     {:ok, _pid, os_pid} = :exec.run_link(cmd_line, opts)
     os_pid

@@ -21,16 +21,8 @@ defmodule Integration.MonitorInvocationTest do
     assert_receive {:EXIT, _pid, {:exit_status, 15}}, @sleep
   end
 
-  test "Protocol handler write wraps correct function" do
-    os_pid = start_and_configure_monitor()
-    # Also tests the exit handling
-    Orchestrator.ProtocolHandler.write(os_pid, "Exit 0")
-    Process.sleep @sleep
-    refute os_pid in :exec.which_children()
-  end
-
   test "Exits when caller exits" do
-    {:ok, agent} = Agent.start_link(fn ->
+    {:ok, agent} = Agent.start(fn ->
       start_monitor()
     end)
 
@@ -42,6 +34,23 @@ defmodule Integration.MonitorInvocationTest do
     Agent.stop(agent)
     Process.sleep(@sleep)
     refute os_pid in :exec.which_children()
+  end
+
+  test "Caller exits when process exits" do
+    {:ok, agent} = Agent.start(fn ->
+      start_and_configure_monitor()
+    end)
+
+    os_pid = Agent.get(agent, & &1)
+    assert os_pid in :exec.which_children()
+
+    # Exiting the process should exit the agent as well. Also
+    # verifies that ProtocolHandler.write does what we want it to do.
+    Orchestrator.ProtocolHandler.write(os_pid, "Exit 0")
+    Process.sleep @sleep
+
+    refute os_pid in :exec.which_children()
+    refute Process.alive?(agent)
   end
 
   test "Can exchange protocol messages" do
