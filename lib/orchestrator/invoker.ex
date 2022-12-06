@@ -14,37 +14,52 @@ defmodule Orchestrator.Invoker do
   @doc """
   Starts a monitor on a port and runs the protocol.
   """
-  def run_monitor(config, opts, port_fn) do
+  def run_monitor(config, opts, start_function) do
     tmpname = :crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower)
     tmpdir = Path.join(Orchestrator.Application.temp_dir(), "orchtmp-#{tmpname}")
     File.mkdir_p!(tmpdir)
 
     parent = self()
 
-    Task.async(fn ->
-      Orchestrator.Application.set_monitor_metadata(config)
+    Task.Supervisor.async_nolink(Orchestrator.TaskSupervisor, fn ->
+      Orchestrator.Application.set_monitor_logging_metadata(config)
 
-      # A bit dirty, the OTP way is to serialize using processes, not locks. But it is infrequent enough
-      # that the difference is going to be more theoretical than practical. We keep the lock just long enough
-      # to start the child process, at which point the environment will have been copied and we can safely continue.
-      port = :global.trans({__MODULE__, self()}, fn ->
-        System.put_env("TMPDIR", tmpdir)
-        System.put_env("TEMP", tmpdir)
-        System.put_env("TMP", tmpdir)
-        port_fn.()
-      end)
-      pid = Keyword.get(Port.info(port), :os_pid)
-      GenServer.cast(parent, {:monitor_pid, pid})
+      os_pid = start_function.(tmpdir)
+      GenServer.cast(parent, {:monitor_pid, os_pid})
 
-      Logger.info("Started monitor with OS pid #{pid}")
-      Logger.metadata(os_pid: pid)
+      Logger.info("Started monitor with OS pid #{os_pid}")
+      Logger.metadata(os_pid: os_pid)
 
-      result = Orchestrator.ProtocolHandler.run_protocol(config, port, opts)
+      result = Orchestrator.ProtocolHandler.run_protocol(config, os_pid, opts)
 
       File.rm_rf!(tmpdir)
 
       result
     end)
+  end
+
+  @doc """
+  Configures the monitoring executable. Basically a light wrapper around Erlexec that ensures we
+  have the correct options.
+  """
+  def start_monitor(cmd_line, extra_opts, tmp_dir) do
+    opts =
+      Keyword.put(extra_opts, :env, [
+        # Yes, all three variations have been seen in the wild.
+        {"TMPDIR", tmp_dir},
+        {"TEMP", tmp_dir},
+        {"TMP", tmp_dir},
+
+      ])
+
+    # The bi-directional linking only works if the subprocess exits with an error state.
+    # On the protocol level, we don't care too much about process exit states, so the
+    # easiest work-around is to have a success exit code that will trigger the linked error
+    # exit.
+    opts = opts ++ [:stdin, :stdout, :stderr, :monitor, success_exit_code: 1]
+
+    {:ok, _pid, os_pid} = :exec.run_link(cmd_line, opts)
+    os_pid
   end
 
   # Download/caching support.
@@ -95,10 +110,10 @@ defmodule Orchestrator.Invoker do
       _ -> get_latest_version(name, false)
     end
   end
+
   defp get_latest_version(name, _preview_mode = false) do
     String.trim(download("#{name}-latest.txt"))
   end
-
 
   defp fetch_and_unpack_zip(name, version) do
     Logger.info("Fetching monitor #{name} version #{version}")
@@ -132,7 +147,7 @@ defmodule Orchestrator.Invoker do
   # have it on and it must be on for executables, so we set it for everything. This allows us
   # to use the built-in zip library. Alternative would be gzip+tar.
   defp ensure_x_bit(path) do
-    import  Bitwise
+    import Bitwise
     {:ok, stat} = File.stat(path)
     File.chmod(path, stat.mode ||| 0o110)
   end
@@ -163,5 +178,4 @@ defmodule Orchestrator.Invoker do
   defp cache_path, do: System.get_env("METRIST_CACHE_DIR") || default_cache_path()
 
   defp default_cache_path, do: Path.join([System.user_home(), ".cache/metrist/monitors"])
-
 end
