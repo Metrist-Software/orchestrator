@@ -42,6 +42,7 @@ defmodule Mix.Tasks.Metrist.RunMonitor do
   def run(args) do
     Mix.Task.run("app.config")
     Application.ensure_started(:erlexec)
+    Task.Supervisor.start_link(name: Orchestrator.TaskSupervisor)
     setup_hackney_for_external_webhook_processing()
 
     {opts, []} =
