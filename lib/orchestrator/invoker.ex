@@ -38,6 +38,7 @@ defmodule Orchestrator.Invoker do
       result = Orchestrator.ProtocolHandler.run_protocol(config, os_pid, opts)
 
       File.rm_rf!(tmpdir)
+      Logger.info("Monitor complete, cleanup done")
 
       result
     end)

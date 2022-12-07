@@ -68,7 +68,6 @@ defmodule Orchestrator.ProtocolHandler do
     # itself, we do not care), so Process.spawn/2 is like the correct solution.
     if Process.alive?(pid), do: Process.spawn(fn -> GenServer.stop(pid) end, [])
 
-    Logger.info("Monitor is complete")
     result
   end
 
