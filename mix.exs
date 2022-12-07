@@ -30,6 +30,7 @@ defmodule Orchestrator.MixProject do
 
       # Generic dependencies
       {:bakeware, "~> 0.2.0"},
+      {:erlexec, "~> 2.0"},
       {:ex_aws_secretsmanager, "~> 2.0"},
       {:ex_aws_lambda, "~> 2.0"},
       {:httpoison, "~> 1.8"},
