@@ -24,6 +24,11 @@ defmodule Orchestrator.Invoker do
     Task.Supervisor.async_nolink(Orchestrator.TaskSupervisor, fn ->
       Orchestrator.Application.set_monitor_logging_metadata(config)
 
+      # Whatever happens, we must be able to cleanup tmpdir. So that's
+      # why we trap exits here. ProtocolHandler will stop recursing on
+      # receiving the EXIT signal.
+      Process.flag(:trap_exit, true)
+
       os_pid = start_function.(tmpdir)
       GenServer.cast(parent, {:monitor_pid, os_pid})
 

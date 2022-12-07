@@ -81,6 +81,10 @@ defmodule Orchestrator.ProtocolHandler do
         Logger.info("Protocol process completed with reason #{inspect reason}")
         :ok
 
+      {:EXIT, _from, reason} ->
+        Logger.info("Process exit signal received with reason #{inspect reason}, ending protocol")
+        :ok
+
       {:stdout, ^os_pid, data} ->
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
