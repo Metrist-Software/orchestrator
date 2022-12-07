@@ -4,159 +4,41 @@ defmodule Orchestrator.ProtocolHandlerTest do
   import ExUnit.CaptureLog
 
   alias Orchestrator.ProtocolHandler
-  # We have some tests that work with message passing between processes,
-  # make sure we don't wait too long if they happen to be broken.
-  @moduletag timeout: 1_000
 
-  describe "Message handling" do
-    test "Incomplete single message returns {:incomplete, message}" do
-      {result, _message} =
-        ProtocolHandler.handle_message(
-          self(),
-          "testmonitor",
-          "00041 Log Info Created card 6102e3cd"
-        )
-
-      assert result == :incomplete
-    end
-
-    test "Multiple messages where last is incomplete returns last message and :incomplete message returns {:incomplete, message}" do
-      {result, message} =
-        ProtocolHandler.handle_message(
-          self(),
-          "testmonitor",
-          "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Second Created"
-        )
-
-      assert result == :incomplete
-      assert message == "00041 Log Second Created"
-    end
-
-    test "Multiple complete messages will succeed with {:ok, nil}" do
-      {result, message} =
-        ProtocolHandler.handle_message(
-          self(),
-          "testmonitor",
-          "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Info Create card 6102e3cde5a2f61a4478"
-        )
-
-      assert result == :ok
-      assert message == nil
-    end
-
-    test "Message with CRLF will succeed with {:ok, nil}" do
-      log =
-        "00214 Log Debug statusCode: 500, gotIp: <html>\r\n<head><title>500 Internal Server Error</title></head>\r\n<body>\r\n<center><h1>500 Internal Server Error</h1></center>\r\n</body>\r\n</html>\r\n, theIp: ip-11-1-111-111, not done yet"
-
-      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", log)
-      assert result == :ok
-      assert message == nil
-    end
-
-    test "Message is complete when the number of bytes is correct" do
-      {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00006 héllo")
-      assert message == nil
-      assert result == :ok
-    end
-
-    test "Empty log message works" do
-      result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
-      assert {:ok, nil} == result
-    end
+  test "Incomplete single message returns {:incomplete, message}" do
+    {result, _message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cd")
+    assert result == :incomplete
   end
 
-  describe "Completion handling" do
-    defp send_exit, do: send(self(), :exit_for_test)
-
-    test "Partial messages get collected and sent to genserver" do
-      os_pid = 42
-      send(self(), {:stdout, os_pid, "00014 "})
-      send(self(), {:stdout, os_pid, "Log Info "})
-      send(self(), {:stdout, os_pid, "Hello"})
-      send_exit()
-      ProtocolHandler.wait_for_complete(os_pid, "testmonitor", self())
-      assert_received {:"$gen_cast", {:message, "Log Info Hello"}}
-    end
-
-    test "Mixed messages get split and sent to genserver" do
-      os_pid = 42
-      send(self(), {:stdout, os_pid, "00014 Log Info Hello00015 Log Error Error"})
-      send_exit()
-      ProtocolHandler.wait_for_complete(os_pid, "testmonitor", self())
-      assert_received {:"$gen_cast", {:message, "Log Info Hello"}}
-      assert_received {:"$gen_cast", {:message, "Log Error Error"}}
-    end
+  test "Multiple messages where last is incomplete returns last message and :incomplete message returns {:incomplete, message}" do
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Second Created")
+    assert result == :incomplete
+    assert message == "00041 Log Second Created"
   end
 
-  describe "Handshake" do
-    test "Basic handshake works" do
-      fake_os_pid = self()
-
-      writer = fn os_pid, msg -> send(self(), {:write, os_pid, msg}) end
-
-      # We don't strictly need to interleave all the messages, so we fill the
-      # queue with what the handshake expects, run the handshake, then test
-      # whether the output is correct.
-
-      send(self(), {:stdout, fake_os_pid, "00011 Started 1.1"})
-      send(self(), {:stdout, fake_os_pid, "00005 Ready"})
-
-      ProtocolHandler.handle_handshake(
-        fake_os_pid,
-        %{
-          monitor_logical_name: "testmonitor",
-          extra_config: %{test: "value", more: 42}
-        },
-        writer
-      )
-
-      assert_received {:write, ^fake_os_pid, "Version 1.1"}
-      assert_received {:write, ^fake_os_pid, ~s(Config {"more":42,"test":"value"})}
-    end
+  test "Multiple complete messages will succeed with {:ok, nil}" do
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00041 Log Info Created card 6102e3cde5a2f61a44700041 Log Info Create card 6102e3cde5a2f61a4478")
+    assert result == :ok
+    assert message == :nil
   end
 
-  describe "Stepping" do
-    test "If no more steps are available, monitor is asked to exit" do
-      state = %ProtocolHandler.State{steps: [], owner: self()}
-      {:noreply, new_state} = ProtocolHandler.handle_info(:start_step, state)
-      assert state == new_state
-      assert_received {:write, "Exit 0"}
-    end
+  test "Message with CRLF will succeed with {:ok, nil}" do
+    log = "00214 Log Debug statusCode: 500, gotIp: <html>\r\n<head><title>500 Internal Server Error</title></head>\r\n<body>\r\n<center><h1>500 Internal Server Error</h1></center>\r\n</body>\r\n</html>\r\n, theIp: ip-11-1-111-111, not done yet"
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", log)
+    assert result == :ok
+    assert message == :nil
+  end
 
-    test "If a step is available, monitor is asked to run step" do
-      state = %ProtocolHandler.State{
-        steps: [
-          %{check_logical_name: "StepOne", timeout_secs: 60},
-          %{check_logical_name: "StepTwo", timeout_secs: 60}
-        ],
-        owner: self()
-      }
+  test "Message is complete when the number of bytes is correct" do
+    {result, message} = ProtocolHandler.handle_message(self(), "testmonitor", "00007 héllo")
+    assert message == :nil
+    assert result == :ok
+  end
 
-      {:noreply, new_state} = ProtocolHandler.handle_info(:start_step, state)
 
-      assert new_state.steps == [%{check_logical_name: "StepTwo", timeout_secs: 60}]
-      assert new_state.current_step == %{check_logical_name: "StepOne", timeout_secs: 60}
-      refute is_nil(new_state.step_timeout_timer)
-      assert_received {:write, "Run Step StepOne"}
-    end
-
-    test "Step timeout results in error and monitor exit" do
-      state = %ProtocolHandler.State{
-        monitor_logical_name: "testmonitor",
-        steps: [
-          %{check_logical_name: "StepTwo", timeout_secs: 60}
-        ],
-        current_step: %{check_logical_name: "StepOne", timeout_secs: 60},
-        owner: self(),
-        error_report_fun: fn m, c, msg, opts -> send(self(), {:error, m, c, msg, opts}) end
-      }
-      {:stop, :normal, _new_state} = ProtocolHandler.handle_info(:step_timeout, state)
-      assert_received {:write, "Exit 0"}
-
-      assert_received {:error, "testmonitor", "StepOne",
-                       "Timeout: check did not complete within 60 seconds - METRIST_MONITOR_ERROR",
-                       metadata: %{"metrist.source" => "monitor"}, blocked_steps: ["StepTwo"]}
-    end
+  test "Empty log message works" do
+    result = ProtocolHandler.handle_message(self(), "testmonitor", "00010 Log Debug ")
+    assert {:ok, :nil} == result
   end
 
   describe "Metadata handling in monitor results" do
@@ -170,7 +52,7 @@ defmodule Orchestrator.ProtocolHandlerTest do
         step_timeout_timer: nil,
         telemetry_report_fun: fn m, c, t, meta -> send self(), {:telemetry, m, c, t, meta} end,
         error_report_fun: fn m, c, e, meta -> send self(), {:error, m, c, e, meta} end,
-        owner: self()
+        io_handler: self()
       }
     end
 

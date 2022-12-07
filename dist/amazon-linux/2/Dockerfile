@@ -1,6 +1,6 @@
 FROM amazonlinux:2 AS build
 
-ENV REFRESHED_AT 20221206T202000Z
+ENV REFRESHED_AT 20220926T210646Z
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MIX_ENV=prod
@@ -34,4 +34,3 @@ WORKDIR /app
 # our tooling can write to where we need.
 RUN mkdir /.mix && chmod 777 /.mix
 RUN mkdir /.hex && chmod 777 /.hex
-RUN mkdir /.cache && chmod 777 /.cache

@@ -32,7 +32,6 @@ defmodule Orchestrator.Application do
       end,
       Metrist.Agent,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
-      {Task.Supervisor, name: Orchestrator.TaskSupervisor},
       Orchestrator.MonitorSupervisor,
       Orchestrator.IPAServer
     ]
@@ -75,7 +74,7 @@ defmodule Orchestrator.Application do
     String.split(string, ",")
   end
 
-  def set_monitor_logging_metadata(monitor_config) do
+  def set_monitor_metadata(monitor_config) do
     step_names =
       monitor_config.steps
       |> Enum.map(&(&1.check_logical_name))
@@ -83,8 +82,8 @@ defmodule Orchestrator.Application do
     meta = "#{monitor_config.monitor_logical_name}(#{step_names})"
     Logger.metadata(monitor: meta)
   end
-  def set_monitor_logging_metadata(monitor_logical_name, steps) do
-    set_monitor_logging_metadata(%{monitor_logical_name: monitor_logical_name, steps: steps})
+  def set_monitor_metadata(monitor_logical_name, steps) do
+    set_monitor_metadata(%{monitor_logical_name: monitor_logical_name, steps: steps})
   end
 
   defp set_logging("all"), do: Logger.configure(level: :debug)
@@ -107,9 +106,9 @@ defmodule Orchestrator.Application do
 if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
-  defp print_header(), do: :ok
 else
   defp filter_children(children), do: children
+end
 
   defp print_header() do
     build_txt = Path.join(Application.app_dir(:orchestrator, "priv"), "build.txt")
@@ -127,7 +126,6 @@ else
     ===
     """
   end
-end
 
   def translate_config_from_env(env, default \\ nil) do
     case System.get_env(env) do
