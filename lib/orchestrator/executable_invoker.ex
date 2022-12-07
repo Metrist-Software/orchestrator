@@ -6,19 +6,15 @@ defmodule Orchestrator.ExecutableInvoker do
   """
   require Logger
 
-  alias Orchestrator.Invoker
-  @behaviour Invoker
+  @behaviour Orchestrator.Invoker
 
   @impl true
   def invoke(config, opts \\ []) do
     Logger.debug("Invoking #{inspect(config)}")
 
     # :executable is set for a manual monitor run
-    executable =
-      case Keyword.get(opts, :executable, nil) do
-        nil -> get_executable(config)
-        executable -> executable
-      end
+    executable = Keyword.get(opts, :executable, nil)
+    executable = unless executable, do: get_executable(config), else: executable
 
     Logger.debug("Running #{executable}")
 
@@ -26,14 +22,18 @@ defmodule Orchestrator.ExecutableInvoker do
       raise "Executable #{executable} does not exist, exiting!"
     end
 
-    Invoker.run_monitor(config, opts, fn tmp_dir ->
-      Invoker.start_monitor(executable, [cd: Path.dirname(executable)], tmp_dir)
+    Orchestrator.Invoker.run_monitor(config, opts, fn ->
+      Port.open({:spawn_executable, executable}, [
+        :binary,
+        :stderr_to_stdout,
+        cd: Path.dirname(executable)
+      ])
     end)
   end
 
   defp get_executable(config) do
     name = config.run_spec.name
-    dir = Invoker.maybe_download(name)
+    dir = Orchestrator.Invoker.maybe_download(name)
 
     # executable is relative to dir, make it absolute
     dir

@@ -19,7 +19,7 @@ defmodule Orchestrator.ProtocolHandler do
     @type t() :: %__MODULE__{
       monitor_logical_name: String.t(),
       steps: [String.t()],
-      owner: pid,
+      io_handler: pid,
       telemetry_report_fun: function(),
       error_report_fun: function(),
       current_step: String.t(),
@@ -27,30 +27,18 @@ defmodule Orchestrator.ProtocolHandler do
       step_timeout_timer: reference(),
       webhook_waiting_for: String.t()
     }
-    defstruct [:monitor_logical_name, :steps, :owner, :telemetry_report_fun, :error_report_fun,
+    defstruct [:monitor_logical_name, :steps, :io_handler, :telemetry_report_fun, :error_report_fun,
                :current_step, :step_start_time, :step_timeout_timer, :webhook_waiting_for]
   end
 
-  @doc """
-  Run the Orchestrator protocol for the given configuration and using the running monitor.
-
-  This will setup handshake, handle timeouts, and generally do the whole processing associated
-  with the protocol as documented in [the protocol documentation](docs/protocol.md).
-
-  - `config` is the monitor configuration.
-  - `os_pid` refers to a process that has been started using Erlexec.
-  - `opts` can optionally override the reporting callbacks for errors and telemetry
-
-  The code is implemented using a genserver process that does a lot of the actual I/O and
-  the calling process blocking until the monitor is done. In this way, we can easily handle
-  timeouts, etcetera, but it does complicate things a little bit.
-  """
-  def run_protocol(config, os_pid, opts \\ []) do
-    Orchestrator.Application.set_monitor_logging_metadata(config)
+  def run_protocol(config, port, opts \\ []) do
+    Orchestrator.Application.set_monitor_metadata(config)
     error_report_fun = Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/4)
     telemetry_report_fun = Keyword.get(opts, :telemetry_report_fun, &Orchestrator.APIClient.write_telemetry/4)
+    os_pid = Keyword.get(Port.info(port), :os_pid)
 
-    :ok = handle_handshake(os_pid, config)
+    ref = Port.monitor(port)
+    :ok = handle_handshake(port, config)
     {:ok, pid} =
       GenServer.start_link(__MODULE__, {config.monitor_logical_name,
                                         config.steps,
@@ -58,62 +46,49 @@ defmodule Orchestrator.ProtocolHandler do
                                         telemetry_report_fun,
                                         error_report_fun,
                                         os_pid})
+    result = wait_for_complete(port, ref, config.monitor_logical_name, pid)
 
-    Process.monitor(pid)
-    result = wait_for_complete(os_pid, config.monitor_logical_name, pid)
-
-    # There's a race here, and GenServer.stop takes its business seriously: if we try to
-    # stop an already stopped process, it'll end up exiting us. This is one of the rare
-    # instances where we don't care about the outcome (either we stop it or the process stopped
-    # itself, we do not care), so Process.spawn/2 is like the correct solution.
-    if Process.alive?(pid), do: Process.spawn(fn -> GenServer.stop(pid) end, [])
+    # Don't trust anything to exit voluntarily
+    kill_or_close(port)
+    if Process.alive?(pid), do: GenServer.stop(pid)
 
     Logger.info("Monitor is complete")
     result
   end
 
-  # A lot of functions from here on are public for testing.
-
-  @doc false
-  def wait_for_complete(os_pid, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
+  defp wait_for_complete(port, ref, monitor_logical_name, protocol_handler, previous_partial_message \\ "") do
     receive do
-      {:DOWN, _ref, :process, _object, reason} ->
-        Logger.info("Protocol process completed with reason #{inspect reason}")
+      {:DOWN, ^ref, :port, ^port, reason} ->
+        Logger.info(
+          "Received DOWN message, reason: #{inspect(reason)}, completing invocation."
+        )
         :ok
 
-      {:stdout, ^os_pid, data} ->
+      {^port, {:data, data}} ->
         case handle_message(protocol_handler, monitor_logical_name, previous_partial_message <> data) do
           {:incomplete, message} ->
             # append to returned partial message as this partial piece was not complete
-            wait_for_complete(os_pid, monitor_logical_name, protocol_handler, message)
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler, message)
           {:ok, _} ->
             # call wait_for_complete normally
-            wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
           {:error, message} ->
             Logger.warn("Skipping unparsable message: #{message}")
             # call wait_for_complete normally but skip the bad message
-            wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
+            wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
         end
 
-      {:stderr, ^os_pid, data} ->
-        Logger.info("monitor stderr: #{data}")
-        wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
-
       {:write, message} ->
-        write(os_pid, message)
-        wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
+        Orchestrator.ProtocolHandler.write(port, message)
+        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
 
       :force_exit ->
         Logger.error("Monitor did not complete after receiving Exit command in #{@exit_timeout}ms, killing it")
         {:error, :timeout}
 
-      :exit_for_test ->
-        # Unit testing only!
-        :test_exit_ok
-
       msg ->
         Logger.debug("Ignoring message #{inspect(msg)}")
-        wait_for_complete(os_pid, monitor_logical_name, protocol_handler)
+        wait_for_complete(port, ref, monitor_logical_name, protocol_handler)
     after
       @max_monitor_runtime ->
         Logger.error("Monitor did not complete in time, killing it")
@@ -121,7 +96,6 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
-  @doc false
   def handle_message(pid, monitor_logical_name, message) do
     case Integer.parse(message) do
       {len, rest} ->
@@ -149,26 +123,25 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
-  @doc false
-  def handle_handshake(os_pid, config, writer \\ &write/2) do
-    matches = expect(os_pid, ~r/Started ([0-9]+)\.([0-9]+)/)
+  defp handle_handshake(port, config) do
+    matches = expect(port, ~r/Started ([0-9]+)\.([0-9]+)/)
     {major, _} = Integer.parse(Enum.at(matches, 1))
     {minor, _} = Integer.parse(Enum.at(matches, 2))
     assert_compatible(config.monitor_logical_name, major, minor)
-    writer.(os_pid, "Version #{@major}.#{@minor}")
-    expect(os_pid, ~r/Ready/)
+    write(port, "Version #{@major}.#{@minor}")
+    expect(port, ~r/Ready/)
     json = Jason.encode!(config.extra_config || %{})
-    writer.(os_pid, "Config #{json}")
+    write(port, "Config #{json}")
     :ok
   end
 
   # Server side of protocol handling.
 
   @impl true
-  def init({monitor_logical_name, steps, owner, telemetry_report_fun, error_report_fun, os_pid}) do
-    Orchestrator.Application.set_monitor_logging_metadata(monitor_logical_name, steps)
+  def init({monitor_logical_name, steps, io_handler, telemetry_report_fun, error_report_fun, os_pid}) do
+    Orchestrator.Application.set_monitor_metadata(monitor_logical_name, steps)
     Logger.metadata(os_pid: os_pid)
-    {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, owner: owner, telemetry_report_fun: telemetry_report_fun, error_report_fun: error_report_fun}}
+    {:ok, %State{monitor_logical_name: monitor_logical_name, steps: steps, io_handler: io_handler, telemetry_report_fun: telemetry_report_fun, error_report_fun: error_report_fun}}
   end
 
   @impl true
@@ -344,12 +317,11 @@ defmodule Orchestrator.ProtocolHandler do
   defp send_exit(state) do
     do_cleanup = if Orchestrator.Application.do_cleanup?(), do: "1", else: "0"
     send_msg("Exit #{do_cleanup}", state)
-    Process.send_after(state.owner, :force_exit, @exit_timeout)
+    Process.send_after(state.io_handler, :force_exit, @exit_timeout)
   end
 
   defp send_msg(msg, state) do
-    # Done through the owner so we don't start writing in the middle of reads.
-    send state.owner, {:write, msg}
+    send state.io_handler, {:write, msg}
   end
 
   defp start_step() do
@@ -374,14 +346,17 @@ defmodule Orchestrator.ProtocolHandler do
     do: raise("#{monitor_logical_name}: Incompatible minor version, got #{minor}, want >= #{@minor}")
   defp assert_compatible(_monitor_logical_name, _major, _minor), do: :ok
 
-  defp expect(os_pid, regex) do
-    msg = read(os_pid)
+  # Technically the protocol is not dependent on using a Port and this stuff should move elsewhere. However,
+  # for now it is convenient to keep things together that are protocol-related.
+
+  defp expect(port, regex) do
+    msg = read(port)
     Regex.run(regex, msg)
   end
 
-  defp read(os_pid) do
+  defp read(port) do
     receive do
-      {:stdout, ^os_pid, data} ->
+      {^port, {:data, data}} ->
         Logger.debug("Received data: #{inspect data}")
         case Integer.parse(data) do
           {len, rest} ->
@@ -392,7 +367,7 @@ defmodule Orchestrator.ProtocolHandler do
             String.trim_leading(rest)
           :error ->
             Logger.info("Ignoring monitor output: #{data}")
-            read(os_pid)
+            read(port)
         end
     after
       60_000->
@@ -400,15 +375,43 @@ defmodule Orchestrator.ProtocolHandler do
     end
   end
 
-  def write(os_pid, msg) do
+  def write(port, msg) do
     len =
       msg
       |> byte_size()
       |> Integer.to_string()
       |> String.pad_leading(5, "0")
     msg = len <> " " <> msg
-    :exec.send(os_pid, msg)
+    Port.command(port, msg)
     Logger.debug("Sent message: #{inspect msg}")
+  end
+
+  # Monitors should not have to do any shutdown activities by the time
+  # we really want to force quit them, so if a port has an associated
+  # OS process, we just send it a KILL signal to guarantee success. Otherwise,
+  # we close the port and hope for the best.
+  defp kill_or_close(port) do
+    maybe_info = Port.info(port)
+    maybe_pid = Keyword.get((maybe_info || []), :os_pid)
+    case {maybe_info, maybe_pid} do
+      {nil, _} ->
+        Logger.info("Port already closed")
+      {_, nil} ->
+        Logger.info("No OS process id associated with port, just closing it")
+        Port.close(port)
+      {_, pid} ->
+        Logger.info("Port is associated with OS process #{maybe_pid}, killing it")
+        # Wrapped System.cmd/2 call with try catch since it raises an ` Erlang error: :enoent` occasionally
+        try do
+          # A kill -9 may not get rid of subprocesses of the monitor. Do a two step kill.
+          kill = fn sig -> System.cmd("kill", ["-#{sig}", "#{pid}"]) end
+          kill.(15)
+          Process.sleep(1_000)
+          kill.(9)
+        rescue
+          e -> Logger.error("Got error killing process #{inspect(pid)}: #{Exception.format(:error, e, __STACKTRACE__)}")
+        end
+    end
   end
 
   # Public for testing
