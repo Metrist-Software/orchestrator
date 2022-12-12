@@ -42,7 +42,7 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def api_token, do: Application.get_env(:orchestrator, :instance_id)
+  def api_token, do: Application.get_env(:orchestrator, :api_token)
 
   def do_cleanup?, do: System.get_env("METRIST_CLEANUP_ENABLED") != nil
 
