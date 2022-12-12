@@ -227,6 +227,12 @@ DetectOS() {
 
 }
 
+INSTANCE_NAME=
+GetInstanceName() {
+    echo -n "Please enter your Instance name: "; read -r INSTANCE_NAME
+    echo
+}
+
 API_KEY=
 GetAPIKey() {
     cat <<EOF
@@ -256,6 +262,7 @@ InstallApt() {
 
 # Added by installation script.
 METRIST_API_TOKEN=$API_KEY
+METRIST_INSTANCE_ID=$INSTANCE_NAME
 EOF
     $SUDO systemctl enable --now metrist-orchestrator
     $SUDO systemctl start metrist-orchestrator
@@ -279,6 +286,7 @@ InstallYum() {
 
 # Added by installation script.
 METRIST_API_TOKEN=$API_KEY
+METRIST_INSTANCE_ID=$INSTANCE_NAME
 EOF
     $SUDO systemctl enable --now metrist-orchestrator
     $SUDO systemctl start metrist-orchestrator
@@ -289,6 +297,7 @@ Main() {
     SetTty
     DetectOS
     GetAPIKey
+    GetInstanceName
 
     echo "Installing Metrist Orchestrator for $OS $VERSION."
 
