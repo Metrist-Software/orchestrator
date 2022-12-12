@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+#
+#  This Vagrantfile is provided to make testing on a certain distribution easier.
+#  See https://developer.hashicorp.com/vagrant/docs/installation for instructions.
+#
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2204"
+  # Libvirt is preferred given issues around VirtualBox, Oracle licensing, and
+  # commercial use we need to sort out first.
+  config.vm.provider "libvirt" do |vm|
+    vm.memory = "8192"
+    vm.cpus = 8
+    vm.memorybacking :access, :mode => "shared"
+  end
+  config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    DEBIAN_FRONTEND=noninteractive
+
+    # Basic stuff
+    apt-get update
+    apt-get install -y build-essential curl sudo zstd git curl unzip wget pkg-config ripgrep entr
+
+    # Elixir/Erlang
+    wget https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc; apt-key add erlang_solutions.asc
+    wget https://packages.erlang-solutions.com/erlang/debian/pool/esl-erlang_25.0.3-1~ubuntu~jammy_amd64.deb
+    wget https://packages.erlang-solutions.com/erlang/debian/pool/elixir_1.13.4-1~ubuntu~focal_all.deb
+    apt install -y ./*.deb
+
+    # Quality-of-life tweaks to login shells
+    cat >>/home/vagrant/.profile <<EOF
+ulimit -n 1048576
+EOF
+  SHELL
+end
