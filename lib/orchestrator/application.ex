@@ -60,7 +60,7 @@ defmodule Orchestrator.Application do
 
   def aws_region, do: System.get_env("AWS_REGION", "fake-dev-region")
 
-  def instance, do: Application.get_env(:orchestrator, :instance_id)
+  def instance, do: Application.get_env(:orchestrator, :instance_id) || "fake-dev-instance"
 
   def slack_api_token, do: Application.get_env(:orchestrator, :slack_api_token)
 
