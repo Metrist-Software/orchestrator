@@ -229,7 +229,13 @@ DetectOS() {
 
 INSTANCE_NAME=
 GetInstanceName() {
-    echo -n "Please enter your Instance name: "; read -r INSTANCE_NAME
+    cat <<EOF
+
+    We distinguish collected metrics and error data by "instance name", which can be a hostname,
+    a cloud region, or any other tag you want to use for grouping data.
+
+EOF
+    echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
     echo
 }
 
