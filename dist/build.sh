@@ -11,7 +11,7 @@ ver=$2
 base=$(cd $(dirname $0); /bin/pwd)
 image=public.ecr.aws/metrist/dist-$dist:$ver-latest
 cd $base/..
-rm -rf _build dep
+rm -rf _build deps
 
 docker run -v $PWD:$PWD --user $UID $image $base/do-build.sh $PWD $dist $ver
 

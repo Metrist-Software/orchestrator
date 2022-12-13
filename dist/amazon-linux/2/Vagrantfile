@@ -1,0 +1,27 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby -*-
+#
+#  This Vagrantfile is provided to make testing on a certain distribution easier.
+#  See https://developer.hashicorp.com/vagrant/docs/installation for instructions.
+#
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/amazonlinux-2"
+  # Libvirt is preferred given issues around VirtualBox, Oracle licensing, and
+  # commercial use we need to sort out first.
+  config.vm.provider "libvirt" do |vm|
+    vm.memory = "8192"
+    vm.cpus = 8
+    vm.memorybacking :access, :mode => "shared"
+  end
+  config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # Basic stuff
+    yum install -y curl sudo zstd git curl unzip wget
+
+    # Quality-of-life tweaks to login shells go here
+    cat >>/home/vagrant/.profile <<EOF
+ulimit -n 1048576
+EOF
+  SHELL
+end

@@ -33,3 +33,4 @@ priv/runner
 .vscode/
 *.deb
 pkg/
+.vagrant
