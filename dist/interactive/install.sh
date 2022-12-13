@@ -227,6 +227,18 @@ DetectOS() {
 
 }
 
+INSTANCE_NAME=
+GetInstanceName() {
+    cat <<EOF
+
+    We distinguish collected metrics and error data by "instance name", which can be a hostname,
+    a cloud region, or any other tag you want to use for grouping data.
+
+EOF
+    echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
+    echo
+}
+
 API_KEY=
 GetAPIKey() {
     cat <<EOF
@@ -256,6 +268,7 @@ InstallApt() {
 
 # Added by installation script.
 METRIST_API_TOKEN=$API_KEY
+METRIST_INSTANCE_ID=$INSTANCE_NAME
 EOF
     $SUDO systemctl enable --now metrist-orchestrator
     $SUDO systemctl start metrist-orchestrator
@@ -279,6 +292,7 @@ InstallYum() {
 
 # Added by installation script.
 METRIST_API_TOKEN=$API_KEY
+METRIST_INSTANCE_ID=$INSTANCE_NAME
 EOF
     $SUDO systemctl enable --now metrist-orchestrator
     $SUDO systemctl start metrist-orchestrator
@@ -289,6 +303,7 @@ Main() {
     SetTty
     DetectOS
     GetAPIKey
+    GetInstanceName
 
     echo "Installing Metrist Orchestrator for $OS $VERSION."
 

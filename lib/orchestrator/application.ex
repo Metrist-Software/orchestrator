@@ -42,7 +42,7 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def instance, do: System.get_env("METRIST_INSTANCE_ID", "fake-dev-instance")
+  def api_token, do: Application.get_env(:orchestrator, :api_token)
 
   def do_cleanup?, do: System.get_env("METRIST_CLEANUP_ENABLED") != nil
 
@@ -60,7 +60,7 @@ defmodule Orchestrator.Application do
 
   def aws_region, do: System.get_env("AWS_REGION", "fake-dev-region")
 
-  def api_token, do: Application.get_env(:orchestrator, :api_token)
+  def instance, do: Application.get_env(:orchestrator, :instance_id) || "fake-dev-instance"
 
   def slack_api_token, do: Application.get_env(:orchestrator, :slack_api_token)
 
