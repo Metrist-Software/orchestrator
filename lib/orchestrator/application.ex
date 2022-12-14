@@ -44,25 +44,6 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
-  defp ensure_required_envs!() do
-    required_envs = [:instance_id, :api_token]
-
-    missing_envs = Enum.map(required_envs, fn key ->
-      if is_nil(Application.get_env(:orchestrator, key)), do: key
-    end)
-    |> Enum.reject(&is_nil/1)
-
-    unless Enum.empty?(missing_envs) do
-      envs_message = missing_envs
-      |> Enum.map(& "• #{config_key_to_env(&1)}")
-      |> Enum.join("\n")
-      message = "The following required environment variables are not set:\n#{envs_message}"
-
-      Logger.error(message)
-      System.stop(1)
-    end
-  end
-
   def api_token, do: Application.get_env(:orchestrator, :api_token)
 
   def do_cleanup?, do: System.get_env("METRIST_CLEANUP_ENABLED") != nil
@@ -129,6 +110,7 @@ if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
   defp print_header(), do: :ok
+  defp ensure_required_envs!(), do: nil
 else
   defp filter_children(children), do: children
 
@@ -147,6 +129,25 @@ else
     #{build}
     ===
     """
+  end
+
+  defp ensure_required_envs!() do
+    required_envs = [:instance_id, :api_token]
+
+    missing_envs = Enum.map(required_envs, fn key ->
+      if is_nil(Application.get_env(:orchestrator, key)), do: key
+    end)
+    |> Enum.reject(&is_nil/1)
+
+    unless Enum.empty?(missing_envs) do
+      envs_message = missing_envs
+      |> Enum.map(& "• #{config_key_to_env(&1)}")
+      |> Enum.join("\n")
+      message = "The following required environment variables are not set:\n#{envs_message}"
+
+      Logger.error(message)
+      System.stop(1)
+    end
   end
 end
 
