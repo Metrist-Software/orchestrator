@@ -19,6 +19,8 @@ defmodule Orchestrator.Application do
 
     configure_configs()
 
+    ensure_required_envs!()
+
     rg_string = System.get_env("METRIST_RUN_GROUPS", "")
     run_groups = parse_run_groups(rg_string)
 
@@ -42,6 +44,25 @@ defmodule Orchestrator.Application do
     Supervisor.start_link(children, opts)
   end
 
+  defp ensure_required_envs!() do
+    required_envs = [:instance_id, :api_token]
+
+    missing_envs = Enum.map(required_envs, fn key ->
+      if is_nil(Application.get_env(:orchestrator, key)), do: key
+    end)
+    |> Enum.reject(&is_nil/1)
+
+    unless Enum.empty?(missing_envs) do
+      envs_message = missing_envs
+      |> Enum.map(& "• #{config_key_to_env(&1)}")
+      |> Enum.join("\n")
+      message = "The following required environment variables are not set:\n#{envs_message}"
+
+      Logger.error(message)
+      System.stop(1)
+    end
+  end
+
   def api_token, do: Application.get_env(:orchestrator, :api_token)
 
   def do_cleanup?, do: System.get_env("METRIST_CLEANUP_ENABLED") != nil
@@ -60,7 +81,7 @@ defmodule Orchestrator.Application do
 
   def aws_region, do: System.get_env("AWS_REGION", "fake-dev-region")
 
-  def instance, do: Application.get_env(:orchestrator, :instance_id) || "fake-dev-instance"
+  def instance, do: Application.get_env(:orchestrator, :instance_id)
 
   def slack_api_token, do: Application.get_env(:orchestrator, :slack_api_token)
 
@@ -137,5 +158,12 @@ end
       token ->
         Orchestrator.Configuration.translate_value(token)
     end
+  end
+
+  defp config_key_to_env(key) do
+    key = Atom.to_string(key)
+    |> String.upcase()
+
+    "METRIST_#{key}"
   end
 end
