@@ -142,7 +142,7 @@ end
   def translate_config_from_env!(env) do
     case System.get_env(env) do
       nil ->
-        throw("Missing required environment variable: #{env}")
+        raise "Missing required environment variable: #{env}"
       token ->
         Orchestrator.Configuration.translate_value(token)
     end
