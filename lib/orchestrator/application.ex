@@ -19,8 +19,6 @@ defmodule Orchestrator.Application do
 
     configure_configs()
 
-    ensure_required_envs!()
-
     rg_string = System.get_env("METRIST_RUN_GROUPS", "")
     run_groups = parse_run_groups(rg_string)
 
@@ -110,7 +108,6 @@ if Mix.env() == :test do
   # For now, the simplest way to make tests just do tests, not configure/start anything.
   defp filter_children(_children), do: []
   defp print_header(), do: :ok
-  defp ensure_required_envs!(), do: nil
 else
   defp filter_children(children), do: children
 
@@ -130,25 +127,6 @@ else
     ===
     """
   end
-
-  defp ensure_required_envs!() do
-    required_envs = [:instance_id, :api_token]
-
-    missing_envs = Enum.map(required_envs, fn key ->
-      if is_nil(Application.get_env(:orchestrator, key)), do: key
-    end)
-    |> Enum.reject(&is_nil/1)
-
-    unless Enum.empty?(missing_envs) do
-      envs_message = missing_envs
-      |> Enum.map(& "• #{config_key_to_env(&1)}")
-      |> Enum.join("\n")
-      message = "The following required environment variables are not set:\n#{envs_message}"
-
-      Logger.error(message)
-      System.stop(1)
-    end
-  end
 end
 
   def translate_config_from_env(env, default \\ nil) do
@@ -161,10 +139,12 @@ end
     end
   end
 
-  defp config_key_to_env(key) do
-    key = Atom.to_string(key)
-    |> String.upcase()
-
-    "METRIST_#{key}"
+  def translate_config_from_env!(env) do
+    case System.get_env(env) do
+      nil ->
+        throw("Missing required environment variable: #{env}")
+      token ->
+        Orchestrator.Configuration.translate_value(token)
+    end
   end
 end
