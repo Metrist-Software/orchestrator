@@ -60,7 +60,7 @@ defmodule Orchestrator.Application do
 
   def aws_region, do: System.get_env("AWS_REGION", "fake-dev-region")
 
-  def instance, do: Application.get_env(:orchestrator, :instance_id) || "fake-dev-instance"
+  def instance, do: Application.get_env(:orchestrator, :instance_id)
 
   def slack_api_token, do: Application.get_env(:orchestrator, :slack_api_token)
 
@@ -134,6 +134,15 @@ end
       nil ->
         default
 
+      token ->
+        Orchestrator.Configuration.translate_value(token)
+    end
+  end
+
+  def translate_config_from_env!(env) do
+    case System.get_env(env) do
+      nil ->
+        raise "Missing required environment variable: #{env}"
       token ->
         Orchestrator.Configuration.translate_value(token)
     end
