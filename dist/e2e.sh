@@ -35,8 +35,8 @@ EOF
 
 sudo journalctl -f -n 0 -u metrist-orchestrator.service &
 tail_pid=$!
-sleep 45
 trap "kill $tail_pid" INT TERM HUP QUIT EXIT
+sleep 45
 
 success_count=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" | grep -c "All steps done, asking monitor to exit")
 
