@@ -22,6 +22,7 @@ jobs:
     # See https://github.com/actions/virtual-environments/issues/433 for more
     # information
     runs-on: macos-12
+    timeout-minutes: 30 # If something hangs, timeout the job in 30 so we aren't billed for 6h * distributions * 10 (mac-os minute multiplier)
     needs:
       - setup
     permissions:
@@ -48,19 +49,31 @@ jobs:
           echo "TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
 
       - name: Cache Vagrant box
+        # Caches that are not accessed within the last week will be evicted
+        # If any or all of the vagrant files change a lot in a short period of time
+        # the cache may hit its 10GB limit at which point it will just start trimming
+        # cached items in order of oldest to newest. Worst case it will re-download a vagrant box
+        # (see https://github.com/actions/cache#cache-limits)
         uses: actions/cache@v3
         with:
           path: ~/.vagrant.d/boxes
           key: ${{ runner.os }}-vagrant-${{ matrix.dist }}-${{ hashFiles('**/Vagrantfile') }}
+
+      - name: Provision e2e environment
+        run: |
+          cd ./dist/${{ matrix.dist }}
+          vagrant box update
+          vagrant up --provision
 
       - name: Run e2e
         env:
           DIST: ${{ matrix.dist }}
         run: |
           cd ./dist/${{ matrix.dist }}
-          vagrant box update
-          vagrant up --provision
           vagrant upload ../../e2e.sh
           vagrant ssh -c "TEST_API_TOKEN=$TEST_API_TOKEN DIST=$DIST /bin/bash /home/vagrant/e2e.sh"
-          vagrant destroy -f
 
+      - name: Destroy e2e environment
+        run: |
+          cd ./dist/${{ matrix.dist }}
+          vagrant destroy -f
