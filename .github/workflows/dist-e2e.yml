@@ -24,13 +24,7 @@ jobs:
         run: |
           cd ./dist/ubuntu/22.04
           vagrant box update
-
-      - name: Bring up the VM
-        run: |
           vagrant up --provision
+          vagrant ssh -c "echo 'hello world!'"
+          vagrant destroy -f
 
-      - name: Run e2e
-        run: vagrant ssh -c "echo 'hello world!'"
-
-      - name: Destroy the VM
-        run: vagrant destroy -f
