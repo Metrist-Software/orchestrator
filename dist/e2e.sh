@@ -35,8 +35,9 @@ EOF
 
 sleep 45
 
-sudo journalctl --unit metrist-orchestrator --since "1m ago"
-success_count=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" | grep -c "All steps done, asking monitor to exit")
+logs=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" --no-pager)
+echo "$logs"
+success_count=$(echo "$logs" | grep -c "All steps done, asking monitor to exit")
 
 if [ $success_count -gt 0 ]; then
     RemoveOrchestrator
