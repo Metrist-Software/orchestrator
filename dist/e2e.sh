@@ -33,6 +33,8 @@ $TEST_API_TOKEN
 e2e_test_$DIST
 EOF
 
+sleep 45
+
 sudo journalctl --unit metrist-orchestrator --since "1m ago"
 success_count=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" | grep -c "All steps done, asking monitor to exit")
 
