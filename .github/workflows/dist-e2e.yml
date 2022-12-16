@@ -35,7 +35,7 @@ jobs:
           path: ~/.vagrant.d/boxes
           key: ${{ runner.os }}-vagrant-${{ hashFiles('dist/${{ matrix.dist }}/Vagrantfile') }}
           restore-keys: |
-            ${{ runner.os }}-vagrant-${{ hashFiles('dist/${{ matrix.dist }}/Vagrantfile')
+            ${{ runner.os }}-vagrant-${{ hashFiles('dist/${{ matrix.dist }} }}/Vagrantfile')
 
       - name: Run e2e
         run: |
