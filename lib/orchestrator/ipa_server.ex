@@ -16,13 +16,6 @@ defmodule Orchestrator.IPAServer do
       "host" => ~r(app.*\.metrist\.io),
       "url" => ~r(api/agent/run-config)
     },
-    # Note that this has special support in the IPA agent to
-    # exclude the sending of our own telemetry
-    {"metrist", "SendTelemetry"} => %{
-      "method" => ~r(POST),
-      "host" => ~r(app.*\.metrist\.io),
-      "url" => ~r(api/agent/telemetry)
-    },
     {"metrist", "GetLatestMonitorBuild"} => %{
       "method" => ~r(GET),
       "host" => ~r(monitor-distributions.metrist.io),
