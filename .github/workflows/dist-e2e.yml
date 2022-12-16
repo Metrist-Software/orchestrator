@@ -21,11 +21,12 @@ jobs:
             ${{ runner.os }}-vagrant-
 
       - name: Vagrant base box update
-        run: vagrant box update
+        run: |
+          cd ./dist/ubuntu/22.04
+          vagrant box update
 
       - name: Bring up the VM
         run: |
-          cd ./dist/ubuntu/22.04
           vagrant up --provision
 
       - name: Run e2e
