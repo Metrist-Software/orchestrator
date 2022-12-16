@@ -10,17 +10,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - id: get-all-dists
-        name: Get build chunks
+        name: Get all distributions
         run: |
           cd dist
           echo "dists=$(ls -ld */* | grep ^d | awk '{print $9}' | jq -cnMR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
   e2e:
-    # We use this virtual environment because it supports nested virtualization.
+    # We use this runner because it is currently the only runner that supports nested virtualization.
     # See https://github.com/actions/virtual-environments/issues/433 for more
     # information
     runs-on: macos-12
     needs:
       - setup
+    permissions:
+      id-token: write
+      contents: read      
     strategy:
       fail-fast: false
       matrix: 
@@ -28,6 +31,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-actions-shared-dist-writer
+          aws-region: us-west-2
+
+      - name: Import e2e API TOKEN
+        run: |
+          e2e_api_token=aws secretsmanager get-secret-value --secret-id /prod/gh-actions/orchestrator-e2e-token --region us-west-2 | jq -r '.SecretString'
+          echo "::add-mask::${e2e_api_token}"
+          echo "$TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
 
       - name: Cache Vagrant box
         uses: actions/cache@v3
@@ -41,12 +56,14 @@ jobs:
         run: |
           cd ./dist/${{ matrix.dist }}
           echo "Running ${{matrix.dist}}"
+          echo "ENSURE MASKING $TEST_API_TOKEN"
 
       # - name: full e2e
       #   run: |
       #     cd ./dist/${{ matrix.dist }}
       #     vagrant box update
       #     vagrant up --provision
+      #     vagrant upload ../../e2e.sh
       #     vagrant ssh -c "echo 'hello world!'"
       #     vagrant destroy -f
 
