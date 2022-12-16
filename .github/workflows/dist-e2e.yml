@@ -3,28 +3,50 @@ on:
     branches: [distribution-e2e-tests]
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      all-dists: ${{ steps.get-all-dists.outputs.dists }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: get-all-dists
+        name: Get build chunks
+        run: |
+          cd dist
+          echo "dists=$(ls -ld */* | grep ^d | awk '{print $9}' | jq -cnMR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
   e2e:
     # We use this virtual environment because it supports nested virtualization.
     # See https://github.com/actions/virtual-environments/issues/433 for more
     # information
     runs-on: macos-12
+    needs:
+      - setup
+    strategy:
+      fail-fast: false
+      matrix: 
+        dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Cache Vagrant boxes
+      - name: Cache Vagrant box
         uses: actions/cache@v3
         with:
           path: ~/.vagrant.d/boxes
-          key: ${{ runner.os }}-vagrant-${{ hashFiles('**/Vagrantfile') }}
+          key: ${{ runner.os }}-vagrant-${{ hashFiles('dist/${{ matrix.dist }}/Vagrantfile') }}
           restore-keys: |
-            ${{ runner.os }}-vagrant-
+            ${{ runner.os }}-vagrant-${{ hashFiles('dist/${{ matrix.dist }}/Vagrantfile')
 
-      - name: Test nested virtualization
+      - name: Run e2e
         run: |
-          cd ./dist/ubuntu/22.04
-          vagrant box update
-          vagrant up --provision
-          vagrant ssh -c "echo 'hello world!'"
-          vagrant destroy -f
+          cd ./dist/${{ matrix.dist }}
+          echo "Running ${{matrix.dist}}"
+
+      # - name: full e2e
+      #   run: |
+      #     cd ./dist/${{ matrix.dist }}
+      #     vagrant box update
+      #     vagrant up --provision
+      #     vagrant ssh -c "echo 'hello world!'"
+      #     vagrant destroy -f
 
