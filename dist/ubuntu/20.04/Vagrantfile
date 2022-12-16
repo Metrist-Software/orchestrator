@@ -9,8 +9,8 @@ Vagrant.configure("2") do |config|
   # Libvirt is preferred given issues around VirtualBox, Oracle licensing, and
   # commercial use we need to sort out first.
   config.vm.provider "libvirt" do |vm|
-    vm.memory = "4096"
-    vm.cpus = 1
+    vm.memory = "8192"
+    vm.cpus = 2
     vm.memorybacking :access, :mode => "shared"
   end
   config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"

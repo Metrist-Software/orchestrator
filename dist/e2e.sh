@@ -33,12 +33,7 @@ $TEST_API_TOKEN
 e2e_test_$DIST
 EOF
 
-sudo journalctl -f -n 0 -u metrist-orchestrator.service &
-tail_pid=$!
-trap "sudo kill $tail_pid" INT TERM HUP QUIT EXIT # just in case this gets interrupted
-sleep 45
-sudo kill $tail_pid
-
+sudo journalctl --unit metrist-orchestrator --since "1m ago"
 success_count=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" | grep -c "All steps done, asking monitor to exit")
 
 if [ $success_count -gt 0 ]; then
