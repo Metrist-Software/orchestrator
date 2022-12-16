@@ -20,7 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-vagrant-
 
-      - name: Vagrant base box update
+      - name: Test nested virtualization
         run: |
           cd ./dist/ubuntu/22.04
           vagrant box update
