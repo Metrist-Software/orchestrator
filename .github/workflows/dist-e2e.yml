@@ -40,7 +40,7 @@ jobs:
 
       - name: Import e2e API TOKEN
         run: |
-          e2e_api_token=aws secretsmanager get-secret-value --secret-id /prod/gh-actions/orchestrator-e2e-token --region us-west-2 | jq -r '.SecretString'
+          e2e_api_token=$(aws secretsmanager get-secret-value --secret-id /prod/gh-actions/orchestrator-e2e-token --region us-west-2 | jq -r '.SecretString')
           echo "::add-mask::${e2e_api_token}"
           echo "$TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
 
