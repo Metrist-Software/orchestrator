@@ -23,6 +23,9 @@ RemoveOrchestrator(){
 
 Main() {
 
+# Sanitize DIST env var before using it for instance id - remove forward slashes and periods
+DIST=${DIST//[\/\.]/}
+
 curl https://dist.metrist.io/install.sh >/tmp/install.sh
 
 cat <<EOF | bash /tmp/install.sh
