@@ -60,6 +60,6 @@ jobs:
           vagrant box update
           vagrant up --provision
           vagrant upload ../../e2e.sh
-          vagrant ssh -c "TEST_API_TOKEN=$TEST_API_TOKEN /bin/bash /home/vagrant/e2e.sh"
+          vagrant ssh -c "TEST_API_TOKEN=$TEST_API_TOKEN DIST=$DIST /bin/bash /home/vagrant/e2e.sh"
           vagrant destroy -f
 
