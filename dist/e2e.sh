@@ -33,8 +33,10 @@ $TEST_API_TOKEN
 e2e_test_$DIST
 EOF
 
-# wait 45 seconds
+sudo journalctl -f -n 0 -u metrist-orchestrator.service &
+tail_pid=$!
 sleep 45
+kill $tail_pid
 
 success_count=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" | grep -c "All steps done, asking monitor to exit")
 
