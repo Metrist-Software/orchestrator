@@ -35,7 +35,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::147803588724:role/github-actions-shared-dist-writer
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
           aws-region: us-west-2
 
       - name: Import e2e API TOKEN
