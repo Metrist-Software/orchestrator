@@ -23,7 +23,7 @@ RemoveOrchestrator(){
 
 Main() {
 
-# Sanitize DIST env var before using it for instance id - remove forward slashes and periods
+# Sanitize DIST env var before using it for instance id - remove forward slashes, hyphens, and periods
 DIST=${DIST//[\/\.\-]/}
 
 curl https://dist.metrist.io/install.sh >/tmp/install.sh

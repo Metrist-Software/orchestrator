@@ -48,9 +48,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.vagrant.d/boxes
-          key: ${{ runner.os }}-vagrant-${{ hashFiles('**/${{ matrix.dist }}/Vagrantfile') }}
-          restore-keys: |
-            ${{ runner.os }}-vagrant-${{ hashFiles('**/${{ matrix.dist }}/Vagrantfile') }}
+          key: ${{ runner.os }}-vagrant-${{ matrix.dist }}-${{ hashFiles('**/Vagrantfile') }}
 
       - name: Run e2e
         env:
