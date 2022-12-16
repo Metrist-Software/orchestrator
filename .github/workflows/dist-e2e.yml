@@ -42,7 +42,7 @@ jobs:
         run: |
           e2e_api_token=$(aws secretsmanager get-secret-value --secret-id /prod/gh-actions/orchestrator-e2e-token --region us-west-2 | jq -r '.SecretString')
           echo "::add-mask::${e2e_api_token}"
-          echo "$TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
+          echo "TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
 
       - name: Cache Vagrant box
         uses: actions/cache@v3
