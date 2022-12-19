@@ -7,9 +7,25 @@ defmodule Orchestrator.RetryQueue do
   require Logger
   alias __MODULE__
 
+  @typedoc """
+  The callback that does the actual action that needs to be retried
+  """
   @type callback_mfa :: {module(), atom(), list()}
+
+
+  @typedoc """
+  A `{module, :function}` tuple that returns a boolean that decides if the callback needs to be retried.
+  The function must have an arity of 1 where the argument is the recent callback result
+  """
   @type should_retry_mf :: {module(), atom()}
+
+  @typedoc """
+  A `{module, :function}` responsible for delaying retries.
+  The function must have an arity of 1 where the first argument is the recent callback result. The second argument is
+  the retry count
+  """
   @type delay_retry_mf :: {module(), atom()}
+
   @type queue_item :: %{
           callback_mfa: callback_mfa(),
           should_retry_mf: should_retry_mf(),
@@ -23,6 +39,8 @@ defmodule Orchestrator.RetryQueue do
 
   defstruct [:queue, :max_retry]
 
+  @type start_link_opts :: [name: binary(), max_retry: non_neg_integer()]
+  @spec start_link(start_link_opts()) :: :ignore | {:error, any} | {:ok, pid}
   def start_link(args) do
     name = Keyword.get(args, :name, __MODULE__)
     GenServer.start_link(__MODULE__, args, name: name)
