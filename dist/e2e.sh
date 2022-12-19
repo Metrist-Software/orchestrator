@@ -35,11 +35,11 @@ EOF
 
 sleep 45
 
-logs=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" --no-pager)
-echo "$logs"
-success_count=$(echo "$logs" | grep -c "All steps done, asking monitor to exit")
+LOGS=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" --no-pager)
+echo "$LOGS"
+SUCCESS_COUNT=$(echo "$LOGS" | grep -c "All steps done, asking monitor to exit")
 
-if [ $success_count -gt 0 ]; then
+if [ $SUCCESS_COUNT -gt 0 ]; then
     RemoveOrchestrator
     echo "e2e successful" 
     exit 0
