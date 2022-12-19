@@ -1,4 +1,8 @@
 defmodule Orchestrator.RetryQueue do
+  @moduledoc """
+  Creates a queue that accepts callbacks and retries them depending on the should_retry_mf() result
+  """
+
   use GenServer
   require Logger
   alias __MODULE__
@@ -20,7 +24,6 @@ defmodule Orchestrator.RetryQueue do
   defstruct [:queue, :max_retry]
 
   def start_link(args) do
-    Logger.info("HELLO start_link")
     name = Keyword.get(args, :name, __MODULE__)
     GenServer.start_link(__MODULE__, args, name: name)
   end

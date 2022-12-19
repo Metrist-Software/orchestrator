@@ -93,10 +93,10 @@ defmodule Orchestrator.RetryQueueTest do
     refute_received {:delay, ^fivehundred_resp}
   end
 
-  # test "HELLO" do
-  #   server = Orchestrator.RetryQueue.start_link([])
-  #   Orchestrator.APIClient.write_telemetry("awslambda", "Nice", 1.0)
-  #   |> IO.inspect()
-  #   Process.sleep(:timer.seconds(20))
-  # end
+  test "HELLO" do
+    server = Orchestrator.RetryQueue.start_link([])
+    Orchestrator.APIClient.write_telemetry("awslambda", "Nice", 1.0)
+    |> IO.inspect()
+    Process.sleep(:timer.seconds(20))
+  end
 end

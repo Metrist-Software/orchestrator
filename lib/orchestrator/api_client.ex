@@ -95,20 +95,32 @@ defmodule Orchestrator.APIClient do
     end
   end
 
-  def retry_api_request?({:ok,    %HTTPoison.Response{status_code: 429}}), do: true
-  def retry_api_request?({:ok,    %HTTPoison.Response{status_code: status} }) when status >= 500, do: true
-  def retry_api_request?({:error, %HTTPoison.Error{}}), do: true
+  def retry_api_request?({:ok, %HTTPoison.Response{status_code: 429, request: request}}) do
+    Logger.error("Got status code 429 from #{request.url}. Retrying")
+    true
+  end
+  def retry_api_request?({:ok, %HTTPoison.Response{status_code: status, request: request} }) when status >= 500 do
+    Logger.error("Got status code #{status} from #{request.url}. Retrying")
+    true
+  end
+  def retry_api_request?({:error, %HTTPoison.Error{} = reason}) do
+    Logger.error("Got an error with reason: #{inspect(reason)}. Retrying.")
+    true
+  end
   def retry_api_request?(_response), do: false
 
   def delay_retry({:ok, %{status: 429} = resp} , _retry_count) do
-    Enum.into(resp.headers, %{})
-    |> Map.get("x-ratelimit-reset", 0)
-    |> :timer.seconds()
+    seconds = Enum.into(resp.headers, %{}) |> Map.get("x-ratelimit-reset", 0)
+    seconds = seconds + :rand.uniform(seconds)
+    Logger.info("Delaying retry for #{seconds} seconds")
+    :timer.seconds(seconds)
     |> Process.sleep()
   end
   def delay_retry(_response, retry_count) do
-    Integer.pow(2, retry_count)
-    |> :timer.seconds()
+    seconds = Integer.pow(2, retry_count)
+    seconds = seconds + :rand.uniform(seconds)
+    Logger.info("Delaying retry for #{seconds} seconds")
+    :timer.seconds(seconds)
     |> Process.sleep()
   end
 
