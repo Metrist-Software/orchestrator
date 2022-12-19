@@ -1,6 +1,5 @@
 defmodule Orchestrator.RetryQueueTest do
   use ExUnit.Case, async: true
-  alias Orchestrator.MetristAPI
   alias Orchestrator.RetryQueue
 
   defmodule QueueWrapper do
@@ -79,24 +78,28 @@ defmodule Orchestrator.RetryQueueTest do
     }
 
     q = RetryQueue.dequeue_and_send(qr)
+    # Initial call
     assert_received {:callback, ^fourtwonine_resp}
+    # Retries
     assert_received {:retry?, ^fourtwonine_resp }
     assert_received {:no_delay, ^fourtwonine_resp}
     assert_received {:retry?, ^fourtwonine_resp}
     refute_received {:no_delay, ^fourtwonine_resp}
 
-    q = RetryQueue.dequeue_and_send(%{qr | queue: q})
+    RetryQueue.dequeue_and_send(%{qr | queue: q})
+    # Initial call
     assert_received {:callback, ^fivehundred_resp}
+    # Retries
     assert_received {:retry?, ^fivehundred_resp}
     assert_received {:delay, ^fivehundred_resp}
     assert_received {:retry?, ^fivehundred_resp}
     refute_received {:delay, ^fivehundred_resp}
   end
 
-  test "HELLO" do
-    server = Orchestrator.RetryQueue.start_link([])
-    Orchestrator.APIClient.write_telemetry("awslambda", "Nice", 1.0)
-    |> IO.inspect()
-    Process.sleep(:timer.seconds(20))
-  end
+  # test "HELLO" do
+  #   server = Orchestrator.RetryQueue.start_link([])
+  #   Orchestrator.APIClient.write_telemetry("awslambda", "Nice", 1.0)
+  #   |> IO.inspect()
+  #   Process.sleep(:timer.seconds(100))
+  # end
 end
