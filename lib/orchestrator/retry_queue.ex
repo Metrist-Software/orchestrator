@@ -73,10 +73,10 @@ defmodule Orchestrator.RetryQueue do
       when should_retry? and retry_count <= state.max_retry do
     Logger.debug("Waiting for delay...")
     apply_mf(item.delay_retry_mf, [result, retry_count])
-    Logger.debug("Retrying action...")
+    Logger.info("Retrying callback #{inspect(item.callback_mfa)}")
     result = apply_mfa(item.callback_mfa)
     should_retry? = apply_mf(item.should_retry_mf, [result])
-    Logger.debug("Should retry: #{should_retry?}...")
+    Logger.debug("Should retry: #{should_retry?}")
     retry(result, item, state, should_retry?, retry_count + 1)
   end
 
