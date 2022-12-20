@@ -10,7 +10,7 @@ Vagrant.configure("2") do |config|
   # commercial use we need to sort out first.
   config.vm.provider "libvirt" do |vm|
     vm.memory = "8192"
-    vm.cpus = 8
+    vm.cpus = 2
     vm.memorybacking :access, :mode => "shared"
   end
   config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"
