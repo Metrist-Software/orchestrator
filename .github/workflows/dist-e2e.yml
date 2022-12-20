@@ -1,7 +1,4 @@
 on:
-  push:
-    branches: [distribution-e2e-tests]
-  
   schedule:
     - cron: '0 17 * * *' # every day at 5pm UTC
   
