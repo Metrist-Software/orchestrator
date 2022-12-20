@@ -227,28 +227,93 @@ DetectOS() {
 
 }
 
+CURRENT_CONFIG=
+if test -f "/etc/default/metrist-orchestrator"; then
+    CURRENT_CONFIG=$(</etc/default/metrist-orchestrator)
+fi
+
+EXISTING_INSTANCE_NAME=false
 INSTANCE_NAME=
 GetInstanceName() {
-    cat <<EOF
+    local PATTERN=$'METRIST_INSTANCE_ID=([^\n$]+)'
+    if [[ "$CURRENT_CONFIG" =~ $PATTERN ]]; then
+        EXISTING_INSTANCE_NAME=true
+    else
+        cat <<EOF
 
     We distinguish collected metrics and error data by "instance name", which can be a hostname,
     a cloud region, or any other tag you want to use for grouping data.
 
 EOF
-    echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
-    echo
+        echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
+        echo
+    fi
+
 }
 
-API_KEY=
-GetAPIKey() {
-    cat <<EOF
+EXISTING_API_TOKEN=false
+API_TOKEN=
+GetAPIToken() {
+    local PATTERN=$'METRIST_API_TOKEN=([^\n$]+)'
+    if [[ "$CURRENT_CONFIG" =~ $PATTERN ]]; then
+        EXISTING_API_TOKEN=true
+    else
+        cat <<EOF
 
     In order to be able to report back to the Metrist Backend, you need to provide your API key. You can find your API key in
     the Metrist dashboard at https://app.metrist.io/profile.
 
 EOF
-    echo -n "Please enter your API key: "; read -r API_KEY
-    echo
+        echo -n "Please enter your API key: "; read -r API_TOKEN
+        echo    
+    fi
+}
+
+MaybeWriteAddedByScriptComment() {
+    local PATTERN=$'# Added by installation script'
+    if [[ "$CURRENT_CONFIG" =~ $PATTERN ]]; then
+        cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
+
+# Added by installation script.
+METRIST_INSTANCE_ID=$INSTANCE_NAME
+EOF
+    else
+        echo "Added by install script comment already present in unit defaults, not writing"
+    fi
+}
+
+MaybeWriteApiToken() {
+    if [ "$EXISTING_API_TOKEN" != true ] ; then
+        cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
+METRIST_API_TOKEN=$API_TOKEN
+EOF
+    else
+        echo "API TOKEN already set in unit defaults, not writing"
+    fi
+}
+
+MaybeWriteInstanceId() {
+    if [ "$EXISTING_INSTANCE_NAME" != true ] ; then
+        cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
+METRIST_INSTANCE_ID=$INSTANCE_NAME
+EOF
+    else
+        echo "Instance ID already set in unit defaults, not writing"
+    fi
+}
+
+WriteConfigAndStart() {   
+    MaybeWriteAddedByScriptComment
+    MaybeWriteApiToken
+    MaybeWriteInstanceId
+
+    local SERVICE_NAME="metrist-orchestrator"
+    if systemctl --all --type service | grep -q "$SERVICE_NAME";then
+        echo "$SERVICE_NAME exists. Stopping."
+        $SUDO systemctl stop $SERVICE_NAME
+    fi
+    $SUDO systemctl enable --now $SERVICE_NAME
+    $SUDO systemctl start $SERVICE_NAME
 }
 
 InstallApt() {
@@ -264,16 +329,8 @@ InstallApt() {
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
     $SUDO apt-get install -y ./$latest
-    cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
-
-# Added by installation script.
-METRIST_API_TOKEN=$API_KEY
-METRIST_INSTANCE_ID=$INSTANCE_NAME
-EOF
-    $SUDO systemctl enable --now metrist-orchestrator
-    $SUDO systemctl start metrist-orchestrator
+    WriteConfigAndStart
 }
-
 
 InstallYum() {
     set -x
@@ -287,22 +344,14 @@ InstallYum() {
     cd /tmp
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
-    $SUDO yum localinstall ./$latest
-    cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
-
-# Added by installation script.
-METRIST_API_TOKEN=$API_KEY
-METRIST_INSTANCE_ID=$INSTANCE_NAME
-EOF
-    $SUDO systemctl enable --now metrist-orchestrator
-    $SUDO systemctl start metrist-orchestrator
-    set +x
+    $SUDO yum localinstall -y ./$latest
+    WriteConfigAndStart
 }
 
 Main() {
     SetTty
     DetectOS
-    GetAPIKey
+    GetAPIToken
     GetInstanceName
 
     echo "Installing Metrist Orchestrator for $OS $VERSION."
