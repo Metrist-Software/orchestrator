@@ -287,7 +287,7 @@ InstallYum() {
     cd /tmp
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
-    $SUDO yum localinstall ./$latest
+    $SUDO yum localinstall -y ./$latest
     cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
 
 # Added by installation script.
