@@ -47,6 +47,7 @@ cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin/metrist-orchestrator
 cd $dest
 fpm --verbose -s dir \
     $(cat $rel/fpm.cmd) \
+    --after-remove $rel/after-remove.sh \
     --license "APSLv2" \
     --vendor "Metrist Software, Inc." \
     --provides metrist-orchestrator \
