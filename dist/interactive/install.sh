@@ -269,22 +269,10 @@ EOF
     fi
 }
 
-MaybeWriteAddedByScriptComment() {
-    local PATTERN=$'# Added by installation script'
-    if [[ "$CURRENT_CONFIG" =~ $PATTERN ]]; then
-        cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
-
-# Added by installation script.
-METRIST_INSTANCE_ID=$INSTANCE_NAME
-EOF
-    else
-        echo "Added by install script comment already present in unit defaults, not writing"
-    fi
-}
-
 MaybeWriteApiToken() {
     if [ "$EXISTING_API_TOKEN" != true ] ; then
         cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
+# Added by installation script.
 METRIST_API_TOKEN=$API_TOKEN
 EOF
     else
@@ -302,16 +290,20 @@ EOF
     fi
 }
 
+SERVICE_NAME="metrist-orchestrator"
+MaybeStopOrchestrator() {
+    # Stop the orchestrator if it is already running on this system (upgrade path)
+
+    if systemctl is-active --quiet "$SERVICE_NAME";then
+        echo "$SERVICE_NAME exists and is running. Stopping."
+        $SUDO systemctl stop $SERVICE_NAME
+    fi
+}
+
 WriteConfigAndStart() {   
-    MaybeWriteAddedByScriptComment
     MaybeWriteApiToken
     MaybeWriteInstanceId
 
-    local SERVICE_NAME="metrist-orchestrator"
-    if systemctl --all --type service | grep -q "$SERVICE_NAME";then
-        echo "$SERVICE_NAME exists. Stopping."
-        $SUDO systemctl stop $SERVICE_NAME
-    fi
     $SUDO systemctl enable --now $SERVICE_NAME
     $SUDO systemctl start $SERVICE_NAME
 }
@@ -355,6 +347,8 @@ Main() {
     GetInstanceName
 
     echo "Installing Metrist Orchestrator for $OS $VERSION."
+
+    MaybeStopOrchestrator
 
     case "$PACKAGETYPE" in
         apt)
