@@ -10,7 +10,6 @@ defmodule Orchestrator.RetryQueueTest do
 
   defmodule Stub do
     def callback({pid, data} = arg) do
-      IO.inspect("Callback")
       send(pid, {:callback, data})
       arg
     end
@@ -44,7 +43,7 @@ defmodule Orchestrator.RetryQueueTest do
       max_retry: 1
     }
 
-    q = RetryQueue.dequeue_and_send(qr)
+    RetryQueue.dequeue_and_send(qr)
     # Initial call
     assert_received {:callback, "a"}
     # Retries
@@ -94,12 +93,5 @@ defmodule Orchestrator.RetryQueueTest do
     assert_received {:delay, ^fivehundred_resp}
     assert_received {:retry?, ^fivehundred_resp}
     refute_received {:delay, ^fivehundred_resp}
-  end
-
-  test "HELLO" do
-    server = Orchestrator.RetryQueue.start_link([])
-    Orchestrator.APIClient.write_telemetry("awslambda", "Nice", 1.0)
-    |> IO.inspect()
-    Process.sleep(:timer.seconds(100))
   end
 end
