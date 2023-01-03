@@ -2,8 +2,8 @@
 
 set -ex
 
-if systemctl is-enabled --quiet metrist-orchestrator; then
-  systemctl stop metrist-orchestrator
+if systemctl is-failed --quiet metrist-orchestrator.service; then
+  systemctl reset-failed metrist-orchestrator.service
 fi
 
 systemctl daemon-reload
