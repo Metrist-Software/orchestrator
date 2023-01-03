@@ -27,6 +27,7 @@ defmodule Orchestrator.Application do
     configure_temp_dir()
 
     children = [
+      Orchestrator.RetryQueue,
       if Application.get_env(:orchestrator, :enable_host_telemetry?) do
         Orchestrator.HostTelemetry
       end,
