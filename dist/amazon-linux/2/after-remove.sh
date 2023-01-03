@@ -1,6 +1,5 @@
 #!/bin/bash
-
-set -ex
+set -x
 
 SERVICE="metrist-orchestrator.service"
 

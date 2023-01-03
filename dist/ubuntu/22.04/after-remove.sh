@@ -1,11 +1,12 @@
 #!/bin/bash
+set -x
 
-set -ex
+SERVICE="metrist-orchestrator.service"
 
-if systemctl is-enabled --quiet metrist-orchestrator; then
-  systemctl stop metrist-orchestrator
-  systemctl disable metrist-orchestrator
-  systemctl reset-failed metrist-orchestrator
+if systemctl is-enabled --quiet $SERVICE; then
+  systemctl stop $SERVICE
+  systemctl disable $SERVICE
+  systemctl reset-failed $SERVICE
   systemctl daemon-reload
 fi
 
