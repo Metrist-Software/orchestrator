@@ -227,28 +227,88 @@ DetectOS() {
 
 }
 
+SERVICE_NAME="metrist-orchestrator"
+
+EXISTING_CONFIG=
+GetExistingConfig() {
+    if test -f "/etc/default/$SERVICE_NAME"; then
+        EXISTING_CONFIG=`$SUDO cat /etc/default/$SERVICE_NAME`
+    fi
+}
+
+EXISTING_INSTANCE_NAME=false
 INSTANCE_NAME=
 GetInstanceName() {
-    cat <<EOF
+    local PATTERN=$'METRIST_INSTANCE_ID=([^\n$]+)'
+    if [[ "$EXISTING_CONFIG" =~ $PATTERN ]]; then
+        EXISTING_INSTANCE_NAME=true
+    else
+        cat <<EOF
 
     We distinguish collected metrics and error data by "instance name", which can be a hostname,
     a cloud region, or any other tag you want to use for grouping data.
 
 EOF
-    echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
-    echo
+        echo -n "Please enter the instance name you want to use on this machine: "; read -r INSTANCE_NAME
+        echo
+    fi
+
 }
 
-API_KEY=
-GetAPIKey() {
-    cat <<EOF
+EXISTING_API_TOKEN=false
+API_TOKEN=
+GetAPIToken() {
+    local PATTERN=$'METRIST_API_TOKEN=([^\n$]+)'
+    if [[ "$EXISTING_CONFIG" =~ $PATTERN ]]; then
+        EXISTING_API_TOKEN=true
+    else
+        cat <<EOF
 
-    In order to be able to report back to the Metrist Backend, you need to provide your API key. You can find your API key in
+    In order to be able to report back to the Metrist Backend, you need to provide your API token. You can find your API token in
     the Metrist dashboard at https://app.metrist.io/profile.
 
 EOF
-    echo -n "Please enter your API key: "; read -r API_KEY
-    echo
+        echo -n "Please enter your API token: "; read -r API_TOKEN
+        echo    
+    fi
+}
+
+MaybeWriteApiToken() {
+    if [ "$EXISTING_API_TOKEN" != true ] ; then
+        cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
+# Added by installation script.
+METRIST_API_TOKEN=$API_TOKEN
+EOF
+    else
+        echo "API TOKEN already set in unit defaults, not writing"
+    fi
+}
+
+MaybeWriteInstanceId() {
+    if [ "$EXISTING_INSTANCE_NAME" != true ] ; then
+        cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
+METRIST_INSTANCE_ID=$INSTANCE_NAME
+EOF
+    else
+        echo "Instance ID already set in unit defaults, not writing"
+    fi
+}
+
+MaybeStopOrchestrator() {
+    # Stop the orchestrator if it is already running on this system (upgrade path)
+
+    if systemctl is-active --quiet "$SERVICE_NAME";then
+        echo "$SERVICE_NAME exists and is running. Stopping."
+        $SUDO systemctl stop $SERVICE_NAME
+    fi
+}
+
+WriteConfigAndStart() {   
+    MaybeWriteApiToken
+    MaybeWriteInstanceId
+
+    $SUDO systemctl enable --now $SERVICE_NAME
+    $SUDO systemctl start $SERVICE_NAME
 }
 
 InstallApt() {
@@ -264,16 +324,8 @@ InstallApt() {
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
     $SUDO apt-get install -y ./$latest
-    cat <<EOF | sudo tee -a /etc/default/metrist-orchestrator >/dev/null
-
-# Added by installation script.
-METRIST_API_TOKEN=$API_KEY
-METRIST_INSTANCE_ID=$INSTANCE_NAME
-EOF
-    $SUDO systemctl enable --now metrist-orchestrator
-    $SUDO systemctl start metrist-orchestrator
+    WriteConfigAndStart
 }
-
 
 InstallYum() {
     set -x
@@ -288,24 +340,19 @@ InstallYum() {
     latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
     $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
     $SUDO yum localinstall -y ./$latest
-    cat <<EOF | $SUDO tee -a /etc/default/metrist-orchestrator >/dev/null
-
-# Added by installation script.
-METRIST_API_TOKEN=$API_KEY
-METRIST_INSTANCE_ID=$INSTANCE_NAME
-EOF
-    $SUDO systemctl enable --now metrist-orchestrator
-    $SUDO systemctl start metrist-orchestrator
-    set +x
+    WriteConfigAndStart
 }
 
 Main() {
     SetTty
     DetectOS
-    GetAPIKey
+    GetExistingConfig
+    GetAPIToken
     GetInstanceName
 
     echo "Installing Metrist Orchestrator for $OS $VERSION."
+
+    MaybeStopOrchestrator
 
     case "$PACKAGETYPE" in
         apt)
