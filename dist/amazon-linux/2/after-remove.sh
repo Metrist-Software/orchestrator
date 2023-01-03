@@ -2,9 +2,10 @@
 
 set -ex
 
-if systemctl is-failed --quiet metrist-orchestrator.service; then
-  systemctl reset-failed metrist-orchestrator.service
-fi
+SERVICE="metrist-orchestrator.service"
+
+systemctl stop $SERVICE || true
+systemctl reset-failed $SERVICE || true
 
 systemctl daemon-reload
 
