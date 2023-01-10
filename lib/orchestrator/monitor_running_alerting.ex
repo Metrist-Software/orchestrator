@@ -1,6 +1,24 @@
 defmodule Orchestrator.MonitorRunningAlerting do
   use GenServer
-  require Logger
+
+  @moduledoc """
+  Tracks the latest runs for all configured monitors and alerts on any that have
+  no recent data.
+
+  This will send a POST request to the url configured by the METRIST_MONITOR_RUNNING_ALERT_WEBHOOK_URL
+  environment variable, optionally setting a Bearer Authorization header using
+  the METRIST_MONITOR_RUNNING_ALERT_WEBHOOK_TOKEN environment variable.
+
+  The request will have the following json body structure:
+
+    {
+      "config_id": "config_id",
+      "monitor_id": "monitor_id",
+      "instance_id": "instance_id",
+      "monitor_state": "ok",
+      "last_update_time": "2023-01-01T00:00:00.000000"
+    }
+  """
 
   @timeout_threshold_seconds 5 * 60
 
@@ -103,6 +121,15 @@ defmodule Orchestrator.MonitorRunningAlerting do
     token = Application.get_env(:orchestrator, :monitor_running_alert_webhook_token)
     instance_id = Application.get_env(:orchestrator, :instance_id)
 
+    headers = if token do
+      [
+        {"Authorization", "Bearer #{token}"},
+        {"content-type", "application/json"}
+      ]
+    else
+      [{"content-type", "application/json"}]
+    end
+
     for {{config_id, monitor_id}, {monitor_state, last_update_time}} <- changes do
       body = %{
         config_id: config_id,
@@ -113,7 +140,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
       }
       |> Jason.encode!()
 
-      HTTPoison.post(url, body, [{"Authorization", "Bearer #{token}"}, {"content-type", "application/json"}])
+      HTTPoison.post(url, body, headers)
     end
   end
 
