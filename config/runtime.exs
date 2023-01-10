@@ -7,7 +7,9 @@ if config_env() == :prod do
     api_token: Orchestrator.Application.translate_config_from_env!("METRIST_API_TOKEN"),
     instance_id: Orchestrator.Application.translate_config_from_env!("METRIST_INSTANCE_ID"),
     slack_api_token: Orchestrator.Application.translate_config_from_env("SLACK_API_TOKEN"),
-    slack_reporting_channel: Orchestrator.Application.translate_config_from_env("SLACK_ALERTING_CHANNEL")
+    slack_reporting_channel: Orchestrator.Application.translate_config_from_env("SLACK_ALERTING_CHANNEL"),
+    monitor_running_alert_webhook_url: Orchestrator.Application.translate_config_from_env("METRIST_MONITOR_RUNNING_ALERT_WEBHOOK_URL"),
+    monitor_running_alert_webhook_token: Orchestrator.Application.translate_config_from_env("METRIST_MONITOR_RUNNING_ALERT_WEBHOOK_TOKEN")
 end
 
 # Erlexec has some protection against accidentally
