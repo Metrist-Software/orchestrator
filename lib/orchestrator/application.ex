@@ -32,6 +32,9 @@ defmodule Orchestrator.Application do
         Orchestrator.HostTelemetry
       end,
       Metrist.Agent,
+      if Application.get_env(:orchestrator, :monitor_running_alert_webhook_url) do
+        Orchestrator.MonitorRunningAlerting
+      end,
       {Orchestrator.ConfigFetcher, [config_fetch_fun: config_fetch_fun]},
       {Task.Supervisor, name: Orchestrator.TaskSupervisor},
       Orchestrator.MonitorSupervisor,
