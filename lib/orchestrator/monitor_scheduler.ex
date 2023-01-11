@@ -25,8 +25,12 @@ defmodule Orchestrator.MonitorScheduler do
 
   @impl true
   def init(config) do
+    Process.flag(:trap_exit, true)
+
     Orchestrator.Application.set_monitor_logging_metadata(config)
     Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
+
+    Orchestrator.MonitorRunningAlerting.track_monitor(config)
 
     schedule_initially(config)
     {:ok, %State{config: config}}
@@ -50,6 +54,7 @@ defmodule Orchestrator.MonitorScheduler do
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
+      Orchestrator.MonitorRunningAlerting.update_monitor(state.config)
       task = do_run(state.config)
       {:noreply, %State{state | task: task, overtime: false}}
     else
@@ -85,13 +90,15 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   @impl true
-  def terminate(_reason, %State{monitor_pid: pid}) when pid != nil do
+  def terminate(_reason, %State{monitor_pid: pid, config: config}) when pid != nil do
     Logger.info("Monitor Scheduler terminate callback killing os pid #{pid}")
     :exec.kill(pid, 9)
+
+    Orchestrator.MonitorRunningAlerting.untrack_monitor(config)
   end
 
-  def terminate(_reason, _state) do
-    # No running task so nothing to clean up
+  def terminate(_reason, %State{config: config}) do
+    Orchestrator.MonitorRunningAlerting.untrack_monitor(config)
   end
 
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
