@@ -2,14 +2,14 @@ defmodule Orchestrator.MonitorRunningAlertingTest do
   use ExUnit.Case
 
   @now NaiveDateTime.utc_now()
-  @one_hour_ago NaiveDateTime.add(@now, -3_600)
+  @two_hours_ago NaiveDateTime.add(@now, -7_200)
 
   describe "update_monitor_states" do
     test "Should mark ok monitors with no recent data as notrunning" do
-      tracked_monitors = %{{"config", "monitor"} => {:ok, @one_hour_ago}}
+      tracked_monitors = %{{"config", "monitor"} => {:ok, @two_hours_ago}}
       updated_monitors = Orchestrator.MonitorRunningAlerting.update_monitor_states(tracked_monitors)
 
-      assert Map.get(updated_monitors, {"config", "monitor"}) == {:notrunning, @one_hour_ago}
+      assert Map.get(updated_monitors, {"config", "monitor"}) == {:notrunning, @two_hours_ago}
     end
 
     test "Should mark notrunning monitors withrecent data as ok" do
@@ -27,17 +27,17 @@ defmodule Orchestrator.MonitorRunningAlertingTest do
     end
 
     test "Should not change notrunning monitors with no recent data" do
-      tracked_monitors = %{{"config", "monitor"} => {:notrunning, @one_hour_ago}}
+      tracked_monitors = %{{"config", "monitor"} => {:notrunning, @two_hours_ago}}
       updated_monitors = Orchestrator.MonitorRunningAlerting.update_monitor_states(tracked_monitors)
 
-      assert Map.get(updated_monitors, {"config", "monitor"}) == {:notrunning, @one_hour_ago}
+      assert Map.get(updated_monitors, {"config", "monitor"}) == {:notrunning, @two_hours_ago}
     end
   end
 
   describe "get_changed_monitors" do
     test "should return a list of monitors with changed state" do
       old_monitors = %{
-        {"config1", "monitor1"} => {:notrunning, @one_hour_ago},
+        {"config1", "monitor1"} => {:notrunning, @two_hours_ago},
         {"config2", "monitor2"} => {:ok, @now},
       }
       new_monitors = %{
@@ -52,11 +52,11 @@ defmodule Orchestrator.MonitorRunningAlertingTest do
 
     test "should return an empty list when no changes" do
       old_monitors = %{
-        {"config1", "monitor1"} => {:notrunning, @one_hour_ago},
+        {"config1", "monitor1"} => {:notrunning, @two_hours_ago},
         {"config2", "monitor2"} => {:ok, @now},
       }
       new_monitors = %{
-        {"config1", "monitor1"} => {:notrunning, @one_hour_ago},
+        {"config1", "monitor1"} => {:notrunning, @two_hours_ago},
         {"config2", "monitor2"} => {:ok, @now}
       }
 
