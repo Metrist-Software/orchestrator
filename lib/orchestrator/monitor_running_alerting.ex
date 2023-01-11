@@ -20,7 +20,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
     }
   """
 
-  @timeout_threshold_seconds 5 * 60
+  @timeout_threshold_seconds 30 * 60
 
   defmodule State do
     @type config_id :: String.t()
