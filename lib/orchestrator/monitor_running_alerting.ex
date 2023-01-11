@@ -94,7 +94,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
     {:noreply, %State{state | tracked_monitors: new_tracked_monitors}}
   end
 
-  defp update_monitor_states(tracked_monitors) do
+  def update_monitor_states(tracked_monitors) do
     cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -@timeout_threshold_seconds)
 
     Enum.map(tracked_monitors, fn {key, {_monitor_state, last_update_time}} ->
@@ -107,7 +107,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
     |> Map.new()
   end
 
-  defp get_changed_monitors(old_tracked_monitors, new_tracked_monitors) do
+  def get_changed_monitors(old_tracked_monitors, new_tracked_monitors) do
     Enum.filter(new_tracked_monitors, fn {key, {new_monitor_state, _last_update_time}} ->
       case Map.get(old_tracked_monitors, key) do
         {old_monitor_state, _} when new_monitor_state != old_monitor_state -> true
