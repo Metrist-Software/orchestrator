@@ -1,6 +1,7 @@
 on:
-  schedule:
-    - cron: '0 17 * * *' # every day at 5pm UTC
+  push:
+  # schedule:
+  #   - cron: '0 17 * * *' # every day at 5pm UTC
 
 jobs:
   setup:
@@ -67,6 +68,7 @@ jobs:
           DIST: ${{ matrix.dist }}
         run: |
           cd ./dist/${{ matrix.dist }}
+          vagrant upload ../../interactive/install.sh /tmp/install.sh
           vagrant upload ../../e2e.sh
           vagrant ssh -c "TEST_API_TOKEN=$TEST_API_TOKEN DIST=$DIST /bin/bash /home/vagrant/e2e.sh"
 

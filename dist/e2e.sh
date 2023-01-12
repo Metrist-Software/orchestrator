@@ -28,7 +28,9 @@ Main() {
 # Sanitize DIST env var before using it for instance id - remove forward slashes, hyphens, and periods
 DIST=${DIST//[\/\.\-]/}
 
-curl https://dist.metrist.io/install.sh >/tmp/install.sh
+if [ ! -f /tmp/install.sh ]; then
+    curl https://dist.metrist.io/install.sh >/tmp/install.sh
+fi
 
 cat <<EOF | bash /tmp/install.sh
 $TEST_API_TOKEN
