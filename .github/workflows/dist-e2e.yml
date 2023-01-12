@@ -1,7 +1,8 @@
 on:
-  schedule:
-    - cron: '0 17 * * *' # every day at 5pm UTC
-  
+  # schedule:
+  #   - cron: '0 17 * * *' # every day at 5pm UTC
+  push:
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -24,10 +25,10 @@ jobs:
       - setup
     permissions:
       id-token: write
-      contents: read      
+      contents: read
     strategy:
       fail-fast: false
-      matrix: 
+      matrix:
         dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
     steps:
       - name: Checkout
