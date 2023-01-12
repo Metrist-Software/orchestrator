@@ -16,6 +16,8 @@ RemoveOrchestrator(){
 
     if type apt >/dev/null; then
         sudo apt purge -y metrist-orchestrator
+    elif type dnf >/dev/null; then
+        sudo dnf remove -y metrist-orchestrator
     elif type yum >/dev/null; then
         sudo yum remove -y metrist-orchestrator
     fi
@@ -26,7 +28,9 @@ Main() {
 # Sanitize DIST env var before using it for instance id - remove forward slashes, hyphens, and periods
 DIST=${DIST//[\/\.\-]/}
 
-curl https://dist.metrist.io/install.sh >/tmp/install.sh
+if [ ! -f /tmp/install.sh ]; then
+    curl https://dist.metrist.io/install.sh >/tmp/install.sh
+fi
 
 cat <<EOF | bash /tmp/install.sh
 $TEST_API_TOKEN
@@ -41,7 +45,7 @@ SUCCESS_COUNT=$(echo "$LOGS" | grep -c "All steps done, asking monitor to exit")
 
 if [ $SUCCESS_COUNT -gt 0 ]; then
     RemoveOrchestrator
-    echo "e2e successful" 
+    echo "e2e successful"
     exit 0
 else
     RemoveOrchestrator
