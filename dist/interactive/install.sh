@@ -127,11 +127,16 @@ DetectOS() {
                 VERSION=""
                 PACKAGETYPE="dnf"
                 ;;
-            rocky|almalinux)
-                OS="fedora"
-                VERSION=""
+            rocky)
+                OS="$ID"
+                VERSION="$(echo "$VERSION_ID" | cut -f1 -d.)"
                 PACKAGETYPE="dnf"
                 ;;
+            # rocky|almalinux)
+            #     OS="fedora"
+            #     VERSION=""
+            #     PACKAGETYPE="dnf"
+            #     ;;
             amzn)
                 OS="amazon-linux"
                 VERSION="$VERSION_ID"
@@ -191,6 +196,11 @@ DetectOS() {
             ;;
         amazon-linux)
             if [ "$VERSION" != "2" ]; then
+                ExitWithUnsupportedOS
+            fi
+            ;;
+        rocky)
+            if [ "$VERSION" != "8" ]; then
                 ExitWithUnsupportedOS
             fi
             ;;
@@ -269,7 +279,7 @@ GetAPIToken() {
 
 EOF
         echo -n "Please enter your API token: "; read -r API_TOKEN
-        echo    
+        echo
     fi
 }
 
@@ -303,7 +313,7 @@ MaybeStopOrchestrator() {
     fi
 }
 
-WriteConfigAndStart() {   
+WriteConfigAndStart() {
     MaybeWriteApiToken
     MaybeWriteInstanceId
 
@@ -343,6 +353,21 @@ InstallYum() {
     WriteConfigAndStart
 }
 
+InstallDnf() {
+    if ! type gpg >/dev/null; then
+        $SUDO dnf update
+        $SUDO dnf install -y gnupg
+    fi
+
+    $SUDO mkdir -p --mode=0755 /usr/share/keyrings
+    $CURL "https://github.com/Metrist-Software/orchestrator/blob/main/dist/trustedkeys.gpg?raw=true" | $SUDO tee /usr/share/keyrings/metrist-keyring.gpg >/dev/null
+    cd /tmp
+    latest=$($CURL https://dist.metrist.io/orchestrator/$OS/$VERSION.$ARCH.latest.txt)
+    $CURL "https://dist.metrist.io/orchestrator/$OS/$latest" >$latest
+    $SUDO dnf install -y ./$latest
+    WriteConfigAndStart
+}
+
 Main() {
     SetTty
     DetectOS
@@ -360,6 +385,9 @@ Main() {
             ;;
         yum)
             InstallYum
+            ;;
+        dnf)
+            InstallDnf
             ;;
         *)
             ExitWith "Unknown package type '$PACKAGETYPE', this should not happen."
