@@ -1,6 +1,7 @@
 on:
   # schedule:
   #   - cron: '0 17 * * *' # every day at 5pm UTC
+  push:
 
 jobs:
   setup:
