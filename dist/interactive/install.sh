@@ -204,6 +204,11 @@ DetectOS() {
                 ExitWithUnsupportedOS
             fi
             ;;
+        centos)
+            if [ "$VERSION" != "7" ]; then
+                ExitWithUnsupportedOS
+            fi
+            ;;
         *)
             ExitWithUnsupportedOS
     esac
