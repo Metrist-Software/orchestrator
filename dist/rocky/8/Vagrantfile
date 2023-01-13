@@ -16,8 +16,6 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"
 
   config.vm.provision "shell", inline: <<-SHELL
-    DEBIAN_FRONTEND=noninteractive
-
     # Basic stuff
     dnf update
     dnf install -y curl sudo zstd git curl unzip wget
