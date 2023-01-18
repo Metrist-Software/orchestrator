@@ -77,7 +77,7 @@ defmodule Orchestrator.HostTelemetry do
     m = :memsup.get_system_memory_data()
     available = m[:free_memory] + m[:buffered_memory] + m[:cached_memory]
     used = m[:total_memory] - available
-    used_fraction = used / available
+    used_fraction = used / m[:total_memory]
     round(used_fraction * 100)
   end
 
