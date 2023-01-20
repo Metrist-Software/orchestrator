@@ -82,7 +82,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'ubuntu-22.04', 'amazon_linux-2', 'rocky-8', 'centos-7']
+        os: ['ubuntu-20.04', 'ubuntu-22.04', 'amazon_linux-2', 'rocky-8', 'centos-7', 'rhel-7']
     permissions:
       id-token: write
       contents: read

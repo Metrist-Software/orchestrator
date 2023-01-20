@@ -121,6 +121,9 @@ DetectOS() {
                 OS="$ID"
                 VERSION="$(echo "$VERSION_ID" | cut -f1 -d.)"
                 PACKAGETYPE="dnf"
+                if [ "$VERSION" = "7" ]; then
+                    PACKAGETYPE="yum"
+                fi
                 ;;
             fedora)
                 OS="$ID"
@@ -205,6 +208,11 @@ DetectOS() {
             fi
             ;;
         centos)
+            if [ "$VERSION" != "7" ]; then
+                ExitWithUnsupportedOS
+            fi
+            ;;
+        rhel)
             if [ "$VERSION" != "7" ]; then
                 ExitWithUnsupportedOS
             fi
