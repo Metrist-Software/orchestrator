@@ -15,10 +15,15 @@ Vagrant.configure("2") do |config|
   end
   config.vm.synced_folder "../../../", "/vagrant" #, type: "virtiofs"
 
+  if Vagrant.has_plugin?('vagrant-registration')
+    config.registration.username = ENV['RHEL_USERNAME']
+    config.registration.password = ENV['RHEL_PASSWORD']
+  end
+
   config.vm.provision "shell", inline: <<-SHELL
     # Basic stuff
     yum update
-    yum install -y curl sudo zstd git curl unzip wget
+    yum install -y curl sudo zstd git curl unzip wget openssl lksctp-tools
 
     # Quality-of-life tweaks to login shells go here
     cat >>/home/vagrant/.profile <<EOF
