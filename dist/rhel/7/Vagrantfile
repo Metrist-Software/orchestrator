@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     # Basic stuff
     yum update
-    yum install -y curl sudo zstd git curl unzip wget openssl lksctp-tools
+    yum install -y curl sudo zstd git curl unzip wget
 
     # Quality-of-life tweaks to login shells go here
     cat >>/home/vagrant/.profile <<EOF
