@@ -1,7 +1,6 @@
 on:
-  push:
-  # schedule:
-  #   - cron: '0 17 * * *' # every day at 5pm UTC
+  schedule:
+    - cron: '0 17 * * *' # every day at 5pm UTC
 
 jobs:
   setup:
@@ -29,8 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: ['rhel/7']
-        # dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
+        dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
