@@ -44,7 +44,8 @@ cp _build/prod/rel/bakeware/orchestrator $dest/usr/bin/metrist-orchestrator
 # Build the package. Distribution-method specific arguments MUST
 # be in the `fpm.cmd` file in the rel directory. At a minimum, this
 # should contain something like "-t deb"
-cd $dest
+mkdir /tmp/fpm
+
 fpm --verbose -s dir \
     $(cat $rel/fpm.cmd) \
     --after-remove $rel/after-remove.sh \
@@ -56,6 +57,8 @@ fpm --verbose -s dir \
     -v $orch_ver-$dist-$ver-$tag \
     -a native \
     -p $pkg_dest \
+    -C $dest \
+    --workdir /tmp/fpm \
     .
 
 pkg=$(cd $pkg_dest; ls)

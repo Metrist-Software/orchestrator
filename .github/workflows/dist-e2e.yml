@@ -45,6 +45,10 @@ jobs:
           echo "::add-mask::${e2e_api_token}"
           echo "TEST_API_TOKEN=${e2e_api_token}" >> $GITHUB_ENV
 
+      - name: Enable vagrant-registration for rhel
+        if: ${{ startsWith(matrix.dist, 'rhel') }}
+        run: vagrant plugin install vagrant-registration
+
       - name: Cache Vagrant box
         # Caches that are not accessed within the last week will be evicted
         # If any or all of the vagrant files change a lot in a short period of time
@@ -57,6 +61,9 @@ jobs:
           key: ${{ runner.os }}-vagrant-${{ matrix.dist }}-${{ hashFiles('**/Vagrantfile') }}
 
       - name: Provision e2e environment
+        env:
+          RHEL_USERNAME: ${{ secrets.RHEL_USERNAME }}
+          RHEL_PASSWORD: ${{ secrets.RHEL_PASSWORD }}
         run: |
           cd ./dist/${{ matrix.dist }}
           vagrant box update
