@@ -29,7 +29,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
+        dist: ['rhel/7']
+        # dist: ${{ fromJSON(needs.setup.outputs.all-dists) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
