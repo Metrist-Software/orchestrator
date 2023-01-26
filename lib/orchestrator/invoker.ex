@@ -62,7 +62,7 @@ defmodule Orchestrator.Invoker do
     # On the protocol level, we don't care too much about process exit states, so the
     # easiest work-around is to have a success exit code that will trigger the linked error
     # exit.
-    opts = opts ++ [:stdin, :stdout, :stderr, :monitor, success_exit_code: 1]
+    opts = opts ++ [:stdin, :stdout, :stderr, :monitor, :kill_group, success_exit_code: 1, group: 0]
 
     {:ok, _pid, os_pid} = :exec.run_link(cmd_line, opts)
     os_pid
