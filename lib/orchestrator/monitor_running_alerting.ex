@@ -63,7 +63,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
   @impl true
   def handle_cast({:track_monitor, config_id, monitor_id}, state) do
     tracked_monitors = Map.put_new(state.tracked_monitors, {config_id, monitor_id}, {:ok, NaiveDateTime.utc_now()})
-    {:noreply, %State{state | tracked_monitors: tracked_monitors} |> IO.inspect()}
+    {:noreply, %State{state | tracked_monitors: tracked_monitors}}
   end
 
   def handle_cast({:untrack_monitor,config_id,  monitor_id}, state) do
