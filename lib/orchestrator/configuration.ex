@@ -52,6 +52,7 @@ defmodule Orchestrator.Configuration do
   Retrieve a config by its unique id. The config is retrieved from the ETS table that
   contains all monitor configurations we know about.
   """
+  @spec get_config(String.t()) :: map()
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
       [{_name, config}] ->

@@ -137,7 +137,7 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.LambdaInvoker.invoke(cfg, opts)
   end
   defp do_run(cfg = %{run_spec: %{run_type: _}}) do
-    Logger.warn("Unknown run specification in config: #{inspect Orchestrator.MonitorSupervisor.redact(cfg)}")
+    Logger.warn("Unknown run specification in config: #{inspect Configuration.redact(cfg)}")
     Task.async(fn -> :ok end)
   end
   defp do_run(cfg) do
