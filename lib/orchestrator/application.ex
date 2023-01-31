@@ -133,6 +133,7 @@ else
   end
 end
 
+  @spec translate_config_from_env(binary, any) :: any
   def translate_config_from_env(env, default \\ nil) do
     case System.get_env(env) do
       nil ->
