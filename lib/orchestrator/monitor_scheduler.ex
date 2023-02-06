@@ -112,7 +112,6 @@ defmodule Orchestrator.MonitorScheduler do
 
   # Run a monitor. This depends on the "run type" configured, which can be any of the
   # options handled in the function heads below.
-
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
     opts = [error_report_fun: get_monitor_error_handler("dll")]
     Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)

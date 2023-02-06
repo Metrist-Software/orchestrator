@@ -3,8 +3,6 @@ defmodule Orchestrator.ConfigFetcher do
   This process fetches the configuration every minute and compares it with the current state. If anything
   changes, it'll forward the diffs to the process that supervises all the monitors so it can make
   adjustments.
-
-  Every `@clean_fetch_interval_ms` it will drop the old configuration
   """
   use GenServer
   require Logger
