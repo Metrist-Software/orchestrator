@@ -8,7 +8,7 @@ defmodule Orchestrator.MonitorScheduler do
   alias Orchestrator.Configuration
 
   defmodule State do
-    defstruct [:config_id, :config, :task, :overtime, :monitor_pid]
+    defstruct [:config_id, :config, :task, :overtime, :monitor_os_pid]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -19,6 +19,14 @@ defmodule Orchestrator.MonitorScheduler do
     config_id = Keyword.get(opts, :config_id)
 
     GenServer.start_link(__MODULE__, config_id, name: name)
+  end
+
+  @doc """
+  Sets the OS pid of the monitor to be used for cleanup reasons. Used by the
+  code that actually executes monitors
+  """
+  def set_monitor_os_pid(pid, os_pid) do
+    GenServer.cast(pid, {:monitor_os_pid, os_pid})
   end
 
   @impl true
@@ -34,8 +42,9 @@ defmodule Orchestrator.MonitorScheduler do
     {:ok, %State{config: config, config_id: config_id}}
   end
 
-  def handle_cast({:monitor_pid, pid}, state) do
-    {:noreply, %State{state | monitor_pid: pid}}
+  @impl true
+  def handle_cast({:monitor_os_pid, pid}, state) do
+    {:noreply, %State{state | monitor_os_pid: pid}}
   end
 
   @impl true
@@ -75,12 +84,12 @@ defmodule Orchestrator.MonitorScheduler do
   def handle_info({task_ref, completion}, state) do
     Logger.info("Received task completion for #{show(state)}, completion is #{inspect completion}")
     Process.demonitor(task_ref, [:flush])
-    {:noreply, %State{state | task: nil, monitor_pid: nil, overtime: false}}
+    {:noreply, %State{state | task: nil, monitor_os_pid: nil, overtime: false}}
   end
 
   def handle_info({:DOWN, _task_ref, :process, _task_pid, reason} = msg, state) do
     Logger.info("Received task down message: #{inspect msg}, reason: #{inspect reason}")
-    {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
+    {:noreply, %State{state | monitor_os_pid: nil, task: nil, overtime: false}}
   end
 
   # Catch-all message handler. Should not happen so we log this as an error.
@@ -90,7 +99,7 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   @impl true
-  def terminate(_reason, %State{monitor_pid: pid, config: config}) when pid != nil do
+  def terminate(_reason, %State{monitor_os_pid: pid, config: config}) when pid != nil do
     Logger.info("Monitor Scheduler terminate callback killing os pid #{pid}")
     :exec.kill(pid, 9)
 
