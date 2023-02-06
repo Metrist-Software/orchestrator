@@ -25,9 +25,7 @@ defmodule Orchestrator.MonitorScheduler do
   def init(config_id) do
     Process.flag(:trap_exit, true)
 
-    config = Configuration.get_config(config_id)
-
-    Orchestrator.Application.set_monitor_logging_metadata(config)
+    config = fetch_config(config_id)
     Logger.info("Initialize monitor with #{inspect Configuration.redact(config)}")
 
     Orchestrator.MonitorRunningAlerting.track_monitor(config)
@@ -43,23 +41,28 @@ defmodule Orchestrator.MonitorScheduler do
   @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
+    #
     # We refresh configuration prior to every run. This ensures we have the latest versions
     # of secrets. Caching is hardly worth the money savings (e.g. AWS Secrets Manager charges
     # $.05/10k invocations) and only delays potentially important changes.
-    config = Configuration.get_config(state.config_id)
-    # So the next time we need to run is trivially simple now.
+    config = fetch_config(state.config_id)
+    state = %State{state | config: config}
+
+    # Schedule our next run to start interval_secs from now.
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
+
+    # Actually commence the run if we aren't already busy.
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
       Orchestrator.MonitorRunningAlerting.update_monitor(state.config)
       task = do_run(state.config)
-      {:noreply, %State{state | task: task, overtime: false, config: config}}
+      {:noreply, %State{state | task: task, overtime: false}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
       # will run if it is time, otherwise not. However, we can use this later on to change scheduling - an
       # overtime run ending may mean we want to schedule right away, or after half the interval, or whatever.
       Logger.info("Skipping run for #{show(state)}, marking us in overtime")
-      {:noreply, %State{state | overtime: true, config: config}}
+      {:noreply, %State{state | overtime: true}}
     end
   end
 
@@ -98,6 +101,9 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.MonitorRunningAlerting.untrack_monitor(config)
   end
 
+  # Run a monitor. This depends on the "run type" configured, which can be any of the
+  # options handled in the function heads below.
+
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
     opts = [error_report_fun: get_monitor_error_handler("dll")]
     Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
@@ -114,6 +120,7 @@ defmodule Orchestrator.MonitorScheduler do
     Logger.warn("Unknown run specification in config: #{inspect Configuration.redact(cfg)}")
     Task.async(fn -> :ok end)
   end
+  # We probably want to get rid of this possibility at some point.
   defp do_run(cfg) do
     invocation_style = Orchestrator.Application.invocation_style()
     Logger.info("No run specification given, running based on configured invocation style #{invocation_style}")
@@ -191,6 +198,14 @@ defmodule Orchestrator.MonitorScheduler do
   def monitor_error_handler(_, monitor_logical_name, check_logical_name, message, opts) do
     Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message, opts)
   end
+
+  defp fetch_config(config_id) do
+    # Every time we fetch config we also want to set the metadata to keep it up-to-date
+    config = Configuration.get_config(config_id)
+    Orchestrator.Application.set_monitor_logging_metadata(config)
+    config
+  end
+
 
   # Purely for testing the regex
   def dotnet_http_error_match, do: @dotnet_http_error_match
