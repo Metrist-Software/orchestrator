@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
 #  Run a build through docker. The actual build steps are in do-build.sh
+#
+#  Arguments:
+#  $1 - distribution name ('ubuntu')
+#  $2 - version ('22.04')
 
 set -e
 
@@ -23,4 +27,3 @@ gpg --sign --armor --detach-sign pkg/$pkg
 aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
 aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/
 echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$ver.$arch.latest.txt
-aws cloudfront create-invalidation --distribution-id E1FRDOED06X2I8 --paths "/orchestrator/$dist/*"

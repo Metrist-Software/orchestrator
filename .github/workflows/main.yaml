@@ -122,3 +122,23 @@ jobs:
         run: .github/secret-to-env.sh
       - name: Deploy Orchestrator container
         run: ./deploy.sh
+
+  cloudfront-invalidation:
+    runs-on: ubuntu-latest
+    needs:
+      - build-push-dist
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: arn:aws:iam::147803588724:role/github-action
+          aws-region: us-west-2
+
+      - name: Invalidate cloudfront
+        run: ./dist/invalidate_cloudfront.sh
