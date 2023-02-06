@@ -13,7 +13,7 @@ defmodule Orchestrator.MonitorScheduler do
 
   # How often we force re-reading configuration. This is mostly to ensure that
   # changes in secrets propagate.
-  @config_refresh_interval_ms :timer.minutes(60)
+  @config_refresh_interval_ms :timer.minutes(10)
 
   # A long, long time ago. Epoch of the modified Julian Date
   @never "1858-11-07 00:00:00"
