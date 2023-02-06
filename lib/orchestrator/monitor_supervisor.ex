@@ -25,7 +25,6 @@ defmodule Orchestrator.MonitorSupervisor do
   def process_deltas(supervisor_name, deltas) do
     stop_deleted(supervisor_name, deltas.delete)
     start_added(supervisor_name, deltas.add)
-    update_changed(supervisor_name, deltas.change)
   end
 
   defp stop_deleted(supervisor_name, monitor_configs) do
@@ -56,13 +55,4 @@ defmodule Orchestrator.MonitorSupervisor do
       end
     end)
   end
-
-  defp update_changed(supervisor_name, monitor_configs) do
-    Enum.map(monitor_configs, fn monitor_config ->
-      name = child_name(supervisor_name, Configuration.unique_key(monitor_config))
-      Logger.info("Sending config change signal to child for #{name}")
-      Orchestrator.MonitorScheduler.config_change(name)
-    end)
-  end
-
 end

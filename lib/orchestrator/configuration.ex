@@ -50,7 +50,10 @@ defmodule Orchestrator.Configuration do
 
   @doc """
   Retrieve a config by its unique id. The config is retrieved from the ETS table that
-  contains all monitor configurations we know about.
+  contains all monitor configurations we know about. We translate only at this point
+  so we get the freshest values of both secrets and environment variables (the latter,
+  of course, are as of yet static but making that somehow dynamically settable would then
+  "just work").
   """
   @spec get_config(String.t()) :: map()
   def get_config(name) do

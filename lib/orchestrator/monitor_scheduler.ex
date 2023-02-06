@@ -8,12 +8,8 @@ defmodule Orchestrator.MonitorScheduler do
   alias Orchestrator.Configuration
 
   defmodule State do
-    defstruct [:config, :config_id, :task, :overtime, :monitor_pid]
+    defstruct [:config_id, :config, :task, :overtime, :monitor_pid]
   end
-
-  # How often we force re-reading configuration. This is mostly to ensure that
-  # changes in secrets propagate.
-  @config_refresh_interval_ms :timer.minutes(60)
 
   # A long, long time ago. Epoch of the modified Julian Date
   @never "1858-11-07 00:00:00"
@@ -23,13 +19,6 @@ defmodule Orchestrator.MonitorScheduler do
     config_id = Keyword.get(opts, :config_id)
 
     GenServer.start_link(__MODULE__, config_id, name: name)
-  end
-
-  @doc """
-  Ask scheduler to re-read te config.
-  """
-  def config_change(name) do
-    GenServer.cast(name, :config_change)
   end
 
   @impl true
@@ -44,17 +33,7 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.MonitorRunningAlerting.track_monitor(config)
 
     schedule_initially(config)
-    schedule_config_change()
     {:ok, %State{config: config, config_id: config_id}}
-  end
-
-  @impl true
-  def handle_cast(:config_change, state) do
-    # We simply fetch the new config; the next run will then use the new data for scheduling.
-    config = Configuration.get_config(state.config_id)
-
-    Logger.info("Config change: setting new config to #{inspect Configuration.redact(config)}.")
-    {:noreply, %State{state | config: config}}
   end
 
   def handle_cast({:monitor_pid, pid}, state) do
@@ -64,29 +43,24 @@ defmodule Orchestrator.MonitorScheduler do
   @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
+    # We refresh configuration prior to every run. This ensures we have the latest versions
+    # of secrets. Caching is hardly worth the money savings (e.g. AWS Secrets Manager charges
+    # $.05/10k invocations) and only delays potentially important changes.
+    config = Configuration.get_config(state.config_id)
     # So the next time we need to run is trivially simple now.
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
       Orchestrator.MonitorRunningAlerting.update_monitor(state.config)
       task = do_run(state.config)
-      {:noreply, %State{state | task: task, overtime: false}}
+      {:noreply, %State{state | task: task, overtime: false, config: config}}
     else
       # For now, this is entirely informational. We have the `:run` clock tick every `intervalSecs` and
       # will run if it is time, otherwise not. However, we can use this later on to change scheduling - an
       # overtime run ending may mean we want to schedule right away, or after half the interval, or whatever.
       Logger.info("Skipping run for #{show(state)}, marking us in overtime")
-      {:noreply, %State{state | overtime: true}}
+      {:noreply, %State{state | overtime: true, config: config}}
     end
-  end
-
-  # Ideally, if we get a forced config change from the backend, we should reschedule
-  # our config change but that's a lot of complication for avoiding the extremely occasional
-  # double invocation. Except for secrets, config reads are extremely cheap anyway.
-  def handle_info(:config_change, state) do
-    Logger.info("Config change: timed refresh of configuration called.")
-    schedule_config_change()
-    handle_cast(:config_change, state)
   end
 
   # Handle various messages that flow in from subprocesses given that we trap
@@ -183,10 +157,6 @@ defmodule Orchestrator.MonitorScheduler do
     time_to_next_run = time_to_next_run(last_run, config.interval_secs) + :rand.uniform(config.interval_secs)
     Logger.debug("Schedule next run in #{time_to_next_run} seconds")
     Process.send_after(self(), :run, time_to_next_run * 1_000)
-  end
-
-  defp schedule_config_change() do
-    Process.send_after(self(), :config_change, @config_refresh_interval_ms)
   end
 
   def time_to_next_run(nil, _interval), do: 0
