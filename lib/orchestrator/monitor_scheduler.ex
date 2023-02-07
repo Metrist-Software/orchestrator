@@ -5,9 +5,10 @@ defmodule Orchestrator.MonitorScheduler do
   """
   use GenServer
   require Logger
+  alias Orchestrator.Configuration
 
   defmodule State do
-    defstruct [:config, :task, :overtime, :monitor_pid]
+    defstruct [:config_id, :config, :task, :overtime, :monitor_os_pid]
   end
 
   # A long, long time ago. Epoch of the modified Julian Date
@@ -16,42 +17,50 @@ defmodule Orchestrator.MonitorScheduler do
   def start_link(opts) do
     name = Keyword.get(opts, :name)
     config_id = Keyword.get(opts, :config_id)
-    get_config_fn = Keyword.get(opts, :get_config_fn, &Orchestrator.Configuration.get_config/1)
 
-    config = get_config_fn.(config_id)
+    GenServer.start_link(__MODULE__, config_id, name: name)
+  end
 
-    GenServer.start_link(__MODULE__, config, name: name)
+  @doc """
+  Sets the OS pid of the monitor to be used for cleanup reasons. Used by the
+  code that actually executes monitors
+  """
+  def set_monitor_os_pid(pid, os_pid) do
+    GenServer.cast(pid, {:monitor_os_pid, os_pid})
   end
 
   @impl true
-  def init(config) do
+  def init(config_id) do
     Process.flag(:trap_exit, true)
 
-    Orchestrator.Application.set_monitor_logging_metadata(config)
-    Logger.info("Initialize monitor with #{inspect Orchestrator.MonitorSupervisor.redact(config)}")
+    config = fetch_config(config_id)
+    Logger.info("Initialize monitor with #{inspect Configuration.redact(config)}")
 
     Orchestrator.MonitorRunningAlerting.track_monitor(config)
 
     schedule_initially(config)
-    {:ok, %State{config: config}}
+    {:ok, %State{config: config, config_id: config_id}}
   end
 
   @impl true
-  def handle_cast({:config_change, new_config}, state) do
-    # We simply adopt the new config; the next run will then use the new data for scheduling.
-    Logger.info("Setting new config of #{inspect new_config}")
-    {:noreply, %State{state | config: new_config}}
-  end
-
-  def handle_cast({:monitor_pid, pid}, state) do
-    {:noreply, %State{state | monitor_pid: pid}}
+  def handle_cast({:monitor_os_pid, pid}, state) do
+    {:noreply, %State{state | monitor_os_pid: pid}}
   end
 
   @impl true
   def handle_info(:run, state) do
     Logger.info("Asked to run #{show(state)}")
-    # So the next time we need to run is trivially simple now.
+    #
+    # We refresh configuration prior to every run. This ensures we have the latest versions
+    # of secrets. Caching is hardly worth the money savings (e.g. AWS Secrets Manager charges
+    # $.05/10k invocations) and only delays potentially important changes.
+    config = fetch_config(state.config_id)
+    state = %State{state | config: config}
+
+    # Schedule our next run to start interval_secs from now.
     Process.send_after(self(), :run, state.config.interval_secs * 1_000)
+
+    # Actually commence the run if we aren't already busy.
     if state.task == nil do
       Logger.info("Doing run for #{show(state)}")
       Orchestrator.MonitorRunningAlerting.update_monitor(state.config)
@@ -75,12 +84,12 @@ defmodule Orchestrator.MonitorScheduler do
   def handle_info({task_ref, completion}, state) do
     Logger.info("Received task completion for #{show(state)}, completion is #{inspect completion}")
     Process.demonitor(task_ref, [:flush])
-    {:noreply, %State{state | task: nil, monitor_pid: nil, overtime: false}}
+    {:noreply, %State{state | task: nil, monitor_os_pid: nil, overtime: false}}
   end
 
   def handle_info({:DOWN, _task_ref, :process, _task_pid, reason} = msg, state) do
     Logger.info("Received task down message: #{inspect msg}, reason: #{inspect reason}")
-    {:noreply, %State{state | monitor_pid: nil, task: nil, overtime: false}}
+    {:noreply, %State{state | monitor_os_pid: nil, task: nil, overtime: false}}
   end
 
   # Catch-all message handler. Should not happen so we log this as an error.
@@ -90,7 +99,7 @@ defmodule Orchestrator.MonitorScheduler do
   end
 
   @impl true
-  def terminate(_reason, %State{monitor_pid: pid, config: config}) when pid != nil do
+  def terminate(_reason, %State{monitor_os_pid: pid, config: config}) when pid != nil do
     Logger.info("Monitor Scheduler terminate callback killing os pid #{pid}")
     :exec.kill(pid, 9)
 
@@ -101,6 +110,8 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.MonitorRunningAlerting.untrack_monitor(config)
   end
 
+  # Run a monitor. This depends on the "run type" configured, which can be any of the
+  # options handled in the function heads below.
   defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
     opts = [error_report_fun: get_monitor_error_handler("dll")]
     Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
@@ -114,9 +125,10 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.LambdaInvoker.invoke(cfg, opts)
   end
   defp do_run(cfg = %{run_spec: %{run_type: _}}) do
-    Logger.warn("Unknown run specification in config: #{inspect Orchestrator.MonitorSupervisor.redact(cfg)}")
+    Logger.warn("Unknown run specification in config: #{inspect Configuration.redact(cfg)}")
     Task.async(fn -> :ok end)
   end
+  # We probably want to get rid of this possibility at some point.
   defp do_run(cfg) do
     invocation_style = Orchestrator.Application.invocation_style()
     Logger.info("No run specification given, running based on configured invocation style #{invocation_style}")
@@ -194,6 +206,14 @@ defmodule Orchestrator.MonitorScheduler do
   def monitor_error_handler(_, monitor_logical_name, check_logical_name, message, opts) do
     Orchestrator.APIClient.write_error(monitor_logical_name, check_logical_name, message, opts)
   end
+
+  defp fetch_config(config_id) do
+    # Every time we fetch config we also want to set the metadata to keep it up-to-date
+    config = Configuration.get_config(config_id)
+    Orchestrator.Application.set_monitor_logging_metadata(config)
+    config
+  end
+
 
   # Purely for testing the regex
   def dotnet_http_error_match, do: @dotnet_http_error_match

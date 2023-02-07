@@ -50,8 +50,12 @@ defmodule Orchestrator.Configuration do
 
   @doc """
   Retrieve a config by its unique id. The config is retrieved from the ETS table that
-  contains all monitor configurations we know about.
+  contains all monitor configurations we know about. We translate only at this point
+  so we get the freshest values of both secrets and environment variables (the latter,
+  of course, are as of yet static but making that somehow dynamically settable would then
+  "just work").
   """
+  @spec get_config(String.t()) :: map()
   def get_config(name) do
     case :ets.lookup(__MODULE__, name) do
       [{_name, config}] ->
@@ -83,6 +87,35 @@ defmodule Orchestrator.Configuration do
       change: find_changed(new_config, old_config)
     }
     |> store_configs
+  end
+
+  @doc """
+  For logging, use this function to obfuscate the extra config as that may hold secrets. Basically we print the
+  first and last three characters of values; we don't expect secrets to be so short that this would leak a significant amount
+  of data. It's a security/convenience trade-off.
+  """
+  @spec redact(%{:extra_config => any, optional(any) => any}) :: %{
+          :extra_config => nil | map,
+          optional(any) => any
+        }
+  def redact(monitor_config) do
+    Map.put(monitor_config, :extra_config, do_redact(monitor_config.extra_config))
+  end
+  defp do_redact(nil), do: nil
+  defp do_redact(extra_config) do
+    extra_config
+    |> Enum.map(fn
+      {k, nil} ->
+        # Yes, this will probably log the same thing more often than once, but better that then never for now.
+        Logger.error("Unexpected nil value in extra config under key #{k} found during redaction, monitor may not work!")
+        {k, nil}
+      {k, e = << "<<ERROR:", _rest::binary>>} ->
+        # "<<ERROR: error message>>" is generated during `translate_value/1`, let's keep these in the clear
+        {k, e}
+      {k, v} ->
+        {k, String.replace(v, ~r/(...).+(...)/, "\\1..\\2")}
+    end)
+    |> Map.new()
   end
 
   defp find_added(new_config, old_config) do

@@ -30,7 +30,7 @@ defmodule Orchestrator.Invoker do
       Process.flag(:trap_exit, true)
 
       os_pid = start_function.(tmpdir)
-      GenServer.cast(parent, {:monitor_pid, os_pid})
+      Orchestrator.MonitorScheduler.set_monitor_os_pid(parent, os_pid)
 
       Logger.info("Started monitor with OS pid #{os_pid}")
       Logger.metadata(os_pid: os_pid)
