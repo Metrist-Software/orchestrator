@@ -16,7 +16,7 @@ defmodule Orchestrator.DotNetDLLInvoker do
   @impl true
   def invoke(config, opts \\ []) do
     runner_dir = Application.app_dir(:orchestrator, "priv/runner")
-    runner = Path.join(runner_dir, "Metrist.Shared.Monitoring.Runner")
+    runner = Path.join(runner_dir, "Metrist.Runner")
 
     # :executable_folder is set for a manual monitor run
     executable_folder =
