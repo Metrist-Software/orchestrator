@@ -33,7 +33,7 @@ defmodule Orchestrator.MixProject do
       {:erlexec, "~> 2.0"},
       {:ex_aws_secretsmanager, "~> 2.0"},
       {:ex_aws_lambda, "~> 2.0"},
-      {:httpoison, "~> 1.8"},
+      {:httpoison, "~> 2.0"},
       {:jason, "~> 1.2"},
       {:observer_cli, "~> 1.7"},
       {:yaml_elixir, "~> 2.8"},
