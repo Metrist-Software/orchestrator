@@ -12,8 +12,18 @@ set -vx
 
 dist=$1
 ver=$2
+
+case "${GITHUB_REF:-}" in
+    refs/heads/master)
+        qualifier=""
+        ;;
+    *)
+        qualifier="-preview"
+        ;;
+esac
+
 base=$(cd $(dirname $0); /bin/pwd)
-image=public.ecr.aws/metrist/dist-$dist:$ver-latest
+image=public.ecr.aws/metrist/dist-$dist:$ver-latest$qualifier
 cd $base/..
 rm -rf _build deps
 
@@ -26,4 +36,4 @@ gpg --sign --armor --detach-sign pkg/$pkg
 
 aws s3 cp pkg/$pkg s3://dist.metrist.io/orchestrator/$dist/
 aws s3 cp pkg/$pkg.asc s3://dist.metrist.io/orchestrator/$dist/
-echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$ver.$arch.latest.txt
+echo $pkg | aws s3 cp - s3://dist.metrist.io/orchestrator/$dist/$ver.$arch.latest$qualifier.txt

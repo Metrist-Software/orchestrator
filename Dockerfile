@@ -1,4 +1,4 @@
-FROM public.ecr.aws/metrist/orchestrator:build-base-2022.39 AS build
+FROM public.ecr.aws/metrist/orchestrator:build-base-2023.07 AS build
 
 COPY mix.exs mix.lock install-runner.sh ./
 COPY config config
@@ -11,7 +11,7 @@ COPY rel rel
 
 RUN mix do compile, release
 
-FROM public.ecr.aws/metrist/orchestrator:runtime-base-2022.39 AS app
+FROM public.ecr.aws/metrist/orchestrator:runtime-base-2023.07 AS app
 
 COPY --from=build --chown=nobody:nogroup /app/_build/prod/rel/bakeware/ ./
 USER nobody:nogroup
