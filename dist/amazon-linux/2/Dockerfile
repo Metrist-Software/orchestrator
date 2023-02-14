@@ -1,13 +1,13 @@
 FROM amazonlinux:2 AS build
 
-ENV REFRESHED_AT 20221206T202000Z
+ENV REFRESHED_AT 20230213T155300Z
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MIX_ENV=prod
 
 # Set the right versions
-ENV ERLANG_VERSION 25.1.1
-ENV ELIXIR_VERSION 1.14.1
+ENV ERLANG_VERSION 25.2.2
+ENV ELIXIR_VERSION 1.14.3
 
 RUN yum install -y ruby-devel git openssl-devel ncurses-devel wget && \
     yum groupinstall -y  "Development tools" --setopt=group_package_types=mandatory && \

@@ -1,15 +1,31 @@
 FROM ubuntu:20.04 AS build
 
-ENV REFRESHED_AT 20221206T202000Z
+ENV REFRESHED_AT 20230213T155300Z
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MIX_ENV=prod
 
+ENV ERLANG_VERSION 25.2.2
+ENV ELIXIR_VERSION 1.14.3
+
 RUN apt-get update
-RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev
-RUN wget https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb && dpkg -i erlang-solutions_2.0_all.deb
+RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev libncurses-dev
+
+RUN cd /tmp && \
+  wget "https://github.com/erlang/otp/releases/download/OTP-$ERLANG_VERSION/otp_src_$ERLANG_VERSION.tar.gz" -O otp.tar.gz && \
+  mkdir otp && \
+  tar -xzf otp.tar.gz -C otp --strip-components=1 && \
+  cd otp && \
+  ./configure && make && make install && rm -rf /tmp/otp*
+
+RUN cd /tmp && \
+  wget "https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VERSION.tar.gz" -O elixir.tar.gz && \
+  mkdir elixir && \
+  tar -xzf elixir.tar.gz -C elixir --strip-components=1 && \
+  cd elixir && \
+  make && make install && rm -rf /tmp/elixir*
+
 RUN apt-get update
-RUN apt-get install -y esl-erlang elixir
 RUN apt-get install -y ruby
 RUN gem install fpm
 
