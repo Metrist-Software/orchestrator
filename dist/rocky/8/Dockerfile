@@ -1,13 +1,13 @@
 FROM rockylinux:8.7 AS build
 
-ENV REFRESHED_AT 20230213T155300Z
+ENV REFRESHED_AT 20230214T165737Z
 ENV LANG=C.UTF-8
 ENV MIX_ENV=prod
 
 ENV ERLANG_VERSION 25.2.2
 ENV ELIXIR_VERSION 1.14.3
 
-RUN dnf update
+RUN dnf update -y
 RUN dnf install -y ruby-devel git openssl-devel ncurses-devel wget && \
     dnf groupinstall -y "Development Tools" --setopt=group_package_types=mandatory && \
     gem install fpm && dnf clean -y all && rm -rf /var/cache/dnf
