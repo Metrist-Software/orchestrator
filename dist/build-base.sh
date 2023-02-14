@@ -22,9 +22,6 @@ cd "$base/$dist/$ver"
 
 docker build -t $image:$tag .
 
-echo $image:$tag
-echo $image:$ver-latest$qualifier
-
 docker tag $image:$tag $image:$ver-latest$qualifier
 docker push $image:$tag
 docker push $image:$ver-latest$qualifier
