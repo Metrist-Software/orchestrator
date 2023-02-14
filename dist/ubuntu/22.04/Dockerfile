@@ -5,27 +5,13 @@ ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MIX_ENV=prod
 
-ENV ERLANG_VERSION 25.2.2
-ENV ELIXIR_VERSION 1.14.3
-
+# Jammy is not setup as a distribution by Erlang Solutions, so grab the packages manually.
 RUN apt-get update
-RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev libncurses-dev
-
-RUN cd /tmp && \
-  wget "https://github.com/erlang/otp/releases/download/OTP-$ERLANG_VERSION/otp_src_$ERLANG_VERSION.tar.gz" -O otp.tar.gz && \
-  mkdir otp && \
-  tar -xzf otp.tar.gz -C otp --strip-components=1 && \
-  cd otp && \
-  ./configure && make && make install && rm -rf /tmp/otp*
-
-RUN cd /tmp && \
-  wget "https://github.com/elixir-lang/elixir/archive/v$ELIXIR_VERSION.tar.gz" -O elixir.tar.gz && \
-  mkdir elixir && \
-  tar -xzf elixir.tar.gz -C elixir --strip-components=1 && \
-  cd elixir && \
-  make && make install && rm -rf /tmp/elixir*
-
-RUN apt-get install -y ruby
+RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev
+RUN wget https://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc; apt-key add erlang_solutions.asc
+RUN wget https://packages.erlang-solutions.com/erlang/debian/pool/esl-erlang_25.0.3-1~ubuntu~jammy_amd64.deb
+RUN wget https://packages.erlang-solutions.com/erlang/debian/pool/elixir_1.13.4-1~ubuntu~focal_all.deb
+RUN apt-get install -y ruby ./*.deb
 RUN gem install fpm
 
 WORKDIR /app
