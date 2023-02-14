@@ -1,6 +1,6 @@
 FROM centos:centos7 AS build
 
-ENV REFRESHED_AT 20230214T165737Z
+ENV REFRESHED_AT 20230214T165749Z
 # Using en_US.UTF-8 since C.UTF-8 not available in centos7
 ENV LANG=en_US.UTF-8
 ENV MIX_ENV=prod
