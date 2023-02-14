@@ -9,7 +9,7 @@ ENV ERLANG_VERSION 25.2.2
 ENV ELIXIR_VERSION 1.14.3
 
 RUN apt-get update
-RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev libncurses-dev
+RUN apt-get install -y build-essential zstd git curl unzip wget libcurl4-openssl-dev libncurses-dev libssl-dev
 
 RUN cd /tmp && \
   wget "https://github.com/erlang/otp/releases/download/OTP-$ERLANG_VERSION/otp_src_$ERLANG_VERSION.tar.gz" -O otp.tar.gz && \
