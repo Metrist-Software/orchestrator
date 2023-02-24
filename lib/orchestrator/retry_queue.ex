@@ -67,7 +67,7 @@ defmodule Orchestrator.RetryQueue do
 
   @impl true
   def handle_cast({:enqueue, queue_item}, state) when state.size == state.max_size do
-    queue = :queue.drop(state.queue)
+    {_value, queue} = :queue.out(state.queue)
     queue = :queue.in(queue_item, queue)
     {:noreply, %{state | queue: queue}}
   end
