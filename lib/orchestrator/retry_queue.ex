@@ -12,7 +12,6 @@ defmodule Orchestrator.RetryQueue do
   """
   @type callback_mfa :: {module(), atom(), list()}
 
-
   @typedoc """
   A `{module, :function}` tuple that returns a boolean that decides if the callback needs to be retried.
   The function must have an arity of 1 where the argument is the recent callback result
@@ -34,7 +33,8 @@ defmodule Orchestrator.RetryQueue do
 
   @type t :: %__MODULE__{
           queue: :queue.queue(queue_item()),
-          max_retry: non_neg_integer()
+          max_retry: non_neg_integer(),
+          size: non_neg_integer()
         }
 
   defstruct [:queue, :max_retry]
@@ -61,7 +61,15 @@ defmodule Orchestrator.RetryQueue do
   def init(arg) do
     queue = Keyword.get(arg, :queue, :queue.new())
     max_retry = Keyword.get(arg, :max_retry, 5)
-    {:ok, %__MODULE__{queue: queue, max_retry: max_retry}}
+    max_size = Keyword.get(arg, :max_size, 5_000)
+    {:ok, %__MODULE__{queue: queue, max_retry: max_retry, size: 0, max_size: max_size}}
+  end
+
+  @impl true
+  def handle_cast({:enqueue, queue_item}, state) when state.size == state.max_size do
+    queue = :queue.drop(state.queue)
+    queue = :queue.in(queue_item, queue)
+    {:noreply, %{state | queue: queue}}
   end
 
   @impl true
@@ -69,13 +77,13 @@ defmodule Orchestrator.RetryQueue do
     Logger.debug(":enqueue called with #{inspect(queue_item)}")
     queue = :queue.in(queue_item, state.queue)
     send(self(), :schedule_dequeue)
-    {:noreply, %{state | queue: queue}}
+    {:noreply, %{state | queue: queue, size: state.size + 1}}
   end
 
   @impl true
   def handle_info(:schedule_dequeue, state) do
     queue = dequeue_and_send(state)
-    {:noreply, %{state | queue: queue}}
+    {:noreply, %{state | queue: queue, size: state.size - 1}}
   end
 
   def dequeue_and_send(%RetryQueue{} = state) do
