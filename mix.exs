@@ -13,7 +13,8 @@ defmodule Orchestrator.MixProject do
         orchestrator: [
           steps: [:assemble, &Bakeware.assemble/1]
         ]
-      ]
+      ],
+      escript: escript()
     ]
   end
 
@@ -48,7 +49,10 @@ defmodule Orchestrator.MixProject do
       plt_add_apps: [:ex_unit, :jason, :mix],
       plt_add_deps: :app_tree,
       plt_file: {:no_warn, "priv/plts/orchestrator.plt"}
-
     ]
+  end
+
+  def escript do
+    [main_module: Orchestrator.CLI, app: nil, path: "rel/overlays/metrist-cli"]
   end
 end

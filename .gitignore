@@ -34,3 +34,5 @@ priv/runner
 *.deb
 pkg/
 .vagrant
+
+rel/overlays/metrist-cli
