@@ -72,6 +72,8 @@ defmodule Orchestrator.Application do
 
   def ipa_server_port, do: System.get_env("METRIST_IPA_SERVER_PORT", "51712") |> String.to_integer()
 
+  def schedule_delay?, do: is_nil(System.get_env("METRIST_NO_SCHEDULE_DELAY"))
+
   defp configure_configs(), do: Orchestrator.Configuration.init()
 
   defp parse_run_groups(""), do: []

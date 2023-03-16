@@ -169,7 +169,8 @@ defmodule Orchestrator.MonitorScheduler do
 
   defp schedule_initially(config) do
     {:ok, last_run} = NaiveDateTime.from_iso8601(config.last_run_time || @never)
-    time_to_next_run = time_to_next_run(last_run, config.interval_secs) + :rand.uniform(config.interval_secs)
+    delay = if Orchestrator.Application.schedule_delay?(), do: :rand.uniform(config.interval_secs), else: 0
+    time_to_next_run = time_to_next_run(last_run, config.interval_secs) + delay
     Logger.debug("Schedule next run in #{time_to_next_run} seconds")
     Process.send_after(self(), :run, time_to_next_run * 1_000)
   end
