@@ -11,7 +11,7 @@ defmodule Orchestrator.ExecutableInvoker do
 
   @impl true
   def invoke(config, opts \\ []) do
-    Logger.debug("Invoking #{inspect(config)}")
+    Logger.debug("Invoking #{Orchestrator.Configuration.inspect(config)}")
 
     # :executable is set for a manual monitor run
     executable =

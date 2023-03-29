@@ -26,7 +26,6 @@ defmodule Orchestrator.DotNetDLLInvoker do
       end
 
     cmd = "#{runner} #{config.monitor_logical_name} #{executable_folder}"
-    Logger.debug("#{inspect(cmd)}")
 
     Invoker.run_monitor(config, opts, fn tmp_dir ->
       Invoker.start_monitor(cmd, [], tmp_dir)

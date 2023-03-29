@@ -118,11 +118,20 @@ defmodule Orchestrator.Configuration do
     |> Map.new()
   end
 
+  @doc """
+  Inspect function for configurations. Just a mash-up of `redact/1` and `inspect/1`.
+  """
+  def inspect(config) do
+    config
+    |> redact()
+    |> Kernel.inspect()
+  end
+
   defp find_added(new_config, old_config) do
     new_list = Map.get(new_config, :monitors, [])
     old_list = Map.get(old_config, :monitors, [])
     Enum.filter(new_list, fn cfg -> find_by_unique_key(old_list, cfg) == nil end)
-  end
+   end
 
   defp find_deleted(new_config, old_config) do
     new_list = Map.get(new_config, :monitors, [])
