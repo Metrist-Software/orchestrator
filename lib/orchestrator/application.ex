@@ -152,4 +152,17 @@ end
         Orchestrator.Configuration.translate_value(token)
     end
   end
+
+  def with_proxy(opts) do
+    proxy = System.get_env("https_proxy") || System.get_env("HTTPS_PROXY")
+    case proxy do
+      nil -> opts
+      hostport ->
+        [host, port] = String.split(proxy, ":")
+        {port, _} = Integer.parse(port)
+        Keyword.put(opts, :proxy, {host, port})
+    end
+  end
+
+  def proxy_opts, do: with_proxy([])
 end

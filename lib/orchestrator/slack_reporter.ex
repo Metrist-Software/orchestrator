@@ -43,7 +43,7 @@ defmodule Orchestrator.SlackReporter do
       {"Content-Type", "application/json; charset=UTF-8"}
     ]
 
-    HTTPoison.post(@slack_url, message, headers)
+    HTTPoison.post(@slack_url, message, headers, Orchestrator.Application.proxy_opts())
   end
 
   def is_configured?() do
