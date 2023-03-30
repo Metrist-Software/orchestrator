@@ -14,7 +14,7 @@ dist=$1
 ver=$2
 
 case "${GITHUB_REF:-}" in
-    refs/heads/master)
+    refs/heads/main)
         qualifier=""
         ;;
     *)

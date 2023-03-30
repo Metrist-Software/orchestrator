@@ -6,7 +6,7 @@
 set -eou pipefail
 
 case "${GITHUB_REF:-}" in
-    refs/heads/master)
+    refs/heads/main)
         qualifier=""
         ;;
     *)

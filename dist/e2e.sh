@@ -37,7 +37,7 @@ $TEST_API_TOKEN
 e2e_test_$DIST
 EOF
 
-sleep 45
+sleep 60
 
 LOGS=$(sudo journalctl --unit metrist-orchestrator --since "1m ago" --no-pager)
 echo "$LOGS"
