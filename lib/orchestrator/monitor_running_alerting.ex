@@ -140,7 +140,7 @@ defmodule Orchestrator.MonitorRunningAlerting do
       }
       |> Jason.encode!()
 
-      HTTPoison.post(url, body, headers)
+      HTTPoison.post(url, body, headers, Orchestrator.Application.proxy_opts())
     end
   end
 

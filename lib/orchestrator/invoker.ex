@@ -164,7 +164,7 @@ defmodule Orchestrator.Invoker do
   end
 
   def download(path) do
-    {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(@monitor_distributions_url <> path)
+    {:ok, %HTTPoison.Response{body: body}} = HTTPoison.get(@monitor_distributions_url <> path, [], Orchestrator.Application.proxy_opts())
     body
   end
 

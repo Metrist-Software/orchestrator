@@ -24,7 +24,9 @@ defmodule Orchestrator.MetristAPI do
 
     # This works for the most part as long as the appropriate HTTP status codes are returned
     # See https://hexdocs.pm/httpoison/HTTPoison.MaybeRedirect.html for details
-    Keyword.put_new(opts, :follow_redirect, true)
+    opts
+    |> Keyword.put_new(:follow_redirect, true)
+    |> Orchestrator.Application.with_proxy()
   end
 
   @impl true
