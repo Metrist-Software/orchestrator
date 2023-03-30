@@ -157,7 +157,7 @@ end
     proxy = System.get_env("https_proxy") || System.get_env("HTTPS_PROXY")
     case proxy do
       nil -> opts
-      hostport ->
+      _hostport ->
         [host, port] = String.split(proxy, ":")
         {port, _} = Integer.parse(port)
         Keyword.put(opts, :proxy, {host, port})
