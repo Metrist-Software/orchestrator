@@ -17,7 +17,7 @@ defmodule Orchestrator.PingInvoker do
   @impl true
   def invoke(config, opts \\ []) do
     Task.async(fn ->
-      target = Map.get(config.extra_config, "Target")
+      target = Map.get(config.extra_config, :"Target")
 
       error_report_fun =
         Keyword.get(opts, :error_report_fun, &Orchestrator.APIClient.write_error/4)
@@ -35,9 +35,9 @@ defmodule Orchestrator.PingInvoker do
         telemetry_report_fun.(config.monitor_logical_name, "Ping", telem, [])
       end
 
-      Logger.debug("Invoking ping #{target}")
+      Logger.info("Invoking ping #{target}")
       {output, exit_code} = System.cmd("ping", ["-c5", "-W5", target], stderr_to_stdout: true)
-      Logger.debug("Ping exited with #{exit_code}, output: #{output}")
+      Logger.info("Ping exited with #{exit_code}, output: #{output}")
 
       case exit_code do
         0 ->
