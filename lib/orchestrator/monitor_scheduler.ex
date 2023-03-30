@@ -110,38 +110,24 @@ defmodule Orchestrator.MonitorScheduler do
     Orchestrator.MonitorRunningAlerting.untrack_monitor(config)
   end
 
+  @type_to_mod %{
+    "dll" => Orchestrator.DotNetDLLInvoker,
+    "exe" => Orchestrator.ExecutableInvoker,
+    "awslambda" => Orchestrator.LambdaInvoker,
+    "nil" => Orchestrator.NilInvoker,
+    "ping" => Orchestrator.PingInvoker
+  }
+
   # Run a monitor. This depends on the "run type" configured, which can be any of the
   # options handled in the function heads below.
-  defp do_run(cfg = %{run_spec: %{run_type: "dll"}}) do
-    opts = [error_report_fun: get_monitor_error_handler("dll")]
-    Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
+  defp do_run(cfg = %{run_spec: %{run_type: run_type}}) when is_map_key(@type_to_mod, run_type) do
+    opts = [error_report_fun: get_monitor_error_handler(run_type)]
+    mod = Map.get(@type_to_mod, run_type)
+    mod.invoke(cfg, opts)
   end
-  defp do_run(cfg = %{run_spec: %{run_type: "exe"}}) do
-    opts = [error_report_fun: get_monitor_error_handler("exe")]
-    Orchestrator.ExecutableInvoker.invoke(cfg, opts)
-  end
-  defp do_run(cfg = %{run_spec: %{run_type: "awslambda"}}) do
-    opts = [error_report_fun: get_monitor_error_handler("awslambda")]
-    Orchestrator.LambdaInvoker.invoke(cfg, opts)
-  end
-  defp do_run(cfg = %{run_spec: %{run_type: _}}) do
+  defp do_run(cfg) do
     Logger.warn("Unknown run specification in config: #{inspect Configuration.redact(cfg)}")
     Task.async(fn -> :ok end)
-  end
-  # We probably want to get rid of this possibility at some point.
-  defp do_run(cfg) do
-    invocation_style = Orchestrator.Application.invocation_style()
-    Logger.info("No run specification given, running based on configured invocation style #{invocation_style}")
-    opts = [error_report_fun: get_monitor_error_handler(invocation_style)]
-    case invocation_style do
-      "rundll" ->
-        Orchestrator.DotNetDLLInvoker.invoke(cfg, opts)
-      "awslambda" ->
-        Orchestrator.LambdaInvoker.invoke(cfg, opts)
-      other ->
-        Logger.warn("Unknown invocation style #{other}, ignoring.")
-        Task.async(fn -> :ok end)
-    end
   end
 
   defp show(state) do
