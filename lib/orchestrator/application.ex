@@ -9,6 +9,7 @@ defmodule Orchestrator.Application do
   @impl true
   def start(_type, _config) do
     print_header()
+    print_proxy_config()
 
     ll_config = System.get_env("METRIST_LOGGING_LEVEL", "Info")
     set_logging(String.downcase(ll_config))
@@ -165,4 +166,13 @@ end
   end
 
   def proxy_opts, do: with_proxy([])
+
+  def print_proxy_config do
+    case proxy_opts() do
+      [proxy: {host, port}] ->
+        IO.puts("Proxying requests through #{host}:#{port}.")
+      _ ->
+        IO.puts("Using direct connections for requests.")
+   end
+  end
 end
