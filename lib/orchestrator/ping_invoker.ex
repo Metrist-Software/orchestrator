@@ -89,7 +89,7 @@ defmodule Orchestrator.PingInvoker do
       "round-trip min/avg/max = " <> rest ->
         {:ok, parse_line.(rest)}
 
-      other ->
+      _other ->
         :error
     end
   end
