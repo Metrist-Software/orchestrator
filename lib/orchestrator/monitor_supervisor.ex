@@ -34,9 +34,9 @@ defmodule Orchestrator.MonitorSupervisor do
       [{pid, _}] = Registry.lookup(registry, id)
       case DynamicSupervisor.terminate_child(supervisor_name, pid) do
         :ok ->
-          Logger.info("Terminated child #{inspect id} with config #{inspect monitor_config} running as #{inspect pid}")
+          Logger.info("Terminated child #{inspect id} with config #{Orchestrator.Configuration.inspect monitor_config} running as #{inspect pid}")
         {:error, err} ->
-          Logger.error("Could not terminate child #{inspect id} with config #{inspect monitor_config}, error: #{inspect err}")
+          Logger.error("Could not terminate child #{inspect id} with config #{Orchestrator.Configuration.inspect monitor_config}, error: #{inspect err}")
       end
     end)
   end

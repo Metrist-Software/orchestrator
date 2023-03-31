@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Metrist.RunMonitor do
     }
     |> Orchestrator.Configuration.translate_config()
 
-    Logger.info("Running #{cfg.monitor_logical_name} with config #{inspect cfg}")
+    Logger.info("Running #{cfg.monitor_logical_name} with config #{Orchestrator.Configuration.inspect cfg}")
 
     get_invoker(opts[:run_type]).
     (
