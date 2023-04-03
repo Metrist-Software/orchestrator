@@ -38,8 +38,14 @@ defmodule Orchestrator.MetristAPI do
       [{"Authorization", "Bearer #{api_token}"} | headers]
     end
 
+    # replace new lines in build info with semicolons
+    formatted_build_id =
+      Orchestrator.Application.build_id()
+      |> String.replace("\r\n", ";")
+      |> String.replace("\n", ";")
+
     [
-       {"User-Agent", "Orchestrator/#{Orchestrator.Application.build_id()}"}
+       {"User-Agent", "Orchestrator/#{formatted_build_id}"}
       | auth_headers
     ]
   end
