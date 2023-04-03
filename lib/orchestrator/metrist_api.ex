@@ -35,7 +35,9 @@ defmodule Orchestrator.MetristAPI do
       headers
     else
       api_token = Orchestrator.Application.api_token()
-      [{"Authorization", "Bearer #{api_token}"} | headers]
+      [{"Authorization", "Bearer #{api_token}"},
+       {"User-Agent", "Orchestrator/#{Orchestrator.Application.build_id()}"}
+       | headers]
     end
   end
 end

@@ -117,22 +117,25 @@ else
   defp filter_children(children), do: children
 
   defp print_header() do
+    IO.puts """
+    Metrist Monitoring Orchestrator starting.
+
+    Build info:
+    ===
+    #{build_id()}
+    ===
+    """
+  end
+end
+
+  def build_id() do
     build_txt = Path.join(Application.app_dir(:orchestrator, "priv"), "build.txt")
     build = if File.exists?(build_txt) do
       File.read!(build_txt)
     else
       "(unknown build)"
     end
-    IO.puts """
-    Metrist Monitoring Orchestrator starting.
-
-    Build info:
-    ===
-    #{build}
-    ===
-    """
   end
-end
 
   @spec translate_config_from_env(binary, any) :: any
   def translate_config_from_env(env, default \\ nil) do
