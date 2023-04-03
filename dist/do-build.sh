@@ -18,6 +18,7 @@ mix local.rebar --force
 cd $base
 tag=$(git rev-parse --short HEAD)
 ./install-runner.sh
+make generate_build_info
 mix do deps.get, compile, release
 
 orch_ver=$(cat _build/prod/rel/orchestrator/releases/start_erl.data |awk '{print $2}')
