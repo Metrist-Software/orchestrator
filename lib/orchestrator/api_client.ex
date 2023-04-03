@@ -109,17 +109,6 @@ defmodule Orchestrator.APIClient do
   end
   def retry_api_request?(_response), do: false
 
-  # def delay_retry({:ok, %{status_code: 429} = resp} , retry_count) do
-  #   if reset_seconds_str = Enum.into(resp.headers, %{}) |> Map.get("x-ratelimit-reset") do
-  #     {seconds, _} = Integer.parse(reset_seconds_str)
-  #     seconds = seconds + :rand.uniform(seconds)
-  #     Logger.info("Delaying retry for #{seconds}s")
-  #     :timer.seconds(seconds)
-  #     |> Process.sleep()
-  #   else
-  #     delay_retry(nil, retry_count)
-  #   end
-  # end
   def delay_retry(_response, retry_count) do
     seconds = Integer.pow(2, retry_count)
     seconds = seconds + :rand.uniform(seconds)
