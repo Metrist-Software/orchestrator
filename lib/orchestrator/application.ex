@@ -130,7 +130,7 @@ end
 
   def build_id() do
     build_txt = Path.join(Application.app_dir(:orchestrator, "priv"), "build.txt")
-    build = if File.exists?(build_txt) do
+    if File.exists?(build_txt) do
       File.read!(build_txt)
     else
       "(unknown build)"
