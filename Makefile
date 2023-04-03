@@ -15,13 +15,11 @@ run_against_local:
 	METRIST_RUN_GROUPS=local-development \
 	  iex -S mix
 
-generate_build_info:
+release:
 	mkdir -p priv/
 	echo Revision: `git rev-parse --short HEAD` >priv/build.txt
 	echo Date: `date` >>priv/build.txt
 	echo Build-Host: `hostname` >>priv/build.txt
-
-release: generate_build_info
 	docker build -t orchestrator:`git rev-parse --short HEAD` --build-arg GITHUB_REF=`git rev-parse --symbolic-full-name HEAD` .
 
 # These tests exercise (or rather demonstrate) how Erlexec works. Given
