@@ -31,16 +31,11 @@ defmodule Orchestrator.MetristAPI do
 
   @impl true
   def process_request_headers(headers) do
-    auth_headers = if Enum.any?(headers, fn {header, _value} -> header == "Authorization" end) do
+    if Enum.any?(headers, fn {header, _value} -> header == "Authorization" end) do
       headers
     else
       api_token = Orchestrator.Application.api_token()
       [{"Authorization", "Bearer #{api_token}"} | headers]
     end
-
-    [
-       {"User-Agent", "Orchestrator/#{Orchestrator.Application.build_id()}"}
-      | auth_headers
-    ]
   end
 end
