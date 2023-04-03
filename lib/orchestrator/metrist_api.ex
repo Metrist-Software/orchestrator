@@ -45,7 +45,7 @@ defmodule Orchestrator.MetristAPI do
       |> String.replace("\n", ";")
 
     [
-       {"User-Agent", "Orchestrator/#{formatted_build_id}"}
+       {"User-Agent", "Orchestrator/1.0 (#{formatted_build_id})"}
       | auth_headers
     ]
   end
