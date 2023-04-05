@@ -6,10 +6,11 @@ build your own or add new distribution targets.
 
 ## Versioning
 
-Distribution packages are tagged with three version elements:
+Distribution packages are tagged with four version elements:
 
 * The Mix version, taken from Orchestrator's [`mix.exs`](../mix.exs);
 * The target (distribution and distribution version, for example `ubuntu-20.04`);
+* The time the package was built (yymmddhhmm);
 * The Git short rev of this repository.
 
 The latter element is just informational, updates to Orchestrator packages will be indicated through mix version bumps.

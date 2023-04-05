@@ -16,7 +16,7 @@ mix local.hex --force
 mix local.rebar --force
 
 cd $base
-tag=$(git rev-parse --short HEAD)
+tag=$(date +%Y%m%d%H%M)-$(git rev-parse --short HEAD)
 ./install-runner.sh
 make generate_build_info
 mix do deps.get, compile, release
