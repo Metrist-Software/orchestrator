@@ -168,7 +168,7 @@ defmodule Orchestrator.Invoker do
   end
 
   defp dll_exists(name, loc) do
-    Path.wildcard(Path.join(loc, "*#{name}.dll")) != []
+    Path.wildcard(Path.join(loc, "*.dll")) != []
   end
 
   def download(path) do
