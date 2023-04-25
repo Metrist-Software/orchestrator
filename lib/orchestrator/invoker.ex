@@ -160,14 +160,14 @@ defmodule Orchestrator.Invoker do
 
   defp available?(name, version) do
     loc = cache_location(name, version)
-    File.dir?(loc) and (exe_exists(name, loc) or dll_exists(name, loc))
+    File.dir?(loc) and (exe_exists(name, loc) or dll_exists(loc))
   end
 
   defp exe_exists(name, loc) do
     File.exists?(Path.join(loc, name))
   end
 
-  defp dll_exists(name, loc) do
+  defp dll_exists(loc) do
     Path.wildcard(Path.join(loc, "*.dll")) != []
   end
 
