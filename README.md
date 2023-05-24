@@ -50,7 +50,7 @@ the measured value will be sent to the Metrist back-end.
 
 The orchestrator is configured through environment variables:
 
-* `METRIST_INSTANCE_ID` - this is the instance id used for reporting. It can be any logical name, but should be unique and consistent between
+* [x] `METRIST_INSTANCE_ID` - this is the instance id used for reporting. It can be any logical name, but should be unique and consistent between
   runs as the backend will use this to supply the instance with the timings of last monitoring runs.
 * `METRIST_RUN_GROUPS` - one or more "run groups" this monitor will schedule. When more than one, a comma-separated list. This can be
   used to have several instances of monitors run some same set of monitors.
@@ -66,6 +66,11 @@ The orchestrator is configured through environment variables:
 * `METRIST_IPA_LOOPBACK_ONLY` - whether to open the UDP socket for in-process data only on the loopback/localhost address. This can be
   used to restrict this sort of traffic to only the local machine. Off by default which means that the "wildcard" address is bound,
   making the UDP socket accessible to all machines that can route to the instance.
+* `METRIST_NO_SCHEDULE_DELAY` - if set, avoids the normal scheduling delay at startup. Normally, Orchestrator,
+when starting up, will wait a random period up to the monitor interval before executing that monitor. This avoids
+spikes in load as it will not start a whole bunch of monitors at the same time when starting, but it also causes
+delays until data is available. Setting this environment variable will avoid the random delay and run monitors
+immediately.
 
 ## License
 
